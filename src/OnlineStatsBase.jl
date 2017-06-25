@@ -1,6 +1,6 @@
 module OnlineStatsBase
 
-using StatsBase
+import StatsBase
 
 export AbstractSeries, OnlineStat, StochasticStat, Weight
 
