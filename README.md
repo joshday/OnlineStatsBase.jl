@@ -4,11 +4,8 @@
 <!-- [![codecov.io](http://codecov.io/github/joshday/OnlineStatsBase.jl/coverage.svg?branch=master)](http://codecov.io/github/joshday/OnlineStatsBase.jl?branch=master) -->
 
 
-This package contains the abstract types used by OnlineStats.
+This package defines the base types used by [OnlineStats](https://github.com/joshday/OnlineStats.jl).
 
-```julia
-abstract type Weight end
-abstract type OnlineStat{INDIM, OUTDIM} end
-abstract type StochasticStat{I, O} <: OnlineStat{I, O} end
-abstract type AbstractSeries end
-```
+- `Weight`
+- `OnlineStat{INPUTDIM, OUTPUTDIM}`
+- `Series <: AbstractSeries`
