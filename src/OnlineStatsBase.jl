@@ -51,6 +51,8 @@ where `InputType` depends on `I`
 abstract type OnlineStat{I, O} end
 abstract type StochasticStat{I, O} <: OnlineStat{I, O} end
 
+Base.show(io::IO, o::OnlineStat) = (print(io, name(o)); show_fields(io, o))
+
 Base.copy(o::OnlineStat) = deepcopy(o)
 Base.map(f::Function, o::OnlineStat) = f(o)
 Base.merge{T <: OnlineStat}(o::T, o2::T, wt::Float64) = merge!(copy(o), o2, wt)
@@ -65,6 +67,9 @@ value(o::OnlineStat) = getfield(o, fieldnames(o)[1])
 abstract type AbstractSeries end
 Base.copy(o::AbstractSeries) = deepcopy(o)
 
+"""
+
+"""
 struct Series{I, OS <: Union{Tuple, OnlineStat{I}}, W <: Weight} <: AbstractSeries
     weight::W
     stats::OS
