@@ -2,7 +2,7 @@ module OnlineStatsBase
 
 import StatsBase: nobs
 
-export AbstractSeries, Series, OnlineStat, StochasticStat, Weight
+export AbstractSeries, OnlineStat, StochasticStat, Weight
 
 #============================================================================= Weight
 Subtypes of Weight need at least the fields
