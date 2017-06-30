@@ -90,12 +90,10 @@ abstract type AbstractSeries end
 Base.copy(o::AbstractSeries) = deepcopy(o)
 
 function Base.show(io::IO, s::AbstractSeries)
-    header(io, name(s))
-    println(io)
-    print(io, "┣━━ ")
-    println(io, s.weight)
+    header(io, name(s, false, true))
+    print(io,   "┣━━ "); println(io, s.weight)
     println(io, "┗━━ Tracking")
-    names = name.(s.stats)
+    names = ifelse(isa(s.stats, Tuple), name.(s.stats), tuple(name(s.stats)))
     indent = maximum(length.(names))
     n = length(names)
     i = 0
@@ -177,12 +175,13 @@ end
 
 fields_to_show(o) = fieldnames(o)
 
-header(io::IO, s::AbstractString) = print(io, "▦ $s" )
+header(io::IO, s::AbstractString) = println(io, "▦ $s" )
 
 function name(o, withmodule = false, withparams = true)
     s = string(typeof(o))
     if !withmodule
-        s = replace(s, r"(.*)\.", "")
+        s = replace(s, "OnlineStats.", "")
+        s = replace(s, "OnlineStatsBase.", "")
     end
     if !withparams
         s = replace(s, r"\{(.*)", "")
