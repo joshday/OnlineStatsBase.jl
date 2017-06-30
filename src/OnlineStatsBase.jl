@@ -4,13 +4,13 @@ import StatsBase: nobs
 
 export AbstractSeries, Series, OnlineStat, StochasticStat, Weight
 
-#======================================================================== Weight
+#============================================================================= Weight
 Subtypes of Weight need at least the fields
 - `nobs`
 - `nups`
 and a method for
 - `weight(w, n2::Int = 1)`
-=========================================================================#
+==============================================================================#
 abstract type Weight end
 # show
 Base.show(io::IO, w::Weight) = (print(io, name(w)); show_fields(io, w))
@@ -33,10 +33,9 @@ function weight!(w::Weight, n2::Int = 1)
 end
 function weight(w::Weight) end
 
-#-----------------------------------------------------------------------# OnlineStat
-"""
-`OnlineStat{I, O}` is an abstract type parameterized by the input and output
-type/dimension `I` and `O`.  The supported `I` and `O` value are:
+#============================================================================= OnlineStat
+`OnlineStat{I, O}` is an abstract type parameterized by the input and
+output type/dimension `I` and `O`.  The supported `I` and `O` value are:
 - 0 = Union{Number, Symbol, AbstractString}
 - 1 = AbstractVector or Tuple
 - 2 = AbstractMatrix
@@ -47,7 +46,7 @@ A new OnlineStat (`<: OnlineStat{I, O)}`) should define :
 - StatsBase.fit!(o::MyStat, y::InputType, w::Float64)
 
 where `InputType` depends on `I`
-"""
+==============================================================================#
 abstract type OnlineStat{I, O} end
 abstract type StochasticStat{I, O} <: OnlineStat{I, O} end
 
@@ -63,77 +62,12 @@ Base.done(o::OnlineStat, state) = state
 
 value(o::OnlineStat) = getfield(o, fieldnames(o)[1])
 
-#-----------------------------------------------------------------------# Series
+#============================================================================= AbstractSeries
+An AbstractSeries contains a Weight `weight` and tuple of OnlineStats `stats`,
+
+==============================================================================#
 abstract type AbstractSeries end
 Base.copy(o::AbstractSeries) = deepcopy(o)
-
-"""
-
-"""
-struct Series{I, OS <: Union{Tuple, OnlineStat{I}}, W <: Weight} <: AbstractSeries
-    weight::W
-    stats::OS
-end
-function Base.show{I, OS<:Tuple, W}(io::IO, s::Series{I, OS, W})
-    header(io, name(s))
-    println(io)
-    print(io, "┣━━ ")
-    println(io, s.weight)
-    println(io, "┗━━ Tracking")
-    names = name.(s.stats)
-    indent = maximum(length.(names))
-    n = length(names)
-    i = 0
-    for o in s.stats
-        i += 1
-        char = ifelse(i == n, "┗━━", "┣━━")
-        print(io, "    $char ")
-        print(io, names[i])
-        print(io, repeat(" ", indent - length(names[i])))
-        print(io, " : $(value(o))")
-        i == n || println(io)
-    end
-end
-function Base.show{I, O <: OnlineStat, W}(io::IO, s::Series{I, O, W})
-    header(io, name(s))
-    println(io)
-    print(io, "┣━━ ")
-    println(io, s.weight)
-    print(io, "┗━━ $(name(s.stats)) : $(value(s.stats))")
-end
-
-
-function Base.merge{T <: Series}(s1::T, s2::T, method::Symbol = :append)
-    merge!(copy(s1), s2, method)
-end
-
-function Base.merge{T <: Series}(s1::T, s2::T, w::Float64)
-    merge!(copy(s1), s2, w)
-end
-
-function Base.merge!{T <: Series}(s1::T, s2::T, method::Symbol = :append)
-    n2 = nobs(s2)
-    n2 == 0 && return s1
-    updatecounter!(s1, n2)
-    if method == :append
-        merge!.(s1.stats, s2.stats, weight(s1, n2))
-    elseif method == :mean
-        merge!.(s1.stats, s2.stats, (weight(s1) + weight(s2)))
-    elseif method == :singleton
-        merge!.(s1.stats, s2.stats, weight(s1))
-    else
-        throw(ArgumentError("method must be :append, :mean, or :singleton"))
-    end
-    s1
-end
-function Base.merge!{T <: Series}(s1::T, s2::T, w::Float64)
-    n2 = nobs(s2)
-    n2 == 0 && return s1
-    0 <= w <= 1 || throw(ArgumentError("weight must be between 0 and 1"))
-    updatecounter!(s1, n2)
-    merge!.(s1.stats, s2.stats, w)
-    s1
-end
 
 # helpers for weight
 nobs(o::AbstractSeries) = nobs(o.weight)
@@ -143,7 +77,9 @@ weight!(o::AbstractSeries, n2::Int = 1) = weight!(o.weight, n2)
 updatecounter!(o::AbstractSeries, n2::Int = 1) = updatecounter!(o.weight, n2)
 
 
-#-----------------------------------------------------------------------# show helpers
+#============================================================================= Show help
+- show_fields
+==============================================================================#
 function show_fields(io::IO, o)
     nms = fields_to_show(o)
     print(io, "(")
