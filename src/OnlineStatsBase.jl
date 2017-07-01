@@ -1,7 +1,5 @@
 module OnlineStatsBase
 
-import StatsBase: nobs
-
 export AbstractSeries, OnlineStat, StochasticStat, Weight
 
 #============================================================================= Weight
@@ -91,8 +89,8 @@ Base.copy(o::AbstractSeries) = deepcopy(o)
 
 function Base.show(io::IO, s::AbstractSeries)
     header(io, name(s, false, true))
-    print(io,   "┣━━ "); println(io, s.weight)
-    println(io, "┗━━ Tracking")
+    print(io, "┣━━ "); println(io, s.weight)
+    print(io, "┗━━ Tracking")
     names = ifelse(isa(s.stats, Tuple), name.(s.stats), tuple(name(s.stats)))
     indent = maximum(length.(names))
     n = length(names)
@@ -100,11 +98,10 @@ function Base.show(io::IO, s::AbstractSeries)
     for o in s.stats
         i += 1
         char = ifelse(i == n, "┗━━", "┣━━")
-        print(io, "    $char ")
+        print(io, "\n    $char ")
         print(io, names[i])
         print(io, repeat(" ", indent - length(names[i])))
         print(io, " : $(value(o))")
-        i == n || println(io)
     end
 end
 
@@ -156,7 +153,7 @@ end
 
 Example:
 
-If I want to print "MyModule.MyType{T, S}(field1 = val1, field2 = val2)""
+If I want to print "MyModule.MyType{T, S}(field1 = val1, field2 = val2)"
 
 function Base.show(io::IO, t::MyType)
     print(io, name(t), true, true)
