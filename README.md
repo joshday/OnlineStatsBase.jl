@@ -4,3 +4,5 @@
 
 
 This package defines the base types used by [OnlineStats](https://github.com/joshday/OnlineStats.jl).
+
+Extending functionality of OnlineStats should be accomplished through OnlineStatsBase and can thus avoid the extra dependencies.
