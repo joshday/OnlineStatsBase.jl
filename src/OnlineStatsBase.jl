@@ -22,17 +22,10 @@ end
 # interface
 nobs(w::Weight) = w.nobs
 nups(w::Weight) = w.nups
-function updatecounter!(w::Weight, n2::Int = 1)
-    w.nobs += n2
-    w.nups += 1
-end
-function weight!(w::Weight, n2::Int = 1)
-    updatecounter!(w, n2)
-    weight(w, n2)
-end
-function weight(w::Weight, n2::Int = 1)
-    error("$w has not defined the required `weight(w, n2 = 1)` method")
-end
+updatecounter!(w::Weight, n2::Int = 1) = (w.nobs += n2;w.nups += 1)
+weight!(w::Weight, n2::Int = 1) = (updatecounter!(w, n2); weight(w, n2))
+weight(w::Weight, n2::Int = 1) = error("$w has not defined the required `weight(w, n2=1)` method")
+
 
 #============================================================================= OnlineStat
 `OnlineStat{I, O}` is an abstract type parameterized by the input and
@@ -51,9 +44,11 @@ where `InputType` depends on `I`
 ---
 If the OnlineStat is mergeable, it should define
 - `merge!(o1::MyStat, o2::MyStat, w::Float64)`
-where `w` is the influence `o2` should have on `o1`
+where `w` is the influence (between 0 and 1) `o2` should have on `o1`
 ==============================================================================#
 abstract type OnlineStat{I, O} end
+
+"An OnlineStat which is estimated through stochastic approximation."
 abstract type StochasticStat{I, O} <: OnlineStat{I, O} end
 
 Base.show(io::IO, o::OnlineStat) = (print(io, name(o)); show_fields(io, o))
@@ -82,6 +77,7 @@ end
 #============================================================================= AbstractSeries
 An AbstractSeries contains a Weight `weight` and tuple of OnlineStats `stats`,
 ==============================================================================#
+"A container for a `Weight` and at least one `OnlineStat`"
 abstract type AbstractSeries end
 
 Base.copy(o::AbstractSeries) = deepcopy(o)
@@ -97,16 +93,15 @@ function Base.show(io::IO, s::AbstractSeries)
     for o in s.stats
         i += 1
         char = ifelse(i == n, "┗━━", "┣━━")
-        print(io, "\n    $char ")
-        print(io, o)
+        print(io, "\n    $char ", o)
     end
 end
 
 # helpers for weight
 nobs(o::AbstractSeries) = nobs(o.weight)
 nups(o::AbstractSeries) = nups(o.weight)
-weight(o::AbstractSeries, n2::Int = 1) = weight(o.weight, n2)
-weight!(o::AbstractSeries, n2::Int = 1) = weight!(o.weight, n2)
+weight(o::AbstractSeries,         n2::Int = 1) = weight(o.weight, n2)
+weight!(o::AbstractSeries,        n2::Int = 1) = weight!(o.weight, n2)
 updatecounter!(o::AbstractSeries, n2::Int = 1) = updatecounter!(o.weight, n2)
 
 function Base.merge{T <: AbstractSeries}(s1::T, s2::T, w::Float64)
