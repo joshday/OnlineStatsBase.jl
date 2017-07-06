@@ -70,7 +70,6 @@ Base.start(o::OnlineStat) = false
 Base.next(o::OnlineStat, state) = o, true
 Base.done(o::OnlineStat, state) = state
 
-value(o::OnlineStat) = getfield(o, fieldnames(o)[1])
 input(o::OnlineStat{I}) = I
 function input(t::Tuple)
     I = input(t[1])
@@ -99,9 +98,7 @@ function Base.show(io::IO, s::AbstractSeries)
         i += 1
         char = ifelse(i == n, "┗━━", "┣━━")
         print(io, "\n    $char ")
-        print(io, names[i])
-        print(io, repeat(" ", indent - length(names[i])))
-        print(io, " : $(value(o))")
+        print(io, o)
     end
 end
 
