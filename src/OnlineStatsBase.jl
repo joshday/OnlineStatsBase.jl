@@ -1,6 +1,6 @@
 module OnlineStatsBase
 
-export AbstractSeries, OnlineStat, StochasticStat, Weight
+export AbstractSeries, OnlineStat, Weight
 
 #============================================================================= Weight
 Subtypes of Weight need at least the fields
@@ -46,12 +46,15 @@ If the OnlineStat is mergeable, it should define
 - `merge!(o1::MyStat, o2::MyStat, w::Float64)`
 where `w` is the influence (between 0 and 1) `o2` should have on `o1`
 ==============================================================================#
-abstract type OnlineStat{I, O} end
+abstract type OnlineStat{INDIM, OUTDIM, WEIGHT} end
 
-"An OnlineStat which is estimated through stochastic approximation."
-abstract type StochasticStat{I, O} <: OnlineStat{I, O} end
+_value(o::OnlineStat) = getfield(o, fieldnames(o)[1])
 
-Base.show(io::IO, o::OnlineStat) = (print(io, name(o)); show_fields(io, o))
+function Base.show(io::IO, o::OnlineStat)
+    print(io, name(o), "(")
+    showcompact(io, _value(o))
+    print(io, ")")
+end
 
 Base.copy(o::OnlineStat) = deepcopy(o)
 Base.map(f::Function, o::OnlineStat) = f(o)
@@ -68,11 +71,20 @@ Base.done(o::OnlineStat, state) = state
 input(o::OnlineStat{I}) = I
 function input(t::Tuple)
     I = input(t[1])
-    any(input.(t) .!= I) && throw(ArgumentError("Inputs must match. Found: $(input.(t))"))
+    for ti in t
+        input(ti) != I && throw(ArgumentError("Inputs must match. Found: $(input.(t))"))
+    end
     I
 end
 
-
+default_weight{I, O, W}(o::OnlineStat{I, O, W}) = W()
+function default_weight(t::Tuple)
+    w = default_weight(t[1])
+    if !all(map(x -> default_weight(x) == w, t))
+        throw(ArgumentError("Default weights differ.  Weight must be specified"))
+    end
+    w
+end
 
 #============================================================================= AbstractSeries
 An AbstractSeries contains a Weight `weight` and tuple of OnlineStats `stats`,
@@ -94,6 +106,7 @@ function Base.show(io::IO, s::AbstractSeries)
         i += 1
         char = ifelse(i == n, "┗━━", "┣━━")
         print(io, "\n    $char ", o)
+
     end
 end
 
