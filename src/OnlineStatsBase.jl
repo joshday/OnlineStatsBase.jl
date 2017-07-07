@@ -48,8 +48,6 @@ where `w` is the influence (between 0 and 1) `o2` should have on `o1`
 ==============================================================================#
 abstract type OnlineStat{INDIM, OUTDIM, WEIGHT} end
 
-_value(o::OnlineStat) = getfield(o, fieldnames(o)[1])
-
 function Base.show(io::IO, o::OnlineStat)
     print(io, name(o), "(")
     showcompact(io, _value(o))
@@ -77,10 +75,12 @@ function input(t::Tuple)
     I
 end
 
-default_weight{I, O, W}(o::OnlineStat{I, O, W}) = W()
-function default_weight(t::Tuple)
-    w = default_weight(t[1])
-    if !all(map(x -> default_weight(x) == w, t))
+_value(o::OnlineStat) = getfield(o, fieldnames(o)[1])
+
+weight{I,O,W}(o::OnlineStat{I,O,W}) = W()
+function weight(t::Tuple)
+    w = weight(t[1])
+    if !all(map(x -> weight(x) == w, t))
         throw(ArgumentError("Default weights differ.  Weight must be specified"))
     end
     w
