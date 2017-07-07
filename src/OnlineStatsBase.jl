@@ -28,23 +28,27 @@ weight(w::Weight, n2::Int = 1) = error("$w has not defined the required `weight(
 
 
 #============================================================================= OnlineStat
-`OnlineStat{I, O}` is an abstract type parameterized by the input and
-output type/dimension `I` and `O`.  The supported `I` and `O` value are:
-- 0 = Union{Number, Symbol, AbstractString}
-- 1 = AbstractVector or Tuple
-- 2 = AbstractMatrix
-- -1 = unknown
-- Distributions.Distribution
+`OnlineStat{I, O, W}` is an abstract type parameterized by the input and
+output type/dimension `I` and `O` as well as the default weight type `W`.
+The supported `I` and `O` value are:
+    0       = Union{Number, Symbol, AbstractString} (Singleton)
+    1       = AbstractVector or Tuple
+    2       = AbstractMatrix
+    -1      = unknown
+    (1, 0)  = (x,y) pair
 
 ---
-A new OnlineStat (`<: OnlineStat{I, O)}`) should define :
-- StatsBase.fit!(o::MyStat, y::InputType, w::Float64)
+A new OnlineStat should define `StatsBase.fit!(o::MyStat, y::InputType, w::Float64)``
 where `InputType` depends on `I`
 
 ---
 If the OnlineStat is mergeable, it should define
 - `merge!(o1::MyStat, o2::MyStat, w::Float64)`
 where `w` is the influence (between 0 and 1) `o2` should have on `o1`
+
+---
+If the OnlineStat's value is not updated with fit!, it should define
+`_value(o)`, which calculates the value
 ==============================================================================#
 abstract type OnlineStat{INDIM, OUTDIM, WEIGHT} end
 
