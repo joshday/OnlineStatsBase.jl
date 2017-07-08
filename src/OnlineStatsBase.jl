@@ -70,7 +70,7 @@ Base.start(o::OnlineStat) = false
 Base.next(o::OnlineStat, state) = o, true
 Base.done(o::OnlineStat, state) = state
 
-input(o::OnlineStat{I}) = I
+input{INDIM}(o::OnlineStat{INDIM}) = INDIM
 function input(t::Tuple)
     I = input(t[1])
     for ti in t
