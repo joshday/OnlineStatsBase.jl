@@ -18,6 +18,7 @@ function Base.:(==){T <: Weight}(w1::T, w2::T)
     nms = fieldnames(w1)
     all(getfield.(w1, nms) .== getfield.(w2, nms))
 end
+Base.copy(w::Weight) = deepcopy(w)
 
 # interface
 nobs(w::Weight) = w.nobs
@@ -186,8 +187,7 @@ header(io::IO, s::AbstractString) = println(io, "▦ $s" )
 function name(o, withmodule = false, withparams = true)
     s = string(typeof(o))
     if !withmodule
-        s = replace(s, "OnlineStats.", "")
-        s = replace(s, "OnlineStatsBase.", "")
+        s = replace(s, r"(.*)\.", "")
     end
     if !withparams
         s = replace(s, r"\{(.*)", "")
