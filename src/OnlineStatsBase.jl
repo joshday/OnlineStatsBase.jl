@@ -1,3 +1,5 @@
+__precompile__(true)
+
 module OnlineStatsBase
 
 export AbstractSeries, OnlineStat, Weight
