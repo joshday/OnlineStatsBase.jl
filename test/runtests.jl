@@ -43,3 +43,19 @@ O = OnlineStatsBase
         @test_throws ArgumentError McclainWeight(1.1)
     end
 end
+
+struct FakeStat <: OnlineStat{0, 0, EqualWeight}
+    a::Float64
+end
+@testset "OnlineStat" begin
+    o = FakeStat(1.0)
+    for o in o
+        println(o)
+    end
+    @test map(O._value, o) == O._value(o)
+    @test O.weight(o) == EqualWeight()
+    @test O.weight((o, o)) == EqualWeight()
+    @test_throws Exception merge(o, copy(o))
+    @test O.input(o) == 0
+    @test O.input((o, o)) == 0
+end
