@@ -14,11 +14,6 @@ A new OnlineStat needs
 - a constructor
 - a `fit!(stat, observation, weight::Float64)` method.
 
-Note that `OnlineStat{InDim, OutDim, Weight}` is parameterized by
-- `InDim`: size of a single observation (`0`=`Real`, `1`=`Vector`, `(0,1)`=`Real`-`Vector` pair
-- `OutDim`: size of output (same convention as `InDim`)
-- `Weight`: default weight
-
 ```julia
 using OnlineStatsBase, StatsBase
 
@@ -42,3 +37,12 @@ end
 value(s)
 mean(y), var(y)
 ```
+
+
+Note that `OnlineStat{InDim, OutDim, Weight}` is parameterized by
+- `InDim`: size of a single observation
+    - `0` = `Union{Real, AbstractString, Symbol}`
+    - `1` = `Union{Vector, NTuple}`,
+    - `(0, 1)` = `Real`, `Union{Vector, NTuple}` pair
+- `OutDim`: size of output (the value of the stat)
+- `Weight`: default weight
