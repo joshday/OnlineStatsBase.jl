@@ -2,33 +2,11 @@ __precompile__(true)
 
 module OnlineStatsBase
 
-export AbstractSeries, OnlineStat, Weight
+export AbstractSeries, OnlineStat,
+    Weight, EqualWeight, BoundedEqualWeight, ExponentialWeight, LearningRate,
+    LearningRate2, McclainWeight, HarmonicWeight
 
-#============================================================================= Weight
-Subtypes of Weight need at least the fields
-- `nobs`
-- `nups`
-and a method for
-- `weight(w, n2::Int = 1)`
-==============================================================================#
-abstract type Weight end
-
-# Base functions
-Base.show(io::IO, w::Weight) = (print(io, name(w)); show_fields(io, w))
-fields_to_show(w::Weight) = setdiff(fieldnames(w), [:nups])
-function Base.:(==){T <: Weight}(w1::T, w2::T)
-    nms = fieldnames(w1)
-    all(getfield.(w1, nms) .== getfield.(w2, nms))
-end
-Base.copy(w::Weight) = deepcopy(w)
-
-# interface
-nobs(w::Weight) = w.nobs
-nups(w::Weight) = w.nups
-updatecounter!(w::Weight, n2::Int = 1) = (w.nobs += n2;w.nups += 1)
-weight!(w::Weight, n2::Int = 1) = (updatecounter!(w, n2); weight(w, n2))
-weight(w::Weight, n2::Int = 1) = error("$w has not defined the required `weight(w, n2=1)` method")
-
+include("weight.jl")
 
 #============================================================================= OnlineStat
 `OnlineStat{I, O, W}` is an abstract type parameterized by the input and
