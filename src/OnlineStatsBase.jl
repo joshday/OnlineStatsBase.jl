@@ -42,6 +42,11 @@ end
 Base.copy(o::OnlineStat) = deepcopy(o)
 Base.map(f::Function, o::OnlineStat) = f(o)
 
+function Base.:(==){T <: OnlineStat}(o1::T, o2::T)
+    nms = fieldnames(o1)
+    all(getfield.(o1, nms) .== getfield.(o2, nms))
+end
+
 Base.merge{T <: OnlineStat}(o::T, o2::T, wt::Float64) = merge!(copy(o), o2, wt)
 function Base.merge!{O <: OnlineStat}(o1::O, o2::O, wt::Float64)
     error("$(typeof(o1)) is not a mergeable OnlineStat")

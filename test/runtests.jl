@@ -49,11 +49,11 @@ struct FakeWeight <: Weight end
 end
 
 #-----------------------------------------------------------------------# Test OnlineStat
-struct FakeStat <: OnlineStat{0, 0, EqualWeight} a::Int end
-struct FakeStat2 <: OnlineStat{1, 0, LearningRate} a::Int end
+mutable struct FakeStat <: OnlineStat{0, 0, EqualWeight} a::Float64 end
+mutable struct FakeStat2 <: OnlineStat{1, 0, LearningRate} a::Float64 end
 @testset "OnlineStat" begin
-    o = FakeStat(1)
-    o2 = FakeStat2(2)
+    o = FakeStat(1.)
+    o2 = FakeStat2(2.)
     for o in o
         println(o)
     end
@@ -64,9 +64,19 @@ struct FakeStat2 <: OnlineStat{1, 0, LearningRate} a::Int end
     @test O.input(o) == 0
     @test O.input((o, o)) == 0
 
+    @test FakeStat(10) == FakeStat(10)
+
     @test_throws Exception O.weight((o, o2))
     @test_throws Exception O.input((o, o2))
     @test_throws Exception merge(o, copy(o), .5)
+end
+
+Base.merge!{T <: FakeStat}(o1::T, o2::T, w::Float64) = (o1.a = w; o1)
+
+@testset "OnlineStat merge" begin
+    o = FakeStat(1.)
+    o2 = FakeStat(5.)
+    @test merge!(o, o2, .1) == FakeStat(.1)
 end
 
 #-----------------------------------------------------------------------# Test Series
@@ -75,13 +85,19 @@ struct FakeSeries <: AbstractSeries
     stats::FakeStat
 end
 @testset "Series" begin
-    s = FakeSeries(EqualWeight(), FakeStat(0))
+    o = FakeStat(0)
+    s = FakeSeries(EqualWeight(), o)
     println(s)
     @test O.nobs(s) == O.nobs(s.weight)
     @test O.nups(s) == O.nups(s.weight)
     @test O.weight(s) == O.weight(s.weight)
     @test O.weight!(s) == 1.0
     @test O.updatecounter!(s) == 2
+
+    @test (merge(s, copy(s), .1)).stats == FakeStat(.1)
+    merge(s, copy(s), :append)
+    merge(s, copy(s), :mean)
+    merge(s, copy(s), :singleton)
 end
 
 end #module
