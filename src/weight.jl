@@ -144,8 +144,8 @@ mutable struct McclainWeight <: Weight
     last::Float64
     nobs::Int
     nups::Int
-    function McclainWeight(ᾱ = .1)
-        0 < ᾱ < 1 || throw(ArgumentError("value must be between 0 and 1"))
+    function McclainWeight(α = .1)
+        0 < α < 1 || throw(ArgumentError("value must be between 0 and 1"))
         new(Float64(α), 1.0, 0, 0)
     end
 end
