@@ -1,8 +1,11 @@
+module OnlineStatsBaseTests
 using OnlineStatsBase, Base.Test
 O = OnlineStatsBase
 
 
 #-----------------------------------------------------------------------# Weight
+struct FakeWeight <: Weight end
+@test_throws Exception weight(FakeWeight())
 
 @testset "Weight" begin
     function test_weight(w::Weight, f::Function)
@@ -20,6 +23,7 @@ O = OnlineStatsBase
             @test O.nobs(w) == i
             @test O.nups(w) == i
         end
+        @test w == copy(w)
     end
 
     test_weight(@inferred(EqualWeight()),           i -> 1 / i)
@@ -44,11 +48,12 @@ O = OnlineStatsBase
     end
 end
 
-struct FakeStat <: OnlineStat{0, 0, EqualWeight}
-    a::Float64
-end
+#-----------------------------------------------------------------------# OnlineStat
+struct FakeStat <: OnlineStat{0, 0, EqualWeight} a::Int end
+struct FakeStat2 <: OnlineStat{1, 0, LearningRate} a::Int end
 @testset "OnlineStat" begin
-    o = FakeStat(1.0)
+    o = FakeStat(1)
+    o2 = FakeStat2(2)
     for o in o
         println(o)
     end
@@ -58,4 +63,8 @@ end
     @test_throws Exception merge(o, copy(o))
     @test O.input(o) == 0
     @test O.input((o, o)) == 0
+
+    @test_throws Exception O.weight((o, o2))
+    @test_throws Exception O.input((o, o2))
 end
+end #module
