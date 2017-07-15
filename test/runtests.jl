@@ -3,7 +3,7 @@ using OnlineStatsBase, Base.Test
 O = OnlineStatsBase
 
 
-#-----------------------------------------------------------------------# Weight
+#-----------------------------------------------------------------------# Test Weight
 struct FakeWeight <: Weight end
 @test_throws Exception weight(FakeWeight())
 
@@ -48,7 +48,7 @@ struct FakeWeight <: Weight end
     end
 end
 
-#-----------------------------------------------------------------------# OnlineStat
+#-----------------------------------------------------------------------# Test OnlineStat
 struct FakeStat <: OnlineStat{0, 0, EqualWeight} a::Int end
 struct FakeStat2 <: OnlineStat{1, 0, LearningRate} a::Int end
 @testset "OnlineStat" begin
@@ -66,5 +66,22 @@ struct FakeStat2 <: OnlineStat{1, 0, LearningRate} a::Int end
 
     @test_throws Exception O.weight((o, o2))
     @test_throws Exception O.input((o, o2))
+    @test_throws Exception merge(o, copy(o), .5)
 end
+
+#-----------------------------------------------------------------------# Test Series
+struct FakeSeries <: AbstractSeries
+    weight::EqualWeight
+    stats::FakeStat
+end
+@testset "Series" begin
+    s = FakeSeries(EqualWeight(), FakeStat(0))
+    println(s)
+    @test O.nobs(s) == O.nobs(s.weight)
+    @test O.nups(s) == O.nups(s.weight)
+    @test O.weight(s) == O.weight(s.weight)
+    @test O.weight!(s) == 1.0
+    @test O.updatecounter!(s) == 2
+end
+
 end #module
