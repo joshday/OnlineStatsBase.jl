@@ -35,7 +35,11 @@ O = OnlineStatsBase
     @testset "McclainWeight" begin
         w = @inferred McclainWeight(.1)
         println(w)
-        O.updatecounter!(w, 1_000_000)
-        @test O.weight(w) > .1
+        for j in 1:10000
+            O.updatecounter!(w)
+        end
+        @test .1 < O.weight(w) < 1.0
+        @test_throws ArgumentError McclainWeight(-1.)
+        @test_throws ArgumentError McclainWeight(1.1)
     end
 end
