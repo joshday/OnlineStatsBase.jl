@@ -140,17 +140,17 @@ McclainWeight(ᾱ = 0.1)
 - Singleton weight at observation `t` is `γ(t-1) / (1 + γ(t-1) - ᾱ)`
 """
 mutable struct McclainWeight <: Weight
-    ᾱ::Float64
+    α::Float64
     last::Float64
     nobs::Int
     nups::Int
     function McclainWeight(ᾱ = .1)
         0 < ᾱ < 1 || throw(ArgumentError("value must be between 0 and 1"))
-        new(ᾱ, 1.0, 0, 0)
+        new(Float64(α), 1.0, 0, 0)
     end
 end
-fields_to_show(w::McclainWeight) = [:ᾱ, :nobs]
+fields_to_show(w::McclainWeight) = [:α, :nobs]
 function weight(w::McclainWeight, n2::Int = 1)
     w.nups == 1 && return 1.0
-    w.last = w.last / (1 + w.last - w.ᾱ)
+    w.last = w.last / (1 + w.last - w.α)
 end
