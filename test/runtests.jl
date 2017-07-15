@@ -77,6 +77,7 @@ Base.merge!{T <: FakeStat}(o1::T, o2::T, w::Float64) = (o1.a = w; o1)
     o = FakeStat(1.)
     o2 = FakeStat(5.)
     @test merge!(o, o2, .1) == FakeStat(.1)
+    @test_throws Exception merge(o, o2, :junk)
 end
 
 #-----------------------------------------------------------------------# Test Series
@@ -98,6 +99,7 @@ end
     merge(s, copy(s), :append)
     merge(s, copy(s), :mean)
     merge(s, copy(s), :singleton)
+    @test_throws Exception merge(s, copy(s), :junk)
 end
 
 end #module
