@@ -12,7 +12,7 @@ include("weight.jl")
 `OnlineStat{I, O, W}` is an abstract type parameterized by the input and
 output type/dimension `I` and `O` as well as the default weight type `W`.
 The supported `I` and `O` value are:
-    0       = Union{Number, Symbol, AbstractString} (Singleton)
+    0       = Union{Number, Symbol, AbstractString} (ScalarOb)
     1       = AbstractVector or Tuple
     2       = AbstractMatrix
     -1      = unknown
@@ -31,7 +31,7 @@ where `w` is the influence (between 0 and 1) `o2` should have on `o1`
 If the OnlineStat's value is not updated with fit!, it should define
 `_value(o)`, which calculates the value
 ==============================================================================#
-abstract type OnlineStat{INDIM, OUTDIM, WEIGHT} end
+abstract type OnlineStat{In, Out, Weight} end
 
 function Base.show(io::IO, o::OnlineStat)
     print(io, name(o), "(")

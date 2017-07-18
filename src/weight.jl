@@ -30,7 +30,7 @@ weight(w::Weight, n2::Int = 1) = error("$w has not defined the required `weight(
 EqualWeight()
 ```
 - Equally weighted observations
-- Singleton weight at observation `t` is `γ = 1 / t`
+- Weight at observation `t` is `γ = 1 / t`
 """
 mutable struct EqualWeight <: Weight
     nobs::Int
@@ -45,7 +45,7 @@ ExponentialWeight(λ::Real = 0.1)
 ExponentialWeight(lookback::Integer)
 ```
 - Exponentially weighted observations (constant)
-- Singleton weight at observation `t` is `γ = λ`
+- Weight at observation `t` is `γ = λ`
 """
 mutable struct ExponentialWeight <: Weight
     λ::Float64
@@ -62,7 +62,7 @@ BoundedEqualWeight(λ::Real = 0.1)
 BoundedEqualWeight(lookback::Integer)
 ```
 - Use EqualWeight until threshold `λ` is hit, then hold constant.
-- Singleton weight at observation `t` is `γ = max(1 / t, λ)`
+- Weight at observation `t` is `γ = max(1 / t, λ)`
 """
 mutable struct BoundedEqualWeight <: Weight
     λ::Float64
@@ -79,7 +79,7 @@ LearningRate(r = .6, λ = 0.0)
 ```
 - Mainly for stochastic approximation types (`QuantileSGD`, `QuantileMM` etc.)
 - Decreases at a "slow" rate until threshold `λ` is reached
-- Singleton weight at observation `t` is `γ = max(1 / t ^ r, λ)`
+- Weight at observation `t` is `γ = max(1 / t ^ r, λ)`
 """
 mutable struct LearningRate <: Weight
     λ::Float64
@@ -96,7 +96,7 @@ LearningRate2(c = .5, λ = 0.0)
 ```
 - Mainly for stochastic approximation types (`QuantileSGD`, `QuantileMM` etc.)
 - Decreases at a "slow" rate until threshold `λ` is reached
-- Singleton weight at observation `t` is `γ = max(inv(1 + c * (t - 1), λ)`
+- Weight at observation `t` is `γ = max(inv(1 + c * (t - 1), λ)`
 """
 mutable struct LearningRate2 <: Weight
     c::Float64
@@ -114,7 +114,7 @@ end
 HarmonicWeight(a = 10.0)
 ```
 - Decreases at a slow rate
-- Singleton weight at observation `t` is `γ = a / (a + t - 1)`
+- Weight at observation `t` is `γ = a / (a + t - 1)`
 """
 mutable struct HarmonicWeight <: Weight
     a::Float64
@@ -137,7 +137,7 @@ McclainWeight(ᾱ = 0.1)
 ```
 - "smoothed" version of `BoundedEqualWeight`
 - weights asymptotically approach `ᾱ`
-- Singleton weight at observation `t` is `γ(t-1) / (1 + γ(t-1) - ᾱ)`
+- Weight at observation `t` is `γ(t-1) / (1 + γ(t-1) - ᾱ)`
 """
 mutable struct McclainWeight <: Weight
     α::Float64
