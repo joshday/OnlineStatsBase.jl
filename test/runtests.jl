@@ -27,14 +27,12 @@ struct FakeWeight <: Weight end
     end
 
     test_weight(@inferred(EqualWeight()),           i -> 1 / i)
-    test_weight(@inferred(BoundedEqualWeight(.1)),  i -> max(1 / i, .1))
     test_weight(@inferred(ExponentialWeight(.1)),   i -> .1)
-    test_weight(@inferred(LearningRate(.6, .1)),    i -> max(1 / i^.6, .1))
-    test_weight(@inferred(LearningRate2(.5, .1)),   i -> max(1 / (1 + .5*(i-1)), .1))
+    test_weight(@inferred(LearningRate(.6)),    i -> 1 / i^.6)
+    test_weight(@inferred(LearningRate2(.5)),   i -> 1 / (1 + .5*(i-1)))
     test_weight(@inferred(HarmonicWeight(4.)),       i -> 4 / (4 + i - 1))
 
     @test ExponentialWeight(20) == ExponentialWeight(2 / 21)
-    @test BoundedEqualWeight(20) == BoundedEqualWeight(2 / 21)
 
     @testset "McclainWeight" begin
         w = @inferred McclainWeight(.1)
