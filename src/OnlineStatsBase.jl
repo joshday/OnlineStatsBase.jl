@@ -4,7 +4,7 @@ module OnlineStatsBase
 
 export AbstractSeries, OnlineStat,
     Weight, EqualWeight, BoundedEqualWeight, ExponentialWeight, LearningRate,
-    LearningRate2, McclainWeight, HarmonicWeight
+    LearningRate2, McclainWeight, HarmonicWeight, Bounded
 
 include("weight.jl")
 
