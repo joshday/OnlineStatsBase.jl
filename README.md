@@ -50,7 +50,7 @@ mean(y), var(y)
 - `Weight`: default weight
 
 ### `fit!` and `value`
-Many parameters are based on [sufficient statistics](https://en.wikipedia.org/wiki/Sufficient_statistic).  The `fit!` method should update the sufficient statistics and not necessarily the parameter directly.  If `fit!` does not update the parameter directly, an additional method is required:
+Many parameters are based on [sufficient statistics](https://en.wikipedia.org/wiki/Sufficient_statistic).  The `fit!` method should update the sufficient statistics and not necessarily the parameter directly.  If `fit!` does not update the parameter directly, an additional method is required to create the parameter from the sufficient statistics:
 
 ```julia
 OnlineStatsBase._value(stat)
