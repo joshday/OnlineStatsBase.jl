@@ -89,7 +89,7 @@ LearningRate2(c = .5)
 ```
 - Mainly for stochastic approximation types (`QuantileSGD`, `QuantileMM` etc.)
 - Decreases at a "slow" rate
-- Weight at observation `t` is `γ = inv(1 + c * (t - 1)`
+- Weight at observation `t` is `γ = inv(1 + c * (t - 1))`
 """
 mutable struct LearningRate2 <: Weight
     c::Float64
