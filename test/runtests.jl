@@ -80,26 +80,4 @@ Base.merge!{T <: FakeStat}(o1::T, o2::T, w::Float64) = (o1.a = w; o1)
     @test_throws Exception merge(o, o2, :junk)
 end
 
-#-----------------------------------------------------------------------# Test Series
-struct FakeSeries <: AbstractSeries
-    weight::EqualWeight
-    stats::FakeStat
-end
-@testset "Series" begin
-    o = FakeStat(0)
-    s = FakeSeries(EqualWeight(), o)
-    println(s)
-    @test O.nobs(s) == O.nobs(s.weight)
-    @test O.nups(s) == O.nups(s.weight)
-    @test O.weight(s) == O.weight(s.weight)
-    @test O.weight!(s) == 1.0
-    @test O.updatecounter!(s) == 2
-
-    @test (merge(s, copy(s), .1)).stats == FakeStat(.1)
-    merge(s, copy(s), :append)
-    merge(s, copy(s), :mean)
-    merge(s, copy(s), :singleton)
-    @test_throws Exception merge(s, copy(s), :junk)
-end
-
 end #module
