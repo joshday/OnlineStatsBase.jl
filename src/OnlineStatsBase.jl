@@ -4,7 +4,7 @@ module OnlineStatsBase
 
 export OnlineStat,
     Weight, EqualWeight, BoundedEqualWeight, ExponentialWeight, LearningRate,
-    LearningRate2, McclainWeight, HarmonicWeight, Bounded
+    LearningRate2, McclainWeight, HarmonicWeight, Bounded, Scaled
 
 
 

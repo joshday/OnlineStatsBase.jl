@@ -37,6 +37,19 @@ weight(w::Bounded, n2::Int = 1) = max(weight(w.w, n2), w.λ)
 Base.show(io::IO, w::Bounded) = print(io, "Bounded by $(w.λ): $(w.w)")
 
 
+#-----------------------------------------------------------------------# Scaled
+struct Scaled{W <: Weight} <: Weight
+    w::W
+    λ::Float64
+end
+Base.:*(λ::Real, w::Weight) = Scaled(w, Float64(λ))
+nobs(w::Scaled) = nobs(w.w)
+nups(w::Scaled) = nups(w.w)
+updatecounter!(w::Scaled, n2::Int = 1) = updatecounter!(w.w, n2)
+weight(w::Scaled, n2::Int = 1) = weight(w.w, n2) * w.λ
+Base.show(io::IO, w::Scaled) = print(io, "$(w.λ) * $(w.w)")
+
+
 #-------------------------------------------------------------------------# EqualWeight
 """
 ```julia

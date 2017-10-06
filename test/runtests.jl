@@ -33,6 +33,7 @@ struct FakeWeight <: Weight end
     test_weight(@inferred(HarmonicWeight(4.)),              i -> 4 / (4 + i - 1))
     test_weight(@inferred(Bounded(EqualWeight(), .1)),      i -> max(.1, 1 / i))
     test_weight(@inferred(Bounded(LearningRate(.6), .1)),   i -> max(.1, 1 / i^.6))
+    test_weight(@inferred(Scaled(EqualWeight(), .1)),       i -> .1 / i)
 
     @test ExponentialWeight(20) == ExponentialWeight(2 / 21)
 
