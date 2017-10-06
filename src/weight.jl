@@ -25,6 +25,10 @@ weight(w::Weight, n2::Int = 1) = error("$w has not defined the required `weight(
 
 
 #-------------------------------------------------------------------------# Bounded
+"""
+    Bounded(weight, λ)
+Give a Weight a lower bound.
+"""
 struct Bounded{W <: Weight} <: Weight
     w::W
     λ::Float64
@@ -38,6 +42,11 @@ Base.show(io::IO, w::Bounded) = print(io, "Bounded by $(w.λ): $(w.w)")
 
 
 #-----------------------------------------------------------------------# Scaled
+"""
+    Scaled(weight, λ)
+    λ * weight
+Scale a weight by a constant.
+"""
 struct Scaled{W <: Weight} <: Weight
     w::W
     λ::Float64
@@ -52,9 +61,7 @@ Base.show(io::IO, w::Scaled) = print(io, "$(w.λ) * $(w.w)")
 
 #-------------------------------------------------------------------------# EqualWeight
 """
-```julia
-EqualWeight()
-```
+    EqualWeight()
 - Equally weighted observations
 - Weight at observation `t` is `γ = 1 / t`
 """
@@ -66,10 +73,8 @@ end
 weight(w::EqualWeight, n2::Int = 1) = n2 / w.nobs
 #-------------------------------------------------------------------------# ExponentialWeight
 """
-```julia
-ExponentialWeight(λ::Real = 0.1)
-ExponentialWeight(lookback::Integer)
-```
+    ExponentialWeight(λ::Real = 0.1)
+    ExponentialWeight(lookback::Integer)
 - Exponentially weighted observations (constant)
 - Weight at observation `t` is `γ = λ`
 """
@@ -84,7 +89,7 @@ weight(w::ExponentialWeight, n2::Int = 1) = w.λ
 #-------------------------------------------------------------------------# LearningRate
 """
     LearningRate(r = .6)
-- Mainly for stochastic approximation types (`QuantileSGD`, `QuantileMM` etc.)
+- Mainly for stochastic approximation types
 - Decreases at a "slow" rate
 - Weight at observation `t` is `γ = 1 / t ^ r`
 """
@@ -97,10 +102,8 @@ end
 weight(w::LearningRate, n2::Int = 1) = exp(-w.r * log(w.nups))
 #-------------------------------------------------------------------------# LearningRate2
 """
-```julia
-LearningRate2(c = .5)
-```
-- Mainly for stochastic approximation types (`QuantileSGD`, `QuantileMM` etc.)
+    LearningRate2(c = .5)
+- Mainly for stochastic approximation types
 - Decreases at a "slow" rate
 - Weight at observation `t` is `γ = inv(1 + c * (t - 1))`
 """
@@ -115,9 +118,7 @@ function weight(w::LearningRate2, n2::Int = 1)
 end
 #-------------------------------------------------------------------------# HarmonicWeight
 """
-```julia
-HarmonicWeight(a = 10.0)
-```
+    HarmonicWeight(a = 10.0)
 - Decreases at a slow rate
 - Weight at observation `t` is `γ = a / (a + t - 1)`
 """
@@ -137,9 +138,7 @@ end
 # Link with many weighting schemes:
 # http://castlelab.princeton.edu/ORF569papers/Powell%20ADP%20Chapter%206.pdf
 """
-```julia
-McclainWeight(ᾱ = 0.1)
-```
+    McclainWeight(ᾱ = 0.1)
 - "smoothed" version of `BoundedEqualWeight`
 - weights asymptotically approach `ᾱ`
 - Weight at observation `t` is `γ(t-1) / (1 + γ(t-1) - ᾱ)`
