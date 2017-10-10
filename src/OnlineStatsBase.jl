@@ -99,7 +99,7 @@ const ϵ = 1e-6
 #-----------------------------------------------------------------------# includes
 include("weight.jl")
 include("series.jl")
-include("stats/summary.jl")
+include("stats.jl")
 
 
 
