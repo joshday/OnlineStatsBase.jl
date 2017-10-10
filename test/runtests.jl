@@ -45,37 +45,42 @@ struct FakeWeight <: Weight end
         @test_throws ArgumentError McclainWeight(1.1)
     end
 end
-
-#-----------------------------------------------------------------------# Test OnlineStat
-mutable struct FakeStat <: OnlineStat{0, 0, EqualWeight} a::Float64 end
-mutable struct FakeStat2 <: OnlineStat{1, 0, LearningRate} a::Float64 end
-@testset "OnlineStat" begin
-    o = FakeStat(1.)
-    o2 = FakeStat2(2.)
-    for o in o
-        println(o)
-    end
-    @test map(O._value, o) == O._value(o)
-    @test O.weight(o) == EqualWeight()
-    @test O.weight((o, o)) == EqualWeight()
-    @test_throws Exception merge(o, copy(o))
-    @test O.input(o) == 0
-    @test O.input((o, o)) == 0
-
-    @test FakeStat(10) == FakeStat(10)
-
-    @test_throws Exception O.weight((o, o2))
-    @test_throws Exception O.input((o, o2))
-    @test_throws Exception merge(o, copy(o), .5)
-end
-
-Base.merge!{T <: FakeStat}(o1::T, o2::T, w::Float64) = (o1.a = w; o1)
-
-@testset "OnlineStat merge" begin
-    o = FakeStat(1.)
-    o2 = FakeStat(5.)
-    @test merge!(o, o2, .1) == FakeStat(.1)
-    @test_throws Exception merge(o, o2, :junk)
-end
+#
+# #-----------------------------------------------------------------------# Test OnlineStat
+# mutable struct FakeStat <: OnlineStat{0, 0, EqualWeight} a::Float64 end
+# mutable struct FakeStat2 <: OnlineStat{1, 0, LearningRate} a::Float64 end
+# @testset "OnlineStat" begin
+#     o = FakeStat(1.)
+#     o2 = FakeStat2(2.)
+#     for o in o
+#         println(o)
+#     end
+#     @test map(O._value, o) == O._value(o)
+#     @test O.weight(o) == EqualWeight()
+#     @test O.weight((o, o)) == EqualWeight()
+#     @test_throws Exception merge(o, copy(o))
+#     @test O.input(o) == 0
+#     @test O.input((o, o)) == 0
+#
+#     @test FakeStat(10) == FakeStat(10)
+#
+#     @test_throws Exception O.weight((o, o2))
+#     @test_throws Exception O.input((o, o2))
+#     @test_throws Exception merge(o, copy(o), .5)
+# end
+#
+# Base.merge!{T <: FakeStat}(o1::T, o2::T, w::Float64) = (o1.a = w; o1)
+#
+# @testset "OnlineStat merge" begin
+#     o = FakeStat(1.)
+#     o2 = FakeStat(5.)
+#     @test merge!(o, o2, .1) == FakeStat(.1)
+#     @test_throws Exception merge(o, o2, :junk)
+# end
+#
+# #-----------------------------------------------------------------------# Series
+# @testset "Series" begin
+#
+# end
 
 end #module

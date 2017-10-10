@@ -1,109 +1,52 @@
 __precompile__(true)
-
 module OnlineStatsBase
+
+import LearnBase: nobs, fit!, value, ObsDim, ObsDimension
+import StatsBase: Histogram
 
 export OnlineStat,
     Weight, EqualWeight, BoundedEqualWeight, ExponentialWeight, LearningRate,
     LearningRate2, McclainWeight, HarmonicWeight, Bounded, Scaled
 
-
-
 const AA = AbstractArray
 
-"""
-`OnlineStat{I, O, W}` is an abstract type parameterized by the input and
-output type/dimension `I` and `O` as well as the default weight type `W`.
-The supported `I` and `O` value are:
-    0       = Union{Number, Symbol, AbstractString} (ScalarOb)
-    1       = AbstractVector or Tuple
-    2       = AbstractMatrix
-    -1      = unknown
-    (1, 0)  = (x, y) pair of (vector, scalar)
+#-----------------------------------------------------------------------# OnlineStat
+abstract type OnlineStat{I, W} end
 
----
-A new OnlineStat should define `StatsBase.fit!(o::MyStat, y::InputType, w::Float64)``
-where `InputType` depends on `I`
-
----
-If the OnlineStat is mergeable, it should define
-- `merge!(o1::MyStat, o2::MyStat, w::Float64)`
-where `w` is the influence (between 0 and 1) `o2` should have on `o1`
-
----
-If the OnlineStat's value is not updated with fit!, it should define
-`_value(o)`, which calculates the value
-"""
-abstract type OnlineStat{In, Out, Weight} end
-
+# Base functions
 function Base.show(io::IO, o::OnlineStat)
     print(io, name(o), "(")
-    showcompact(io, _value(o))
+    showcompact(io, value(o))
     print(io, ")")
 end
-
 Base.copy(o::OnlineStat) = deepcopy(o)
-Base.map(f::Function, o::OnlineStat) = f(o)
-
 function Base.:(==){T <: OnlineStat}(o1::T, o2::T)
     nms = fieldnames(o1)
     all(getfield.(o1, nms) .== getfield.(o2, nms))
 end
-
 Base.merge{T <: OnlineStat}(o::T, o2::T, wt::Float64) = merge!(copy(o), o2, wt)
-function Base.merge!{O <: OnlineStat}(o1::O, o2::O, wt::Float64)
-    error("$(typeof(o1)) is not a mergeable OnlineStat")
+
+# OnlineStat Interface (sans `fit!`)
+value(o::OnlineStat) = getfield(o, fieldnames(o)[1])
+input_ndims{I}(o::OnlineStat{I}) = I
+default_weight{I, W}(o::OnlineStat{I, W}) = W()
+
+function input_ndims(t::Tuple)
+    I = input_ndims(first(t))
+    all(input_ndims.(t) .== I) ||
+        error("Inputs don't match. Found: $(input_ndims.(t))")
+    return I
 end
 
-Base.start(o::OnlineStat) = false
-Base.next(o::OnlineStat, state) = o, true
-Base.done(o::OnlineStat, state) = state
-
-input{INDIM}(o::OnlineStat{INDIM}) = INDIM
-function input(t::Tuple)
-    I = input(t[1])
-    for ti in t
-        input(ti) != I && throw(ArgumentError("Inputs must match. Found: $(input.(t))"))
-    end
-    I
+function default_weight(t::Tuple)
+    W = default_weight(first(t))
+    all(default_weight.(t) .== W) ||
+        error("Default weights don't match.  Found: $(default_weight.(t))")
+    return W
 end
 
-_value(o::OnlineStat) = getfield(o, fieldnames(o)[1])
 
-weight{I,O,W}(o::OnlineStat{I,O,W}) = W()
-function weight(t::Tuple)
-    w = weight(t[1])
-    if !all(map(x -> weight(x) == w, t))
-        throw(ArgumentError("Default weights differ.  Weight must be specified"))
-    end
-    w
-end
-
-#-----------------------------------------------------------------------#
-include("weight.jl")
-include("series.jl")
-
-
-
-
-
-
-#============================================================================= Show
-- `show_fields` prints things like "(field1 = val1, field2 = val2)"
-- `fields_to_show` tells `show_fields` which values to print
-- `name` prints
-    - "MyModule.MyType{T, S}" for withmodule=true, withparams=true
-    - "MyModule.MyType"       for withmodule=true, withparams=false
-    - "MyType"                for withmodule=false, withparams=false
-
-Example:
-
-If I want to print "MyModule.MyType{T, S}(field1 = val1, field2 = val2)"
-
-function Base.show(io::IO, t::MyType)
-    print(io, name(t), true, true)
-    show_fields(io, t)
-end
-==============================================================================#
+#-----------------------------------------------------------------------# Show helpers
 function show_fields(io::IO, o)
     nms = fields_to_show(o)
     print(io, "(")
@@ -130,5 +73,39 @@ function name(o, withmodule = false, withparams = true)
     end
     s
 end
+
+#-----------------------------------------------------------------------# Common
+smooth(x, y, γ) = x + γ * (y - x)
+
+function smooth!(x, y, γ)
+    length(x) == length(y) || throw(DimensionMismatch())
+    for i in eachindex(x)
+        @inbounds x[i] = smooth(x[i], y[i], γ)
+    end
+end
+
+function smooth_syr!(A::AbstractMatrix, x, γ::Float64)
+    size(A, 1) == length(x) || throw(DimensionMismatch())
+    for j in 1:size(A, 2), i in 1:j
+        @inbounds A[i, j] = (1.0 - γ) * A[i, j] + γ * x[i] * x[j]
+    end
+end
+
+unbias(o) = o.nobs / (o.nobs - 1)
+
+const ϵ = 1e-6
+
+
+#-----------------------------------------------------------------------# includes
+include("weight.jl")
+include("series.jl")
+include("stats/summary.jl")
+
+
+
+
+
+
+
 
 end

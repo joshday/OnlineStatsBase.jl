@@ -1,19 +1,20 @@
 # A Weight needs the field `nobs` and a method `weight(w, n2 = 1)`
 abstract type Weight end
 
-# Base functions
 Base.show(io::IO, w::Weight) = (print(io, name(w)); show_fields(io, w))
+
 function Base.:(==){T <: Weight}(w1::T, w2::T)
     nms = fieldnames(w1)
     all(getfield.(w1, nms) .== getfield.(w2, nms))
 end
+
 Base.copy(w::Weight) = deepcopy(w)
 
-# interface
 nobs(w::Weight) = w.nobs
+
 updatecounter!(w::Weight, n2::Int = 1) = (w.nobs += n2)
+
 weight!(w::Weight, n2::Int = 1) = (updatecounter!(w, n2); weight(w, n2))
-weight(w::Weight, n2::Int = 1) = error("$w has not defined the required `weight(w, n2=1)` method")
 
 
 #-------------------------------------------------------------------------# Bounded
