@@ -3,6 +3,10 @@ using OnlineStatsBase, Base.Test
 O = OnlineStatsBase
 
 
+#-----------------------------------------------------------------------# Ugly output
+show(Series(Mean()))
+show(Series(Mean(), Variance()))
+
 #-----------------------------------------------------------------------# Test Weight
 struct FakeWeight <: Weight end
 @test_throws Exception weight(FakeWeight())
@@ -10,15 +14,15 @@ struct FakeWeight <: Weight end
 @testset "Weight" begin
     function test_weight(w::Weight, f::Function)
         println(w)
-        @test O.nobs(w) == 0
+        @test nobs(w) == 0
         for i in 1:10
             @test O.weight!(w) ≈ f(i)
-            @test O.nobs(w) == i
+            @test nobs(w) == i
         end
         for i in 11:20
             OnlineStatsBase.updatecounter!(w)
             @test O.weight(w) ≈ f(i)
-            @test O.nobs(w) == i
+            @test nobs(w) == i
         end
         @test w == copy(w)
     end
@@ -50,6 +54,8 @@ end
 @testset "Series" begin
     Series(Mean())
     Series(Mean(), Variance())
+    Series(randn(100), Mean(), Variance())
+    Series(randn(100, 4), CovMatrix(4))
     @test_throws Exception Series(Mean(), QuantileMM())
 end
 
