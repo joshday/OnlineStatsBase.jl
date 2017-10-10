@@ -4,11 +4,12 @@ module OnlineStatsBase
 import LearnBase: nobs, fit!, value, ObsDim, ObsDimension
 import StatsBase: Histogram
 
-export OnlineStat,
-    Weight, EqualWeight, BoundedEqualWeight, ExponentialWeight, LearningRate,
-    LearningRate2, McclainWeight, HarmonicWeight, Bounded, Scaled
-
-const AA = AbstractArray
+export Series, nobs, fit!, value, Rows, Cols,
+    Weight,
+    EqualWeight, BoundedEqualWeight, ExponentialWeight, LearningRate, LearningRate2, McclainWeight,
+    HarmonicWeight, Bounded, Scaled,
+    OnlineStat,
+    CovMatrix, Mean, Moments, QuantileMM, Variance
 
 #-----------------------------------------------------------------------# OnlineStat
 abstract type OnlineStat{I, W} end
