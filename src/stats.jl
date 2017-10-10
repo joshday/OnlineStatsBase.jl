@@ -298,6 +298,7 @@ Sum{T<:Real}(::Type{T}) = Sum(zero(T))
 Base.sum(o::Sum) = o.sum
 fit!{T<:AbstractFloat}(o::Sum{T}, x::Real, γ::Float64) = (v = convert(T, x); o.sum += v)
 fit!{T<:Integer}(o::Sum{T}, x::Real, γ::Float64) =       (v = round(T, x);   o.sum += v)
+Base.merge!{T <: Sum}(o::T, o2::T, γ::Float64) = (o.sum += o2.sum)
 
 #-----------------------------------------------------------------------# Hist
 """

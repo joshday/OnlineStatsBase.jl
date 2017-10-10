@@ -4,12 +4,16 @@ module OnlineStatsBase
 import LearnBase: nobs, fit!, value, ObsDim, ObsDimension
 import StatsBase: Histogram
 
-export Series, nobs, fit!, value, Rows, Cols,
+export
+    # Series
+    Series, nobs, fit!, value, Rows, Cols,
+    # Weight
     Weight,
     EqualWeight, BoundedEqualWeight, ExponentialWeight, LearningRate, LearningRate2, McclainWeight,
     HarmonicWeight, Bounded, Scaled,
+    # OnlineStats
     OnlineStat,
-    CovMatrix, Mean, Moments, QuantileMM, Variance
+    CovMatrix, Extrema,Mean, Moments, QuantileMM, Sum, Variance
 
 #-----------------------------------------------------------------------# OnlineStat
 abstract type OnlineStat{I, W} end
