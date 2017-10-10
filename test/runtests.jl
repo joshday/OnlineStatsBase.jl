@@ -1,5 +1,5 @@
 module OnlineStatsBaseTests
-using OnlineStatsBase, Base.Test
+using OnlineStatsBase, Base.Test, StatsBase
 O = OnlineStatsBase
 
 
@@ -7,6 +7,7 @@ O = OnlineStatsBase
 @testset "Series" begin
     show(Series(Mean()))
     show(Series(Mean(), Variance()))
+    println()
     Series(Mean())
     Series(LearningRate(), Mean())
     Series(randn(100), Mean())
@@ -22,6 +23,7 @@ O = OnlineStatsBase
     @test all(value(s) .== value.(s.stats))
     merge(s, s2, :singleton)
     merge(s, s2, :mean)
+    merge(s, s2), .5
     merge!(s, s2, .5)
 end
 

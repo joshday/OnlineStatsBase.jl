@@ -10,7 +10,7 @@ mutable struct Mean <: OnlineStat{0, EqualWeight}
     Mean() = new(0.0)
 end
 fit!(o::Mean, y::Real, γ::Float64) = (o.μ = smooth(o.μ, y, γ))
-Base.merge!(o::Mean, o2::Mean, γ::Float64) = fit!(o, value(o2), γ)
+Base.merge!(o::Mean, o2::Mean, γ::Float64) = (fit!(o, value(o2), γ); o)
 Base.mean(o::Mean) = value(o)
 
 #--------------------------------------------------------------------# Variance
@@ -71,7 +71,7 @@ function value(o::CovMatrix)
     o.value[:] = full(Symmetric((o.A - o.b * o.b')))
     scale!(o.value, unbias(o))
 end
-Base.length(o::CovMatrix) = length(o.b)
+# Base.length(o::CovMatrix) = length(o.b)  # What is this here for?
 Base.mean(o::CovMatrix) = o.b
 Base.cov(o::CovMatrix) = value(o)
 Base.var(o::CovMatrix) = diag(value(o))

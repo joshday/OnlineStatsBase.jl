@@ -2,7 +2,7 @@ __precompile__(true)
 module OnlineStatsBase
 
 import LearnBase: nobs, fit!, value, ObsDim, ObsDimension
-import StatsBase: Histogram
+import StatsBase: Histogram, skewness, kurtosis
 
 export
     # Series
@@ -13,7 +13,7 @@ export
     HarmonicWeight, Bounded, Scaled,
     # OnlineStats
     OnlineStat,
-    CovMatrix, Extrema,Mean, Moments, QuantileMM, Sum, Variance
+    CovMatrix, Diff, Extrema, Mean, Moments, QuantileMM, Sum, Variance
 
 #-----------------------------------------------------------------------# OnlineStat
 abstract type OnlineStat{I, W} end
@@ -66,16 +66,16 @@ fields_to_show(o) = fieldnames(o)
 
 header(io::IO, s::AbstractString) = println(io, "▦ $s" )
 
-function name(o, withmodule = false, withparams = true)
+function name(o, withmodule = false)
     s = string(typeof(o))
     if !withmodule
         # remove text that ends in period:  OnlineStats.Mean -> Mean
         s = replace(s, r"([a-zA-Z]*\.)", "")
     end
-    if !withparams
-        # replace everything from "{" to the end of the string
-        s = replace(s, r"\{(.*)", "")
-    end
+    # if !withparams
+    #     # replace everything from "{" to the end of the string
+    #     s = replace(s, r"\{(.*)", "")
+    # end
     s
 end
 
