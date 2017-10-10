@@ -11,17 +11,14 @@ struct FakeWeight <: Weight end
     function test_weight(w::Weight, f::Function)
         println(w)
         @test O.nobs(w) == 0
-        @test O.nups(w) == 0
         for i in 1:10
             @test O.weight!(w) ≈ f(i)
             @test O.nobs(w) == i
-            @test O.nups(w) == i
         end
         for i in 11:20
             OnlineStatsBase.updatecounter!(w)
             @test O.weight(w) ≈ f(i)
             @test O.nobs(w) == i
-            @test O.nups(w) == i
         end
         @test w == copy(w)
     end
