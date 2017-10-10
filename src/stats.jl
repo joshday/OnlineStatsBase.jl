@@ -39,7 +39,7 @@ function Base.merge!(o::Variance, o2::Variance, γ::Float64)
     o.μ = smooth(o.μ, o2.μ, γ)
     o
 end
-_value(o::Variance) = o.σ2 * unbias(o)
+value(o::Variance) = o.σ2 * unbias(o)
 Base.var(o::Variance) = value(o)
 Base.std(o::Variance) = sqrt(var(o))
 Base.mean(o::Variance) = o.μ
@@ -112,7 +112,7 @@ function Base.merge!(o::Extrema, o2::Extrema, γ::Float64)
     o.max = max(o.max, o2.max)
     o
 end
-_value(o::Extrema) = (o.min, o.max)
+value(o::Extrema) = (o.min, o.max)
 Base.extrema(o::Extrema) = value(o)
 
 #--------------------------------------------------------------------# OrderStats
@@ -225,7 +225,7 @@ end
 #         o.value[i] -= γ * deriv(l, u) / c
 #     end
 # end
-# 
+#
 # function Base.merge!(o::Quantiles, o2::Quantiles, γ::Float64)
 #     o.τvec == o2.τvec || throw(ArgumentError("objects track different quantiles"))
 #     smooth!(o.value, o2.value, γ)
