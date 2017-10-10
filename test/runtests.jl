@@ -8,6 +8,7 @@ O = OnlineStatsBase
     show(Series(Mean()))
     show(Series(Mean(), Variance()))
     Series(Mean())
+    Series(LearningRate(), Mean())
     Series(randn(100), Mean())
     Series(randn(100), LearningRate(), Mean())
     Series(LearningRate(), randn(100), Mean())
@@ -17,6 +18,11 @@ O = OnlineStatsBase
     fit!(s, randn(10), rand(10))
     s2 = copy(s)
     @test s == s2
+    @test all(stats(s) .== s.stats)
+    @test all(value(s) .== value.(s.stats))
+    merge(s, s2, :singleton)
+    merge(s, s2, :mean)
+    merge!(s, s2, .5)
 end
 
 #-----------------------------------------------------------------------# Test Weight

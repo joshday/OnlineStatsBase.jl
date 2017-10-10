@@ -6,7 +6,7 @@ import StatsBase: Histogram
 
 export
     # Series
-    Series, nobs, fit!, value, Rows, Cols,
+    Series, nobs, fit!, value, stats, Rows, Cols,
     # Weight
     Weight,
     EqualWeight, BoundedEqualWeight, ExponentialWeight, LearningRate, LearningRate2, McclainWeight,
