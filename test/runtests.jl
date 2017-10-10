@@ -4,13 +4,22 @@ O = OnlineStatsBase
 
 
 #-----------------------------------------------------------------------# Ugly output
-show(Series(Mean()))
-show(Series(Mean(), Variance()))
+@testset "Series" begin
+    show(Series(Mean()))
+    show(Series(Mean(), Variance()))
+    Series(Mean())
+    Series(randn(100), Mean())
+    Series(randn(100), LearningRate(), Mean())
+    Series(LearningRate(), randn(100), Mean())
+    @test Series(Mean()) == Series(Mean())
+    s = Series(Mean())
+    fit!(s, .1, .1)
+    fit!(s, randn(10), rand(10))
+    s2 = copy(s)
+    @test s == s2
+end
 
 #-----------------------------------------------------------------------# Test Weight
-struct FakeWeight <: Weight end
-@test_throws Exception weight(FakeWeight())
-
 @testset "Weight" begin
     function test_weight(w::Weight, f::Function)
         println(w)
