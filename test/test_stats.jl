@@ -75,6 +75,11 @@ end
     test_function(Moments(), y, kurtosis, kurtosis; atol=.1)
 end
 
+@testset "OrderStats" begin
+    test_exact(OrderStats(length(y)), y, sort)
+    @test issorted(first(value(Series(y, OrderStats(5)))))
+end
+
 @testset "QuantileMM" begin
     y = randn(100_000)
     o = QuantileMM()

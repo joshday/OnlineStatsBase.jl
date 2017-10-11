@@ -1,51 +1,3 @@
-#--------------------------------------------------------------------# Mean
-"""
-    Mean()
-Univariate mean.
-    s = Series(randn(100), Mean())
-    value(s)
-"""
-mutable struct Mean <: OnlineStat{0, EqualWeight}
-    μ::Float64
-    Mean() = new(0.0)
-end
-fit!(o::Mean, y::Real, γ::Float64) = (o.μ = smooth(o.μ, y, γ))
-Base.merge!(o::Mean, o2::Mean, γ::Float64) = (fit!(o, value(o2), γ); o)
-Base.mean(o::Mean) = value(o)
-
-#--------------------------------------------------------------------# Variance
-"""
-    Variance()
-Univariate variance.
-    s = Series(randn(100), Variance())
-    value(s)
-"""
-mutable struct Variance <: OnlineStat{0, EqualWeight}
-    σ2::Float64     # biased variance
-    μ::Float64
-    nobs::Int
-    Variance() = new(0.0, 0.0, 0)
-end
-function fit!(o::Variance, y::Real, γ::Float64)
-    μ = o.μ
-    o.nobs += 1
-    o.μ = smooth(o.μ, y, γ)
-    o.σ2 = smooth(o.σ2, (y - o.μ) * (y - μ), γ)
-end
-function Base.merge!(o::Variance, o2::Variance, γ::Float64)
-    o.nobs += o2.nobs
-    δ = o2.μ - o.μ
-    o.σ2 = smooth(o.σ2, o2.σ2, γ) + δ ^ 2 * γ * (1.0 - γ)
-    o.μ = smooth(o.μ, o2.μ, γ)
-    o
-end
-value(o::Variance) = o.σ2 * unbias(o)
-Base.var(o::Variance) = value(o)
-Base.std(o::Variance) = sqrt(var(o))
-Base.mean(o::Variance) = o.μ
-nobs(o::Variance) = o.nobs
-
-
 #-------------------------------------------------------------------------# CovMatrix
 """
     CovMatrix(d)
@@ -90,6 +42,32 @@ function Base.merge!(o::CovMatrix, o2::CovMatrix, γ::Float64)
     o
 end
 
+#--------------------------------------------------------------------# Diff
+"""
+    Diff()
+Track the difference and the last value.
+    s = Series(randn(1000), Diff())
+    value(s)
+"""
+mutable struct Diff{T <: Real} <: OnlineStat{0, EqualWeight}
+    diff::T
+    lastval::T
+end
+Diff() = Diff(0.0, 0.0)
+Diff{T<:Real}(::Type{T}) = Diff(zero(T), zero(T))
+Base.last(o::Diff) = o.lastval
+Base.diff(o::Diff) = o.diff
+function fit!{T<:AbstractFloat}(o::Diff{T}, x::Real, γ::Float64)
+    v = convert(T, x)
+    o.diff = v - last(o)
+    o.lastval = v
+end
+function fit!{T<:Integer}(o::Diff{T}, x::Real, γ::Float64)
+    v = round(T, x)
+    o.diff = v - last(o)
+    o.lastval = v
+end
+
 #--------------------------------------------------------------------# Extrema
 """
     Extrema()
@@ -115,33 +93,21 @@ end
 value(o::Extrema) = (o.min, o.max)
 Base.extrema(o::Extrema) = value(o)
 
-#--------------------------------------------------------------------# OrderStats
+#--------------------------------------------------------------------# Mean
 """
-    OrderStats(b)
-Average order statistics with batches of size `b`.
-    s = Series(randn(1000), OrderStats(10))
+    Mean()
+Univariate mean.
+    s = Series(randn(100), Mean())
     value(s)
 """
-mutable struct OrderStats <: OnlineStat{0, EqualWeight}
-    value::Vector{Float64}
-    buffer::Vector{Float64}
-    i::Int
-    nreps::Int
-    OrderStats(p::Integer) = new(zeros(p), zeros(p), 0, 0)
+mutable struct Mean <: OnlineStat{0, EqualWeight}
+    μ::Float64
+    Mean() = new(0.0)
 end
-function fit!(o::OrderStats, y::Real, γ::Float64)
-    p = length(o.value)
-    buffer = o.buffer
-    o.i += 1
-    buffer[o.i] = y
-    if o.i == p
-        sort!(buffer)
-        o.nreps += 1
-        o.i = 0
-        smooth!(o.value, buffer, 1 / o.nreps)
-    end
-    o
-end
+fit!(o::Mean, y::Real, γ::Float64) = (o.μ = smooth(o.μ, y, γ))
+Base.merge!(o::Mean, o2::Mean, γ::Float64) = (fit!(o, value(o2), γ); o)
+Base.mean(o::Mean) = value(o)
+
 
 #--------------------------------------------------------------------# Moments
 """
@@ -179,6 +145,56 @@ function Base.merge!(o1::Moments, o2::Moments, γ::Float64)
     o1
 end
 
+#-----------------------------------------------------------------------# Hist
+"""
+    OHistogram(range)
+Make a histogram with bins given by `range`.  Uses left-closed bins.
+    y = randn(100)
+    s = Series(y, OHistogram(-4:.1:4))
+    value(s)
+"""
+struct OHistogram{H <: Histogram} <: OnlineStat{0, EqualWeight}
+    h::H
+end
+OHistogram(r::Range) = OHistogram(Histogram(r, :left))
+function fit!(o::OHistogram, y::ScalarOb, γ::Float64)
+    H = o.h
+    x = H.edges[1]
+    a = first(x)
+    δ = step(x)
+    k = floor(Int, (y - a) / δ) + 1
+    if 1 <= k <= length(x)
+        @inbounds H.weights[k] += 1
+    end
+end
+
+#--------------------------------------------------------------------# OrderStats
+"""
+    OrderStats(b)
+Average order statistics with batches of size `b`.
+    s = Series(randn(1000), OrderStats(10))
+    value(s)
+"""
+mutable struct OrderStats <: OnlineStat{0, EqualWeight}
+    value::Vector{Float64}
+    buffer::Vector{Float64}
+    i::Int
+    nreps::Int
+    OrderStats(p::Integer) = new(zeros(p), zeros(p), 0, 0)
+end
+function fit!(o::OrderStats, y::Real, γ::Float64)
+    p = length(o.value)
+    buffer = o.buffer
+    o.i += 1
+    buffer[o.i] = y
+    if o.i == p
+        sort!(buffer)
+        o.nreps += 1
+        o.i = 0
+        smooth!(o.value, buffer, 1 / o.nreps)
+    end
+    o
+end
 
 # #-----------------------------------------------------------------------# Quantiles
 # """
@@ -255,34 +271,6 @@ function fit!(o::QuantileMM, y::Real, γ::Float64)
     end
 end
 
-
-
-#--------------------------------------------------------------------# Diff
-"""
-    Diff()
-Track the difference and the last value.
-    s = Series(randn(1000), Diff())
-    value(s)
-"""
-mutable struct Diff{T <: Real} <: OnlineStat{0, EqualWeight}
-    diff::T
-    lastval::T
-end
-Diff() = Diff(0.0, 0.0)
-Diff{T<:Real}(::Type{T}) = Diff(zero(T), zero(T))
-Base.last(o::Diff) = o.lastval
-Base.diff(o::Diff) = o.diff
-function fit!{T<:AbstractFloat}(o::Diff{T}, x::Real, γ::Float64)
-    v = convert(T, x)
-    o.diff = v - last(o)
-    o.lastval = v
-end
-function fit!{T<:Integer}(o::Diff{T}, x::Real, γ::Float64)
-    v = round(T, x)
-    o.diff = v - last(o)
-    o.lastval = v
-end
-
 #--------------------------------------------------------------------# Sum
 """
     Sum()
@@ -300,25 +288,34 @@ fit!{T<:AbstractFloat}(o::Sum{T}, x::Real, γ::Float64) = (v = convert(T, x); o.
 fit!{T<:Integer}(o::Sum{T}, x::Real, γ::Float64) =       (v = round(T, x);   o.sum += v)
 Base.merge!{T <: Sum}(o::T, o2::T, γ::Float64) = (o.sum += o2.sum)
 
-#-----------------------------------------------------------------------# Hist
+#--------------------------------------------------------------------# Variance
 """
-    OHistogram(range)
-Make a histogram with bins given by `range`.  Uses left-closed bins.
-    y = randn(100)
-    s = Series(y, OHistogram(-4:.1:4))
+    Variance()
+Univariate variance.
+    s = Series(randn(100), Variance())
     value(s)
 """
-struct OHistogram{H <: Histogram} <: OnlineStat{0, EqualWeight}
-    h::H
+mutable struct Variance <: OnlineStat{0, EqualWeight}
+    σ2::Float64     # biased variance
+    μ::Float64
+    nobs::Int
+    Variance() = new(0.0, 0.0, 0)
 end
-OHistogram(r::Range) = OHistogram(Histogram(r, :left))
-function fit!(o::OHistogram, y::ScalarOb, γ::Float64)
-    H = o.h
-    x = H.edges[1]
-    a = first(x)
-    δ = step(x)
-    k = floor(Int, (y - a) / δ) + 1
-    if 1 <= k <= length(x)
-        @inbounds H.weights[k] += 1
-    end
+function fit!(o::Variance, y::Real, γ::Float64)
+    μ = o.μ
+    o.nobs += 1
+    o.μ = smooth(o.μ, y, γ)
+    o.σ2 = smooth(o.σ2, (y - o.μ) * (y - μ), γ)
 end
+function Base.merge!(o::Variance, o2::Variance, γ::Float64)
+    o.nobs += o2.nobs
+    δ = o2.μ - o.μ
+    o.σ2 = smooth(o.σ2, o2.σ2, γ) + δ ^ 2 * γ * (1.0 - γ)
+    o.μ = smooth(o.μ, o2.μ, γ)
+    o
+end
+value(o::Variance) = o.σ2 * unbias(o)
+Base.var(o::Variance) = value(o)
+Base.std(o::Variance) = sqrt(var(o))
+Base.mean(o::Variance) = o.μ
+nobs(o::Variance) = o.nobs
