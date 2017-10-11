@@ -94,6 +94,15 @@ end
     @test all(isapprox.(value(o), quantile(y, [.25, .5, .75]); atol = .1))
 end
 
+@testset "ReservoirSample" begin
+    test_exact(ReservoirSample(length(y)), y, identity)
+    o = ReservoirSample(10)
+    Series(y, o)
+    for j in value(o)
+        @test j in y
+    end
+end
+
 @testset "Sum" begin
     test_exact(Sum(Int), collect(1:100), sum)
     test_exact(Sum(), rand(100), sum)

@@ -13,7 +13,8 @@ export
     HarmonicWeight, Bounded, Scaled,
     # OnlineStats
     OnlineStat,
-    CovMatrix, Diff, Extrema, Mean, Moments, OHistogram, OrderStats, QuantileMM, Sum, Variance
+    CovMatrix, Diff, Extrema, Mean, Moments, OHistogram, OrderStats, QuantileMM, ReservoirSample,
+    Sum, Variance
 
 #-----------------------------------------------------------------------# OnlineStat
 abstract type OnlineStat{I, W} end
