@@ -75,6 +75,16 @@ end
     test_function(Moments(), y, kurtosis, kurtosis; atol=.1)
 end
 
+@testset "MV" begin
+    test_exact(MV(4, Mean()), Y, x -> vec(mean(x, 1)))
+    test_exact(MV(4, Variance()), Y, x -> vec(var(x, 1)))
+    test_merge(MV(4, Mean()), MV(4, Mean()), Y, Y2)
+
+    o = MV(4, Mean())
+    Series(Y', o; dim = Cols())
+    @test value(o) ≈ vec(mean(Y, 1))
+end
+
 @testset "OHistogram" begin
     o = OHistogram(-5:.1:5)
     h = fit(Histogram, y, -5:.1:5; closed = :left)

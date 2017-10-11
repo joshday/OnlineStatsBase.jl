@@ -13,8 +13,8 @@ export
     HarmonicWeight, Bounded, Scaled,
     # OnlineStats
     OnlineStat,
-    CovMatrix, Diff, Extrema, Mean, Moments, OHistogram, OrderStats, QuantileMM, ReservoirSample,
-    Sum, Variance
+    CovMatrix, Diff, Extrema, Mean, Moments, MV,OHistogram, OrderStats, QuantileMM, 
+    ReservoirSample, Sum, Variance
 
 #-----------------------------------------------------------------------# OnlineStat
 abstract type OnlineStat{I, W} end
@@ -106,6 +106,7 @@ const ϵ = 1e-6
 include("weight.jl")
 include("series.jl")
 include("stats.jl")
+include("mv.jl")
 
 
 
