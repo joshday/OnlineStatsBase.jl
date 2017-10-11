@@ -26,7 +26,9 @@ OnlineStatsBase.fit!(o::MyMean, y::Real, w::Float64) = (o.value += w * (y - o.va
 ```
 
 ### That's all there is to it
-```
+```julia
+using OnlineStats
+
 y = randn(1000)
 
 s = Series(MyMean(), Variance())
