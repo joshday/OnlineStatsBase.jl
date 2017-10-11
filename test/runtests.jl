@@ -25,6 +25,7 @@ O = OnlineStatsBase
     merge(s, s2, :mean)
     merge(s, s2, .5)
     merge!(s, s2, .5)
+    @test_throws Exception merge(s, s2, :bad_arg)
 end
 
 #-----------------------------------------------------------------------# Test Weight
