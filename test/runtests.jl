@@ -97,6 +97,8 @@ end
     @test nobs(b) == 100
     @test value(b) == b.f.(replicates(b))
     confint(b)
+    b.replicates[1].μ = NaN
+    confint(b)
 
     b2 = Bootstrap(CovMatrix(2))
     fit!(b2, randn(10, 2))
