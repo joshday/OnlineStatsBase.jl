@@ -3,7 +3,12 @@ using OnlineStatsBase, Base.Test, StatsBase
 O = OnlineStatsBase
 
 
+
 #-----------------------------------------------------------------------# Ugly output
+show(MV(4, QuantileMM()))
+println()
+
+#-----------------------------------------------------------------------# Series
 @testset "Series" begin
     show(Series(Mean()))
     show(Series(Mean(), Variance()))

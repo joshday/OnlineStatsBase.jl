@@ -13,7 +13,7 @@ export
     HarmonicWeight, Bounded, Scaled,
     # OnlineStats
     OnlineStat,
-    CovMatrix, Diff, Extrema, Mean, Moments, MV,OHistogram, OrderStats, QuantileMM, 
+    CovMatrix, Diff, Extrema, Mean, Moments, MV,OHistogram, OrderStats, QuantileMM,
     ReservoirSample, Sum, Variance
 
 #-----------------------------------------------------------------------# OnlineStat
