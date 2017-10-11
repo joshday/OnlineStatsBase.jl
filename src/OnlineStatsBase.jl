@@ -2,7 +2,7 @@ __precompile__(true)
 module OnlineStatsBase
 
 import LearnBase: nobs, fit!, value, ObsDim, ObsDimension
-import StatsBase: Histogram, skewness, kurtosis
+import StatsBase: Histogram, skewness, kurtosis, confint
 
 export
     # Series

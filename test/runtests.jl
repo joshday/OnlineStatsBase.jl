@@ -5,7 +5,8 @@ O = OnlineStatsBase
 
 
 #-----------------------------------------------------------------------# Printing
-for o in [MV(4, QuantileMM()), KMeans(4,3), fill(MV(2, Mean()), 11)]
+for o in [MV(4, QuantileMM()), KMeans(4,3), fill(MV(2, Mean()), 11), HyperLogLog(10),
+        Bootstrap(Mean())]
     show(o)
     println()
 end
@@ -94,6 +95,11 @@ end
     fit!(b, randn(100))
     @test length(replicates(b)) == 100
     @test nobs(b) == 100
+    @test value(b) == b.f.(replicates(b))
+    confint(b)
+
+    b2 = Bootstrap(CovMatrix(2))
+    fit!(b2, randn(10, 2))
 end
 
 include("test_stats.jl")

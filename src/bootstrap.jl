@@ -48,7 +48,7 @@ replicates(b::Bootstrap) = b.replicates
     confint(b, coverageprob = .95)
 Return a confidence interval for a Bootstrap `b`.
 """
-function confint(b::Bootstrap, coverageprob = 0.95, method = :quantile)
+function confint(b::Bootstrap, coverageprob = 0.95)
     states = value(b)
     if any(isnan, states)
         return (NaN, NaN)
