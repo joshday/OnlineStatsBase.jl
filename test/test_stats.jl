@@ -56,6 +56,12 @@ end
     test_function(Extrema(), y, extrema, extrema)
 end
 
+@testset "HyperLogLog" begin
+    o = HyperLogLog(10)
+    Series(rand(1:5, 500), o)
+    @test value(o) ≈ 5 atol=.5
+end
+
 @testset "KMeans" begin
     o = KMeans(4, 3)
     Series(Y, o)
