@@ -145,7 +145,7 @@ function Base.merge!(o1::Moments, o2::Moments, γ::Float64)
     o1
 end
 
-#-----------------------------------------------------------------------# Hist
+#-----------------------------------------------------------------------# OHistogram
 """
     OHistogram(range)
 Make a histogram with bins given by `range`.  Uses left-closed bins.

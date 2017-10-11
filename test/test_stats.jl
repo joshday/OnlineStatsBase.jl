@@ -75,6 +75,11 @@ end
     test_function(Moments(), y, kurtosis, kurtosis; atol=.1)
 end
 
+@testset "OHistogram" begin
+    Base.isapprox(h1::Histogram, h2::Histogram) = h1 == h2
+    test_exact(OHistogram(-5:.1:5), y, x -> fit(Histogram, y, -5:.1:5; closed=:left))
+end
+
 @testset "OrderStats" begin
     test_exact(OrderStats(length(y)), y, sort)
     @test issorted(first(value(Series(y, OrderStats(5)))))

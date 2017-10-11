@@ -11,7 +11,7 @@ This package defines the basic types and interface used by [OnlineStats](https:/
 
 # Creating a new OnlineStat
 
-Make a subtype of OnlineStat and give it a `fit!` method.
+### Make a subtype of OnlineStat and give it a `fit!` method.
 
 ```julia
 using OnlineStatsBase
