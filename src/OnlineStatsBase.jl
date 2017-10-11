@@ -14,7 +14,9 @@ export
     # OnlineStats
     OnlineStat,
     CovMatrix, Diff, Extrema, KMeans, Mean, Moments, MV,OHistogram, OrderStats, QuantileMM,
-    ReservoirSample, Sum, Variance
+    ReservoirSample, Sum, Variance,
+    # Other
+    Bootstrap, replicates
 
 #-----------------------------------------------------------------------# OnlineStat
 abstract type OnlineStat{I, W} end
@@ -110,12 +112,5 @@ include("weight.jl")
 include("series.jl")
 include("stats.jl")
 include("mv.jl")
-
-
-
-
-
-
-
-
+include("bootstrap.jl")
 end

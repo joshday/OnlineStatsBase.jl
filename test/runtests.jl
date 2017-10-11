@@ -5,7 +5,7 @@ O = OnlineStatsBase
 
 
 #-----------------------------------------------------------------------# Printing
-for o in [MV(4, QuantileMM()), KMeans(4,3)]
+for o in [MV(4, QuantileMM()), KMeans(4,3), fill(MV(2, Mean()), 11)]
     show(o)
     println()
 end
@@ -40,6 +40,12 @@ end
         s2 = Series(y', CovMatrix(5); dim = Cols())
         @test value(s) == value(s2)
     end
+
+    Series(Mean())
+    Series(Mean(), Variance())
+    Series(randn(100), Mean(), Variance())
+    Series(randn(100, 4), CovMatrix(4))
+    @test_throws Exception Series(Mean(), QuantileMM())
 end
 
 #-----------------------------------------------------------------------# Test Weight
@@ -83,12 +89,11 @@ end
     end
 end
 
-@testset "Series" begin
-    Series(Mean())
-    Series(Mean(), Variance())
-    Series(randn(100), Mean(), Variance())
-    Series(randn(100, 4), CovMatrix(4))
-    @test_throws Exception Series(Mean(), QuantileMM())
+@testset "Bootstrap" begin
+    b = Bootstrap(Mean())
+    fit!(b, randn(100))
+    @test length(replicates(b)) == 100
+    @test nobs(b) == 100
 end
 
 include("test_stats.jl")
