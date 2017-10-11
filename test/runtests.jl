@@ -4,18 +4,20 @@ O = OnlineStatsBase
 
 
 
-#-----------------------------------------------------------------------# Ugly output
-show(MV(4, QuantileMM()))
-println()
+#-----------------------------------------------------------------------# Printing
+for o in [MV(4, QuantileMM()), KMeans(4,3)]
+    show(o)
+    println()
+end
 
 #-----------------------------------------------------------------------# Series
 @testset "Series" begin
     show(Series(Mean()))
     show(Series(Mean(), Variance()))
     println()
-    Series(Mean())
+    @test nobs(Series(Mean())) == 0
     Series(LearningRate(), Mean())
-    Series(randn(100), Mean())
+    @test nobs(Series(randn(100), Mean())) == 100
     Series(randn(100), LearningRate(), Mean())
     Series(LearningRate(), randn(100), Mean())
     @test Series(Mean()) == Series(Mean())

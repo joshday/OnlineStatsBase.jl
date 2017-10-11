@@ -13,7 +13,7 @@ export
     HarmonicWeight, Bounded, Scaled,
     # OnlineStats
     OnlineStat,
-    CovMatrix, Diff, Extrema, Mean, Moments, MV,OHistogram, OrderStats, QuantileMM,
+    CovMatrix, Diff, Extrema, KMeans, Mean, Moments, MV,OHistogram, OrderStats, QuantileMM,
     ReservoirSample, Sum, Variance
 
 #-----------------------------------------------------------------------# OnlineStat
@@ -39,8 +39,11 @@ default_weight{I, W}(o::OnlineStat{I, W}) = W()
 
 function input_ndims(t::Tuple)
     I = input_ndims(first(t))
-    all(input_ndims.(t) .== I) ||
-        error("Inputs don't match. Found: $(input_ndims.(t))")
+    for ti in t
+        input_ndims(ti) == I || error("Inputs don't match. Found: $(input_ndims.(t))")
+    end
+    # all(input_ndims.(t) .== I) ||
+    #     error("Inputs don't match. Found: $(input_ndims.(t))")
     return I
 end
 

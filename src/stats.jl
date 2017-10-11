@@ -93,6 +93,33 @@ end
 value(o::Extrema) = (o.min, o.max)
 Base.extrema(o::Extrema) = value(o)
 
+#-----------------------------------------------------------------------# KMeans
+"""
+    KMeans(p, k)
+Approximate K-Means clustering of `k` clusters and `p` variables
+    using OnlineStats, Distributions
+    d = MixtureModel([Normal(0), Normal(5)])
+    y = rand(d, 100_000, 1)
+    s = Series(y, LearningRate(.6), KMeans(1, 2))
+"""
+mutable struct KMeans <: OnlineStat{1, LearningRate}
+    value::Matrix{Float64}
+    v::Vector{Float64}
+    KMeans(p::Integer, k::Integer) = new(randn(p, k), zeros(k))
+end
+Base.show(io::IO, o::KMeans) = print(io, "KMeans($(value(o)'))")
+function fit!(o::KMeans, x::VectorOb, γ::Float64)
+    d, k = size(o.value)
+    length(x) == d || throw(DimensionMismatch())
+    for j in 1:k
+        o.v[j] = sum(abs2, x - view(o.value, :, j))
+    end
+    kstar = indmin(o.v)
+    for i in 1:d
+        o.value[i, kstar] = smooth(o.value[i, kstar], x[i], γ)
+    end
+end
+
 #--------------------------------------------------------------------# Mean
 """
     Mean()

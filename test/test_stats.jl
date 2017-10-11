@@ -56,6 +56,11 @@ end
     test_function(Extrema(), y, extrema, extrema)
 end
 
+@testset "KMeans" begin
+    o = KMeans(4, 3)
+    Series(Y, o)
+end
+
 @testset "Mean" begin
     test_exact(Mean(), randn(100), mean)
     test_exact(Mean(), 1.0, mean)
