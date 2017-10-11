@@ -33,6 +33,13 @@ end
     merge(s, s2, .5)
     merge!(s, s2, .5)
     @test_throws Exception merge(s, s2, :bad_arg)
+
+    @testset "ObsDimension" begin
+        y = randn(100, 5)
+        s = Series(y, CovMatrix(5); dim = Rows())
+        s2 = Series(y', CovMatrix(5); dim = Cols())
+        @test value(s) == value(s2)
+    end
 end
 
 #-----------------------------------------------------------------------# Test Weight
