@@ -108,8 +108,8 @@ unbias(o) = o.nobs / (o.nobs - 1)
 
 const ϵ = 1e-6
 
-fit!(o::OnlineStat{(1,0)}, t::Tuple, γ) = fit!(o, t..., γ)
-
+# (1, 0) hack
+fit!(o::OnlineStat{(1,0)}, t::Tuple, γ::Float64) = fit!(o, t..., γ)
 
 #-----------------------------------------------------------------------# includes
 include("weight.jl")
