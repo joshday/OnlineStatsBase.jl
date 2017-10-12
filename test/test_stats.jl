@@ -58,8 +58,10 @@ end
 
 @testset "HyperLogLog" begin
     o = HyperLogLog(10)
+    @test value(o) == 0.0
     Series(rand(1:5, 500), o)
     @test value(o) ≈ 5 atol=.5
+    Series(randn(1000), HyperLogLog(4))
 end
 
 @testset "KMeans" begin
