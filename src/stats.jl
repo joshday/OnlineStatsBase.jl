@@ -2,6 +2,7 @@
 """
     CovMatrix(d)
 Covariance Matrix of `d` variables.
+
     y = randn(100, 5)
     Series(y, CovMatrix(5))
 """
@@ -46,6 +47,7 @@ end
 """
     Diff()
 Track the difference and the last value.
+
     s = Series(randn(1000), Diff())
     value(s)
 """
@@ -72,6 +74,7 @@ end
 """
     Extrema()
 Maximum and minimum.
+
     s = Series(randn(100), Extrema())
     value(s)
 """
@@ -116,6 +119,7 @@ end
 """
     HyperLogLog(b)  # 4 ≤ b ≤ 16
 Approximate count of distinct elements.
+
     s = Series(rand(1:10, 1000), HyperLogLog(12))
     value(s)
 """
@@ -179,7 +183,8 @@ end
 #-----------------------------------------------------------------------# KMeans
 """
     KMeans(p, k)
-Approximate K-Means clustering of `k` clusters and `p` variables
+Approximate K-Means clustering of `k` clusters and `p` variables.
+
     using OnlineStats, Distributions
     d = MixtureModel([Normal(0), Normal(5)])
     y = rand(d, 100_000, 1)
@@ -208,6 +213,7 @@ end
     LinReg(p, λ::Float64 = 0.0)  # use λ for all parameters
     LinReg(p, λfactor::Vector{Float64})
 Ridge regression of `p` variables with elementwise regularization.
+
     x = randn(100, 10)
     y = x * linspace(-1, 1, 10) + randn(100)
     o = LinReg(10)
@@ -293,6 +299,7 @@ predict(o::LinReg, x::AbstractMatrix, dim::Cols) = x'coef(o)
 """
     Mean()
 Univariate mean.
+
     s = Series(randn(100), Mean())
     value(s)
 """
@@ -309,6 +316,7 @@ Base.mean(o::Mean) = value(o)
 """
     Moments()
 First four non-central moments.
+
     s = Series(randn(1000), Moments(10))
     value(s)
 """
@@ -345,6 +353,7 @@ end
 """
     OHistogram(range)
 Make a histogram with bins given by `range`.  Uses left-closed bins.
+
     y = randn(100)
     s = Series(y, OHistogram(-4:.1:4))
     value(s)
@@ -368,6 +377,7 @@ end
 """
     OrderStats(b)
 Average order statistics with batches of size `b`.
+
     s = Series(randn(1000), OrderStats(10))
     value(s)
 """
@@ -396,6 +406,7 @@ end
 """
     QuantileMM(q = 0.5)
 Approximate quantiles via an online MM algorithm.
+
     s = Series(randn(1000), QuantileMM())
     value(s)
 """
@@ -462,6 +473,7 @@ end
 """
     ReservoirSample(k, t = Float64)
 Reservoir sample of `k` items.
+
     o = ReservoirSample(k, Int)
     s = Series(o)
     fit!(s, 1:10000)
@@ -488,6 +500,7 @@ end
 """
     Sum()
 Track the overall sum.
+
     s = Series(randn(1000), Sum())
     value(s)
 """
@@ -505,6 +518,7 @@ Base.merge!{T <: Sum}(o::T, o2::T, γ::Float64) = (o.sum += o2.sum)
 """
     Variance()
 Univariate variance.
+
     s = Series(randn(100), Variance())
     value(s)
 """
