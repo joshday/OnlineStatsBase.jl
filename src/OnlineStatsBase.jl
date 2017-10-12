@@ -1,7 +1,7 @@
 __precompile__(true)
 module OnlineStatsBase
 
-import LearnBase: nobs, fit!, value, ObsDim, ObsDimension
+import LearnBase: nobs, fit!, value, ObsDim, ObsDimension, predict
 import StatsBase: Histogram, skewness, kurtosis, confint
 
 export
@@ -14,7 +14,7 @@ export
     # OnlineStats
     OnlineStat,
     CovMatrix, Diff, Extrema, HyperLogLog, KMeans, Mean, Moments, MV,OHistogram, OrderStats,
-    QuantileMM, ReservoirSample, Sum, Variance,
+    QuantileMM, ReservoirSample, RidgeReg, Sum, Variance,
     # Other
     Bootstrap, replicates
 
@@ -89,7 +89,7 @@ end
 smooth(x, y, γ) = x + γ * (y - x)
 
 function smooth!(x, y, γ)
-    length(x) == length(y) || throw(DimensionMismatch())
+    length(x) == length(y) || throw(DimensionMismatch("can't smooth arrays of different length"))
     for i in eachindex(x)
         @inbounds x[i] = smooth(x[i], y[i], γ)
     end
@@ -105,6 +105,8 @@ end
 unbias(o) = o.nobs / (o.nobs - 1)
 
 const ϵ = 1e-6
+
+fit!(o::OnlineStat{(1,0)}, t::Tuple, γ) = fit!(o, t..., γ)
 
 
 #-----------------------------------------------------------------------# includes

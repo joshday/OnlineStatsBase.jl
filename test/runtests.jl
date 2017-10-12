@@ -5,10 +5,9 @@ O = OnlineStatsBase
 
 
 #-----------------------------------------------------------------------# Printing
-for o in [MV(4, QuantileMM()), KMeans(4,3), fill(MV(2, Mean()), 11), HyperLogLog(10),
-        Bootstrap(Mean())]
-    show(o)
-    println()
+for o in [MV(4, QuantileMM()), KMeans(4,3), 11*Mean(), HyperLogLog(10),
+        Bootstrap(Mean()), RidgeReg(5)]
+    println(o)
 end
 
 #-----------------------------------------------------------------------# Series

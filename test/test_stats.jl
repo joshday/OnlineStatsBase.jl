@@ -124,6 +124,18 @@ end
     end
 end
 
+@testset "RidgeReg" begin
+    n, p = 100, 10
+    x = randn(n, p)
+    y = x * linspace(-1, 1, p) + randn(n)
+    o = RidgeReg(p)
+    Series((x,y), o)
+    @test value(o) ≈ x\y
+    @test predict(o, x, Rows()) == x * o.β
+    @test predict(o, x', Cols()) ≈ predict(o, x)
+    @test nobs(o) == n
+end
+
 @testset "Sum" begin
     test_exact(Sum(Int), collect(1:100), sum)
     test_exact(Sum(), rand(100), sum)
