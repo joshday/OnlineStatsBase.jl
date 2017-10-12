@@ -130,10 +130,24 @@ end
     y = x * linspace(-1, 1, p) + randn(n)
     o = RidgeReg(p)
     Series((x,y), o)
-    @test value(o) ≈ x\y
+    @test value(o) ≈ x \ y
     @test predict(o, x, Rows()) == x * o.β
     @test predict(o, x', Cols()) ≈ predict(o, x)
     @test nobs(o) == n
+
+    Series((randn(10), randn()), RidgeReg(10))
+
+    @testset "Column obs" begin
+        n, p = 100, 10
+        x = randn(n, p)
+        y = x * linspace(-1, 1, p) + randn(n)
+        o = RidgeReg(p)
+        Series((x', y), o; dim = Cols())
+        @test value(o) ≈ x \ y
+        @test predict(o, x, Rows()) == x * o.β
+        @test predict(o, x', Cols()) ≈ predict(o, x)
+        @test nobs(o) == n
+    end
 end
 
 @testset "Sum" begin
