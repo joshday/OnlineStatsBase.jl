@@ -1,12 +1,12 @@
 __precompile__(true)
 module OnlineStatsBase
 
-import LearnBase: nobs, fit!, value, ObsDim, ObsDimension, predict
-import StatsBase: Histogram, skewness, kurtosis, confint
+import LearnBase: value, ObsDim, ObsDimension
+import StatsBase: Histogram, skewness, kurtosis, confint, coef, predict, nobs, fit!
 
 export
     # Series
-    Series, nobs, fit!, value, stats, Rows, Cols,
+    Series,
     # Weight
     Weight,
     EqualWeight, BoundedEqualWeight, ExponentialWeight, LearningRate, LearningRate2, McclainWeight,
@@ -16,7 +16,9 @@ export
     CovMatrix, Diff, Extrema, HyperLogLog, KMeans, Mean, Moments, MV,OHistogram, OrderStats,
     QuantileMM, ReservoirSample, RidgeReg, Sum, Variance,
     # Other
-    Bootstrap, replicates
+    Bootstrap,
+    # functions
+    nobs, fit!, value, stats, Rows, Cols, predict, coef, replicates
 
 #-----------------------------------------------------------------------# OnlineStat
 abstract type OnlineStat{I, W} end
