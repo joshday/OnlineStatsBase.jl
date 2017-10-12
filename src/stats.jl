@@ -392,57 +392,6 @@ function fit!(o::OrderStats, y::Real, γ::Float64)
     o
 end
 
-# #-----------------------------------------------------------------------# Quantiles
-# """
-#     Quantiles(q = [.25, .5, .75])  # default algorithm is :MSPI
-#     Quantiles{:SGD}(q = [.25, .5, .75])
-#     Quantiles{:MSPI}(q = [.25, .5, .75])
-# Approximate quantiles via the specified algorithm (`:SGD` or `:MSPI`).
-#     s = Series(randn(10_000), Quantiles(.1:.1:.9)
-#     value(s)
-# """
-# struct Quantiles{T} <: OnlineStat{0, LearningRate}
-#     value::Vector{Float64}
-#     τvec::Vector{Float64}
-#     function Quantiles{T}(value, τvec) where {T}
-#         for τ in τvec
-#             0 < τ < 1 || throw(ArgumentError("provided quantiles must be in (0, 1)"))
-#         end
-#         new(value, τvec)
-#     end
-# end
-# Quantiles{T}(τvec = [.25, .5, .75]) where {T} = Quantiles{T}(zeros(τvec), collect(τvec))
-# Quantiles(τvec= [.25, .5, .75]) = Quantiles{:MSPI}(collect(τvec))
-#
-# function fit!(o::Quantiles{:SGD}, y::Float64, γ::Float64)
-#     γ == 1.0 && fill!(o.value, y)
-#     for i in eachindex(o.τvec)
-#         @inbounds o.value[i] -= γ * deriv(QuantileLoss(o.τvec[i]), y, o.value[i])
-#     end
-# end
-# function fit!(o::Quantiles{:MSPI}, y::Real, γ::Float64)
-#     γ == 1.0 && fill!(o.value, y)
-#     for i in eachindex(o.τvec)
-#         w = abs(y - o.value[i]) + ϵ
-#         b = o.τvec[i] - .5 * (1 - y / w)
-#         o.value[i] = (o.value[i] + γ * b) / (1 + γ / 2w)
-#     end
-# end
-# TODO
-# function fit!(o::Quantiles{:OMAP}, y::Real, γ::Float64)
-#     for i in eachindex(o.τvec)
-#         u = y - o.value[i]
-#         l = QuantileLoss(o.τvec[i])
-#         c = (value(l, -u) - value(l, u) - 2deriv(l, u) * u) / (2 * u ^ 2)
-#         o.value[i] -= γ * deriv(l, u) / c
-#     end
-# end
-#
-# function Base.merge!(o::Quantiles, o2::Quantiles, γ::Float64)
-#     o.τvec == o2.τvec || throw(ArgumentError("objects track different quantiles"))
-#     smooth!(o.value, o2.value, γ)
-# end
-
 #-----------------------------------------------------------------------# QuantileMM
 """
     QuantileMM(q = 0.5)
@@ -450,15 +399,15 @@ Approximate quantiles via an online MM algorithm.
     s = Series(randn(1000), QuantileMM())
     value(s)
 """
-mutable struct QuantileMM <: OnlineStat{0, LearningRate}
+struct QuantileMM <: OnlineStat{0, LearningRate}
     value::Vector{Float64}
     τ::Vector{Float64}
     s::Vector{Float64}
     t::Vector{Float64}
-    QuantileMM(τ = [.25, .5, .75]) = new(zeros(τ), τ, zeros(τ), zeros(τ))
+    QuantileMM(τ = [.25, .5, .75]) = new(zeros(τ), collect(τ), zeros(τ), zeros(τ))
 end
 function fit!(o::QuantileMM, y::Real, γ::Float64)
-    γ == 1.0 && fill!(o.value, y)
+    γ == 1.0 && fill!(o.value, y)  # initialize values with first observation
     @inbounds for j in 1:length(o.τ)
         w = 1.0 / (abs(y - o.value[j]) + ϵ)
         o.s[j] = smooth(o.s[j], w * y, γ)
@@ -466,6 +415,48 @@ function fit!(o::QuantileMM, y::Real, γ::Float64)
         o.value[j] = (o.s[j] + (2.0 * o.τ[j] - 1.0)) / o.t[j]
     end
 end
+function Base.merge!(o::QuantileMM, o2::QuantileMM, γ::Float64)
+    o.τ == o2.τ || error("Objects track different quantiles")
+    smooth!(o.value, o2.value, γ)
+end
+
+#-----------------------------------------------------------------------# QuantileMSPI
+struct QuantileMSPI <: OnlineStat{0, LearningRate}
+    value::Vector{Float64}
+    τ::Vector{Float64}
+    QuantileMSPI(τ = [.25, .5, .75]) = new(zeros(τ), collect(τ))
+end
+function fit!(o::QuantileMSPI, y::Real, γ::Float64)
+    γ == 1.0 && fill!(o.value, y)  # initialize values with first observation
+    @inbounds for i in eachindex(o.τ)
+        w = inv(abs(y - o.value[i]) + ϵ)
+        b = o.τ[i] - .5 * (1 - y * w)
+        o.value[i] = (o.value[i] + γ * b) / (1 + .5 * γ * w)
+    end
+end
+function Base.merge!(o::QuantileMSPI, o2::QuantileMSPI, γ::Float64)
+    o.τ == o2.τ || error("Objects track different quantiles")
+    smooth!(o.value, o2.value, γ)
+end
+
+#-----------------------------------------------------------------------# QuantileSGD
+struct QuantileSGD <: OnlineStat{0, LearningRate}
+    value::Vector{Float64}
+    τ::Vector{Float64}
+    QuantileSGD(τ = [.25, .5, .75]) = new(zeros(τ), collect(τ))
+end
+function fit!(o::QuantileSGD, y::Real, γ::Float64)
+    γ == 1.0 && fill!(o.value, y)  # initialize values with first observation
+    for j in eachindex(o.value)
+        u = o.value[j] - y
+        o.value[j] -= γ * ((u > 0.0) - o.τ[j])
+    end
+end
+function Base.merge!(o::QuantileSGD, o2::QuantileSGD, γ::Float64)
+    o.τ == o2.τ || error("Objects track different quantiles")
+    smooth!(o.value, o2.value, γ)
+end
+
 
 #-----------------------------------------------------------------------# ReservoirSample
 """

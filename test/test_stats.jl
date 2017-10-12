@@ -138,12 +138,20 @@ end
     @test issorted(first(value(Series(y, OrderStats(5)))))
 end
 
-@testset "QuantileMM" begin
+@testset "Quantile Types" begin
     y = randn(100_000)
     o = QuantileMM()
-    s = Series(y, o)
+    o2 = QuantileSGD()
+    o3 = QuantileMSPI()
+    s = Series(y, o, o2, o3)
     @test all(isapprox.(value(o), quantile(y, [.25, .5, .75]); atol = .1))
+    @test all(isapprox.(value(o2), quantile(y, [.25, .5, .75]); atol = .1))
+    @test all(isapprox.(value(o3), quantile(y, [.25, .5, .75]); atol = .1))
+
+    s2 = Series(y2, QuantileMM(), QuantileSGD(), QuantileMSPI())
+    merge!(s, s2)
 end
+
 
 @testset "ReservoirSample" begin
     test_exact(ReservoirSample(length(y)), y, identity)
