@@ -13,12 +13,12 @@ export
     HarmonicWeight, Bounded, Scaled,
     # OnlineStats
     OnlineStat,
-    CovMatrix, Diff, Extrema, HyperLogLog, KMeans, Mean, Moments, MV,OHistogram, OrderStats,
-    QuantileMM, ReservoirSample, RidgeReg, Sum, Variance,
+    CovMatrix, Diff, Extrema, HyperLogLog, LinReg, KMeans, Mean, Moments, MV,OHistogram,
+    OrderStats, QuantileMM, ReservoirSample, Sum, Variance,
     # Other
-    Bootstrap,
+    Bootstrap, Rows, Cols,
     # functions
-    nobs, fit!, value, stats, Rows, Cols, predict, coef, replicates
+    nobs, fit!, value, stats, predict, coef, replicates
 
 #-----------------------------------------------------------------------# OnlineStat
 abstract type OnlineStat{I, W} end

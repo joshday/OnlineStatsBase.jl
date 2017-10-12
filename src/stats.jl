@@ -203,6 +203,92 @@ function fit!(o::KMeans, x::VectorOb, γ::Float64)
     end
 end
 
+#-----------------------------------------------------------------------# LinReg
+"""
+    LinReg(p, λ::Float64 = 0.0)  # use λ for all parameters
+    LinReg(p, λfactor::Vector{Float64})
+Ridge regression of `p` variables with elementwise regularization.
+    x = randn(100, 10)
+    y = x * linspace(-1, 1, 10) + randn(100)
+    o = LinReg(10)
+    Series((x,y), o)
+    value(o)
+"""
+mutable struct LinReg <: OnlineStat{(1,0), EqualWeight}
+    β::Vector{Float64}
+    A::Matrix{Float64}
+    λfactor::Vector{Float64}
+    nobs::Int
+    function LinReg(p::Integer, λfactor::Vector{Float64} = zeros(p))
+        d = p + 1
+        new(zeros(p), zeros(d, d), λfactor, 0)
+    end
+    LinReg(p::Integer, λ::Float64) = LinReg(p, fill(λ, p))
+end
+Base.show(io::IO, o::LinReg) = print(io, "LinReg: β($(mean(o.λfactor))) = $(value(o)')")
+nobs(o::LinReg) = o.nobs
+
+function matviews(o::LinReg)
+    p = length(o.β)
+    @views o.A[1:p, 1:p], o.A[1:p, end]
+end
+
+function fit!(o::LinReg, x::VectorOb, y::Real, γ::Float64)
+    xtx, xty = matviews(o)
+    smooth_syr!(xtx, x, γ)
+    smooth!(xty, x .* y, γ)
+    o.A[end] = smooth(o.A[end], y * y, γ)
+    o.nobs += 1
+end
+
+function value(o::LinReg)
+    xtx, xty = matviews(o)
+    A = Symmetric(xtx + Diagonal(o.λfactor))
+    if isposdef(A)
+        o.β[:] = A \ xty
+    end
+    return o.β
+end
+
+coef(o::LinReg) = value(o)
+predict(o::LinReg, x::AbstractVector) = x'coef(o)
+predict(o::LinReg, x::AbstractMatrix, dim::Rows = Rows()) = x * coef(o)
+predict(o::LinReg, x::AbstractMatrix, dim::Cols) = x'coef(o)
+
+# mse(o::LinReg) = (coef(o); o.S[end] * nobs(o) / (nobs(o) - length(o.β)))
+# function coeftable(o::LinReg)
+#     β = coef(o)
+#     p = length(β)
+#     se = stderr(o)
+#     ts = β ./ se
+#     CoefTable(
+#         [β se ts Ds.ccdf(Ds.FDist(1, nobs(o) - p), abs2.(ts))],
+#         ["Estimate", "Std.Error", "t value", "Pr(>|t|)"],
+#         ["x$i" for i in 1:p],
+#         4
+#     )
+# end
+# function confint(o::LinReg, level::Real = 0.95)
+#     β = coef(o)
+#     mult = stderr(o) * quantile(Ds.TDist(nobs(o) - length(β) - 1), (1 - level) / 2)
+#     hcat(β, β) + mult * [1. -1.]
+# end
+# function vcov(o::LinReg)
+#     coef(o)
+#     p = length(o.β)
+#     -mse(o) * o.S[1:p, 1:p] / nobs(o)
+#  end
+# stderr(o::LinReg) = sqrt.(diag(vcov(o)))
+#
+# function Base.merge!(o1::LinReg, o2::LinReg, γ::Float64)
+#     @assert o1.λ == o2.λ
+#     @assert length(o1.β) == length(o2.β)
+#     smooth!(o1.A, o2.A, γ)
+#     o1.nobs += o2.nobs
+#     coef(o1)
+#     o1
+# end
+
 #-----------------------------------------------------------------------# Mean
 """
     Mean()
@@ -406,92 +492,6 @@ function fit!(o::ReservoirSample, y::ScalarOb, γ::Float64)
         end
     end
 end
-
-#-----------------------------------------------------------------------# RidgeReg
-"""
-    RidgeReg(p, λ::Float64 = 0.0)  # use λ for all parameters
-    RidgeReg(p, λfactor::Vector{Float64})
-Ridge regression of `p` variables with elementwise regularization.
-    x = randn(100, 10)
-    y = x * linspace(-1, 1, 10) + randn(100)
-    o = RidgeReg(10)
-    Series((x,y), o)
-    value(o)
-"""
-mutable struct RidgeReg <: OnlineStat{(1,0), EqualWeight}
-    β::Vector{Float64}
-    A::Matrix{Float64}
-    λfactor::Vector{Float64}
-    nobs::Int
-    function RidgeReg(p::Integer, λfactor::Vector{Float64} = zeros(p))
-        d = p + 1
-        new(zeros(p), zeros(d, d), λfactor, 0)
-    end
-    RidgeReg(p::Integer, λ::Float64) = RidgeReg(p, fill(λ, p))
-end
-Base.show(io::IO, o::RidgeReg) = print(io, "RidgeReg: β($(mean(o.λfactor))) = $(value(o)')")
-nobs(o::RidgeReg) = o.nobs
-
-function matviews(o::RidgeReg)
-    p = length(o.β)
-    @views o.A[1:p, 1:p], o.A[1:p, end]
-end
-
-function fit!(o::RidgeReg, x::VectorOb, y::Real, γ::Float64)
-    xtx, xty = matviews(o)
-    smooth_syr!(xtx, x, γ)
-    smooth!(xty, x .* y, γ)
-    o.A[end] = smooth(o.A[end], y * y, γ)
-    o.nobs += 1
-end
-
-function value(o::RidgeReg)
-    xtx, xty = matviews(o)
-    A = Symmetric(xtx + Diagonal(o.λfactor))
-    if isposdef(A)
-        o.β[:] = A \ xty
-    end
-    return o.β
-end
-
-coef(o::RidgeReg) = value(o)
-predict(o::RidgeReg, x::AbstractVector) = x'coef(o)
-predict(o::RidgeReg, x::AbstractMatrix, dim::Rows = Rows()) = x * coef(o)
-predict(o::RidgeReg, x::AbstractMatrix, dim::Cols) = x'coef(o)
-
-# mse(o::LinReg) = (coef(o); o.S[end] * nobs(o) / (nobs(o) - length(o.β)))
-# function coeftable(o::LinReg)
-#     β = coef(o)
-#     p = length(β)
-#     se = stderr(o)
-#     ts = β ./ se
-#     CoefTable(
-#         [β se ts Ds.ccdf(Ds.FDist(1, nobs(o) - p), abs2.(ts))],
-#         ["Estimate", "Std.Error", "t value", "Pr(>|t|)"],
-#         ["x$i" for i in 1:p],
-#         4
-#     )
-# end
-# function confint(o::LinReg, level::Real = 0.95)
-#     β = coef(o)
-#     mult = stderr(o) * quantile(Ds.TDist(nobs(o) - length(β) - 1), (1 - level) / 2)
-#     hcat(β, β) + mult * [1. -1.]
-# end
-# function vcov(o::LinReg)
-#     coef(o)
-#     p = length(o.β)
-#     -mse(o) * o.S[1:p, 1:p] / nobs(o)
-#  end
-# stderr(o::LinReg) = sqrt.(diag(vcov(o)))
-#
-# function Base.merge!(o1::LinReg, o2::LinReg, γ::Float64)
-#     @assert o1.λ == o2.λ
-#     @assert length(o1.β) == length(o2.β)
-#     smooth!(o1.A, o2.A, γ)
-#     o1.nobs += o2.nobs
-#     coef(o1)
-#     o1
-# end
 
 #-----------------------------------------------------------------------# Sum
 """

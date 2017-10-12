@@ -70,6 +70,32 @@ end
     Series(Y, o)
 end
 
+@testset "LinReg" begin
+    n, p = 100, 10
+    x = randn(n, p)
+    y = x * linspace(-1, 1, p) + randn(n)
+    o = LinReg(p)
+    Series((x,y), o)
+    @test value(o) ≈ x \ y
+    @test predict(o, x, Rows()) == x * o.β
+    @test predict(o, x', Cols()) ≈ predict(o, x)
+    @test nobs(o) == n
+
+    Series((randn(10), randn()), LinReg(10))
+
+    @testset "Column obs" begin
+        n, p = 100, 10
+        x = randn(n, p)
+        y = x * linspace(-1, 1, p) + randn(n)
+        o = LinReg(p)
+        Series((x', y), o; dim = Cols())
+        @test value(o) ≈ x \ y
+        @test predict(o, x, Rows()) == x * o.β
+        @test predict(o, x', Cols()) ≈ predict(o, x)
+        @test nobs(o) == n
+    end
+end
+
 @testset "Mean" begin
     test_exact(Mean(), randn(100), mean)
     test_exact(Mean(), 1.0, mean)
@@ -125,32 +151,6 @@ end
     Series(y, o)
     for j in value(o)
         @test j in y
-    end
-end
-
-@testset "RidgeReg" begin
-    n, p = 100, 10
-    x = randn(n, p)
-    y = x * linspace(-1, 1, p) + randn(n)
-    o = RidgeReg(p)
-    Series((x,y), o)
-    @test value(o) ≈ x \ y
-    @test predict(o, x, Rows()) == x * o.β
-    @test predict(o, x', Cols()) ≈ predict(o, x)
-    @test nobs(o) == n
-
-    Series((randn(10), randn()), RidgeReg(10))
-
-    @testset "Column obs" begin
-        n, p = 100, 10
-        x = randn(n, p)
-        y = x * linspace(-1, 1, p) + randn(n)
-        o = RidgeReg(p)
-        Series((x', y), o; dim = Cols())
-        @test value(o) ≈ x \ y
-        @test predict(o, x, Rows()) == x * o.β
-        @test predict(o, x', Cols()) ≈ predict(o, x)
-        @test nobs(o) == n
     end
 end
 
