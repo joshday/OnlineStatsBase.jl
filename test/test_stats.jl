@@ -39,6 +39,7 @@ Y2 = randn(100, 4)
     for f in [mean, var, std]
         @test f(o) ≈ vec(f(Y, 1))
     end
+    @test length(o) == 4
 end
 
 @testset "Diff" begin
@@ -96,6 +97,7 @@ end
     o = MV(4, Mean())
     Series(Y', o; dim = Cols())
     @test value(o) ≈ vec(mean(Y, 1))
+    @test length(o) == 4
 end
 
 @testset "OHistogram" begin

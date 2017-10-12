@@ -74,16 +74,16 @@ fields_to_show(o) = fieldnames(o)
 
 header(io::IO, s::AbstractString) = println(io, "▦ $s" )
 
-function name(o, withmodule = false)
+function name(o, withmodule = false, withparams = true)
     s = string(typeof(o))
     if !withmodule
         # remove text that ends in period:  OnlineStats.Mean -> Mean
         s = replace(s, r"([a-zA-Z]*\.)", "")
     end
-    # if !withparams
-    #     # replace everything from "{" to the end of the string
-    #     s = replace(s, r"\{(.*)", "")
-    # end
+    if !withparams
+        # replace everything from "{" to the end of the string
+        s = replace(s, r"\{(.*)", "")
+    end
     s
 end
 
