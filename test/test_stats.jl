@@ -94,6 +94,18 @@ end
         @test predict(o, x', Cols()) ≈ predict(o, x)
         @test nobs(o) == n
     end
+
+    @testset "merge" begin
+        o = LinReg(5)
+        o2 = LinReg(5, rand(5))
+        @test_throws Exception merge!(o, o2, .5)
+
+        o2 = LinReg(5)
+        x, y = randn(100,5), randn(100)
+        Series((x,y), o, o2)
+        merge!(o, o2, .5)
+        @test value(o) == value(o2)
+    end
 end
 
 @testset "Mean" begin

@@ -286,14 +286,13 @@ predict(o::LinReg, x::AbstractMatrix, dim::Cols) = x'coef(o)
 #  end
 # stderr(o::LinReg) = sqrt.(diag(vcov(o)))
 #
-# function Base.merge!(o1::LinReg, o2::LinReg, γ::Float64)
-#     @assert o1.λ == o2.λ
-#     @assert length(o1.β) == length(o2.β)
-#     smooth!(o1.A, o2.A, γ)
-#     o1.nobs += o2.nobs
-#     coef(o1)
-#     o1
-# end
+function Base.merge!(o1::LinReg, o2::LinReg, γ::Float64)
+    o1.λfactor == o2.λfactor || error("LinReg objects have different λfactor")
+    smooth!(o1.A, o2.A, γ)
+    o1.nobs += o2.nobs
+    coef(o1)
+    o1
+end
 
 #-----------------------------------------------------------------------# Mean
 """
