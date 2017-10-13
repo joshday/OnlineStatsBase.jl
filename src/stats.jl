@@ -2,7 +2,7 @@
 """
     CovMatrix(d)
 Covariance Matrix of `d` variables.
-
+# Example
     y = randn(100, 5)
     Series(y, CovMatrix(5))
 """
@@ -47,7 +47,7 @@ end
 """
     Diff()
 Track the difference and the last value.
-
+# Example
     s = Series(randn(1000), Diff())
     value(s)
 """
@@ -74,7 +74,7 @@ end
 """
     Extrema()
 Maximum and minimum.
-
+# Example
     s = Series(randn(100), Extrema())
     value(s)
 """
@@ -119,7 +119,7 @@ end
 """
     HyperLogLog(b)  # 4 ≤ b ≤ 16
 Approximate count of distinct elements.
-
+# Example
     s = Series(rand(1:10, 1000), HyperLogLog(12))
     value(s)
 """
@@ -184,7 +184,7 @@ end
 """
     KMeans(p, k)
 Approximate K-Means clustering of `k` clusters and `p` variables.
-
+# Example
     using OnlineStats, Distributions
     d = MixtureModel([Normal(0), Normal(5)])
     y = rand(d, 100_000, 1)
@@ -213,7 +213,7 @@ end
     LinReg(p, λ::Float64 = 0.0)  # use λ for all parameters
     LinReg(p, λfactor::Vector{Float64})
 Ridge regression of `p` variables with elementwise regularization.
-
+# Example
     x = randn(100, 10)
     y = x * linspace(-1, 1, 10) + randn(100)
     o = LinReg(10)
@@ -273,7 +273,7 @@ end
 """
     Mean()
 Univariate mean.
-
+# Example
     s = Series(randn(100), Mean())
     value(s)
 """
@@ -290,7 +290,7 @@ Base.mean(o::Mean) = value(o)
 """
     Moments()
 First four non-central moments.
-
+# Example
     s = Series(randn(1000), Moments(10))
     value(s)
 """
@@ -327,7 +327,7 @@ end
 """
     OHistogram(range)
 Make a histogram with bins given by `range`.  Uses left-closed bins.
-
+# Example
     y = randn(100)
     s = Series(y, OHistogram(-4:.1:4))
     value(s)
@@ -351,7 +351,7 @@ end
 """
     OrderStats(b)
 Average order statistics with batches of size `b`.
-
+# Example
     s = Series(randn(1000), OrderStats(10))
     value(s)
 """
@@ -378,9 +378,9 @@ end
 
 #-----------------------------------------------------------------------# QuantileMM
 """
-    QuantileMM(q = 0.5)
-Approximate quantiles via an online MM algorithm.
-
+    QuantileMM(q = [.25, .5, .75])
+Approximate quantiles via an online MM algorithm (OMAS).
+# Example
     s = Series(randn(1000), QuantileMM())
     value(s)
 """
@@ -406,6 +406,13 @@ function Base.merge!(o::QuantileMM, o2::QuantileMM, γ::Float64)
 end
 
 #-----------------------------------------------------------------------# QuantileMSPI
+"""
+    QuantileMSPI(q = [.25, .5, .75])
+Approximate quantiles via Majorized Stochastic Proximal Iteration (MSPI).
+# Example
+    s = Series(randn(1000), QuantileMSPI())
+    value(s)
+"""
 struct QuantileMSPI <: OnlineStat{0, LearningRate}
     value::Vector{Float64}
     τ::Vector{Float64}
@@ -425,6 +432,13 @@ function Base.merge!(o::QuantileMSPI, o2::QuantileMSPI, γ::Float64)
 end
 
 #-----------------------------------------------------------------------# QuantileSGD
+"""
+    QuantileSGD(q = [.25, .5, .75])
+Approximate quantiles via an stochastic subgradient descent.
+# Example
+    s = Series(randn(1000), QuantileSGD())
+    value(s)
+"""
 struct QuantileSGD <: OnlineStat{0, LearningRate}
     value::Vector{Float64}
     τ::Vector{Float64}
@@ -447,7 +461,7 @@ end
 """
     ReservoirSample(k, t = Float64)
 Reservoir sample of `k` items.
-
+# Example
     o = ReservoirSample(k, Int)
     s = Series(o)
     fit!(s, 1:10000)
@@ -474,7 +488,7 @@ end
 """
     Sum()
 Track the overall sum.
-
+# Example
     s = Series(randn(1000), Sum())
     value(s)
 """
@@ -492,7 +506,7 @@ Base.merge!{T <: Sum}(o::T, o2::T, γ::Float64) = (o.sum += o2.sum)
 """
     Variance()
 Univariate variance.
-
+# Example
     s = Series(randn(100), Variance())
     value(s)
 """

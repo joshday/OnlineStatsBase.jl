@@ -5,6 +5,8 @@ Online Statistical Bootstrapping.  Create `nreps` replicates of the OnlineStat `
 When `fit!` is called, each of the replicates will be updated `rand(d)` times.
 `value(b::Bootstrap)` returns `f` mapped to the replicates.
 
+# Example
+
     b = Bootstrap(Mean())
     fit!(b, randn(1000))
     value(b)        # `f` mapped to replicates
@@ -39,6 +41,7 @@ nobs(b::Bootstrap) = nobs(b.series)
 
 """
     replicates(b)
+
 Return the vector of replicates from Bootstrap `b`
 """
 replicates(b::Bootstrap) = b.replicates
@@ -46,6 +49,7 @@ replicates(b::Bootstrap) = b.replicates
 
 """
     confint(b, coverageprob = .95)
+
 Return a confidence interval for a Bootstrap `b`.
 """
 function confint(b::Bootstrap, coverageprob = 0.95)

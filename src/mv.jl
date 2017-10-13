@@ -1,7 +1,11 @@
 #-----------------------------------------------------------------------# MV
 """
     MV(p, o)
-Track `p` univariate OnlineStats `o`
+
+Track `p` univariate OnlineStats `o`.
+
+# Example
+
     y = randn(1000, 5)
     o = MV(5, Mean())
     s = Series(y, o)
