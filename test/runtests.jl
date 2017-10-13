@@ -23,7 +23,7 @@ end
     @test Series(Mean()) == Series(Mean())
     s = Series(Mean())
     fit!(s, .1, .1)
-    fit!(s, randn(10), rand(10))
+    fit!(s, randn(10), Weights(rand(10)))
     s2 = copy(s)
     @test s == s2
     @test all(stats(s) .== s.stats)

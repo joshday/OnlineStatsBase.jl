@@ -2,7 +2,8 @@ __precompile__(true)
 module OnlineStatsBase
 
 import LearnBase: value, ObsDim, ObsDimension
-import StatsBase: Histogram, skewness, kurtosis, confint, coef, predict, nobs, fit!
+import StatsBase: Histogram, skewness, kurtosis, confint, coef, predict, nobs, fit!,
+    AbstractWeights
 
 export
     # Series
@@ -46,8 +47,6 @@ function input_ndims(t::Tuple)
     for ti in t
         input_ndims(ti) == I || error("Inputs don't match. Found: $(input_ndims.(t))")
     end
-    # all(input_ndims.(t) .== I) ||
-    #     error("Inputs don't match. Found: $(input_ndims.(t))")
     return I
 end
 
