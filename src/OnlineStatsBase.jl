@@ -3,7 +3,7 @@ module OnlineStatsBase
 
 import LearnBase: value, ObsDim, ObsDimension
 import StatsBase: Histogram, skewness, kurtosis, confint, coef, predict, nobs, fit!,
-    AbstractWeights
+    AbstractWeights, Weights
 
 export
     # Series
@@ -19,7 +19,8 @@ export
     # Other
     Bootstrap, Rows, Cols,
     # functions
-    nobs, fit!, value, stats, predict, coef, replicates
+    nobs, fit!, value, stats, predict, coef, replicates, confint, skewness, kurtosis,
+    Weights # StatsBase.Weights, not be confused with OnlineStatsBase.Weight
 
 #-----------------------------------------------------------------------# OnlineStat
 abstract type OnlineStat{I, W} end
