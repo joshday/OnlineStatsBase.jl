@@ -261,31 +261,6 @@ predict(o::LinReg, x::AbstractVector) = x'coef(o)
 predict(o::LinReg, x::AbstractMatrix, dim::Rows = Rows()) = x * coef(o)
 predict(o::LinReg, x::AbstractMatrix, dim::Cols) = x'coef(o)
 
-# mse(o::LinReg) = (coef(o); o.S[end] * nobs(o) / (nobs(o) - length(o.β)))
-# function coeftable(o::LinReg)
-#     β = coef(o)
-#     p = length(β)
-#     se = stderr(o)
-#     ts = β ./ se
-#     CoefTable(
-#         [β se ts Ds.ccdf(Ds.FDist(1, nobs(o) - p), abs2.(ts))],
-#         ["Estimate", "Std.Error", "t value", "Pr(>|t|)"],
-#         ["x$i" for i in 1:p],
-#         4
-#     )
-# end
-# function confint(o::LinReg, level::Real = 0.95)
-#     β = coef(o)
-#     mult = stderr(o) * quantile(Ds.TDist(nobs(o) - length(β) - 1), (1 - level) / 2)
-#     hcat(β, β) + mult * [1. -1.]
-# end
-# function vcov(o::LinReg)
-#     coef(o)
-#     p = length(o.β)
-#     -mse(o) * o.S[1:p, 1:p] / nobs(o)
-#  end
-# stderr(o::LinReg) = sqrt.(diag(vcov(o)))
-#
 function Base.merge!(o1::LinReg, o2::LinReg, γ::Float64)
     o1.λfactor == o2.λfactor || error("LinReg objects have different λfactor")
     smooth!(o1.A, o2.A, γ)
