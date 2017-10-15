@@ -120,7 +120,7 @@ end
 mutable struct HarmonicWeight <: Weight
     a::Float64
     nobs::Int
-    function HarmonicWeight(a::Float64 = 10.0)
+    function HarmonicWeight(a::Real = 10.0)
         a > 0 || throw(ArgumentError("`a` must be greater than 0"))
         new(a, 0)
     end
@@ -133,7 +133,7 @@ end
 # http://castlelab.princeton.edu/ORF569papers/Powell%20ADP%20Chapter%206.pdf
 """
     McclainWeight(ᾱ = 0.1)
-    
+
 - "smoothed" version of `BoundedEqualWeight`
 - weights asymptotically approach `ᾱ`
 - Weight at observation `t` is `γ(t-1) / (1 + γ(t-1) - ᾱ)`
