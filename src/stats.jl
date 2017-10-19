@@ -1,4 +1,12 @@
 #-----------------------------------------------------------------------# CStat
+"""
+    CStat(stat)
+
+Track a univariate OnlineStat for complex numbers.
+# Example
+    y = randn(100) + randn(100)im
+    Series(y, CStat(Mean()))
+"""
 struct CStat{O <: OnlineStat{0}} <: OnlineStat{0, nothing}
     re_stat::O
     im_stat::O
