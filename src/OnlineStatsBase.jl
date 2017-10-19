@@ -10,12 +10,13 @@ export
     Series,
     # Weight
     Weight,
-    EqualWeight, BoundedEqualWeight, ExponentialWeight, LearningRate, LearningRate2, McclainWeight,
+    EqualWeight, ExponentialWeight, LearningRate, LearningRate2, McclainWeight,
     HarmonicWeight, Bounded, Scaled,
     # OnlineStats
     OnlineStat,
-    CStat, CovMatrix, Diff, Extrema, HyperLogLog, LinReg, KMeans, Mean, Moments, MV,OHistogram,
-    OrderStats, QuantileMM, QuantileMSPI, QuantileSGD, ReservoirSample, Sum, Variance,
+    CStat, CovMatrix, Diff, Extrema, HyperLogLog, LinReg, KMeans, Mean, Moments, MV,
+    OHistogram, OrderStats, QuantileMM, QuantileMSPI, QuantileSGD, ReservoirSample, Sum, 
+    Variance,
     # Other
     Bootstrap, Rows, Cols,
     # functions
@@ -91,7 +92,8 @@ end
 smooth(x, y, γ) = x + γ * (y - x)
 
 function smooth!(x, y, γ)
-    length(x) == length(y) || throw(DimensionMismatch("can't smooth arrays of different length"))
+    length(x) == length(y) || 
+        throw(DimensionMismatch("can't smooth arrays of different length"))
     for i in eachindex(x)
         @inbounds x[i] = smooth(x[i], y[i], γ)
     end
