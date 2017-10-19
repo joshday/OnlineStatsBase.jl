@@ -14,7 +14,7 @@ export
     HarmonicWeight, Bounded, Scaled,
     # OnlineStats
     OnlineStat,
-    CovMatrix, Diff, Extrema, HyperLogLog, LinReg, KMeans, Mean, Moments, MV,OHistogram,
+    CStat, CovMatrix, Diff, Extrema, HyperLogLog, LinReg, KMeans, Mean, Moments, MV,OHistogram,
     OrderStats, QuantileMM, QuantileMSPI, QuantileSGD, ReservoirSample, Sum, Variance,
     # Other
     Bootstrap, Rows, Cols,

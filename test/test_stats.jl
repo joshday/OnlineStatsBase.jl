@@ -26,6 +26,18 @@ Y = randn(100, 4)
 Y2 = randn(100, 4)
 
 #-----------------------------------------------------------------------# Stats
+@testset "CStat" begin
+    o = CStat(Mean())
+    s = Series(complex(y), o)
+    @test value(o)[1] ≈ mean(y)
+    @test value(o)[2] == 0.0
+
+    o = CStat(Mean())
+    y_im = y * im
+    Series(y_im, o)
+    @test value(o)[1] ≈ 0.0
+    @test value(o)[2] ≈ mean(map(x -> x.im, y_im))
+end
 @testset "CovMatrix" begin
     Series(randn(5), CovMatrix(5))
     test_exact(CovMatrix(4), randn(100, 4), cov)

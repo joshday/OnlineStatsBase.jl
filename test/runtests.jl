@@ -6,7 +6,7 @@ O = OnlineStatsBase
 
 #-----------------------------------------------------------------------# Printing
 for o in [MV(4, QuantileMM()), KMeans(4,3), 11*Mean(), HyperLogLog(10),
-        Bootstrap(Mean()), LinReg(5)]
+        Bootstrap(Mean()), LinReg(5), CStat(Mean())]
     println(o)
 end
 
