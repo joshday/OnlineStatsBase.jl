@@ -78,15 +78,15 @@ mutable struct Diff{T <: Real} <: OnlineStat{0, EqualWeight}
     lastval::T
 end
 Diff() = Diff(0.0, 0.0)
-Diff{T<:Real}(::Type{T}) = Diff(zero(T), zero(T))
+Diff(::Type{T}) where {T<:Real} = Diff(zero(T), zero(T))
 Base.last(o::Diff) = o.lastval
 Base.diff(o::Diff) = o.diff
-function fit!{T<:AbstractFloat}(o::Diff{T}, x::Real, γ::Float64)
+function fit!(o::Diff{T}, x::Real, γ::Float64) where {T<:AbstractFloat}
     v = convert(T, x)
     o.diff = v - last(o)
     o.lastval = v
 end
-function fit!{T<:Integer}(o::Diff{T}, x::Real, γ::Float64)
+function fit!(o::Diff{T}, x::Real, γ::Float64) where {T<:Integer}
     v = round(T, x)
     o.diff = v - last(o)
     o.lastval = v

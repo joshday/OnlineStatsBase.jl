@@ -33,16 +33,16 @@ function Base.show(io::IO, o::OnlineStat)
     print(io, ")")
 end
 Base.copy(o::OnlineStat) = deepcopy(o)
-function Base.:(==){T <: OnlineStat}(o1::T, o2::T)
+function Base.:(==)(o1::T, o2::T) where {T <: OnlineStat}
     nms = fieldnames(o1)
     all(getfield.(o1, nms) .== getfield.(o2, nms))
 end
-Base.merge{T <: OnlineStat}(o::T, o2::T, wt::Float64) = merge!(copy(o), o2, wt)
+Base.merge(o::T, o2::T, wt::Float64) where {T <: OnlineStat}= merge!(copy(o), o2, wt)
 
 # OnlineStat Interface (sans `fit!`)
 value(o::OnlineStat) = getfield(o, fieldnames(o)[1])
-input_ndims{I}(o::OnlineStat{I}) = I
-default_weight{I, W}(o::OnlineStat{I, W}) = W()
+input_ndims(o::OnlineStat{I}) where {I} = I
+default_weight(o::OnlineStat{I, W}) where {I, W}= W()
 
 function input_ndims(t::Tuple)
     I = input_ndims(first(t))

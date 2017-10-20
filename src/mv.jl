@@ -25,7 +25,7 @@ end
 Base.length(o::MV) = length(o.stats)
 Base.:*(n::Integer, o::OnlineStat{0}) = MV(n, o)
 
-function Base.show{T}(io::IO, o::MV{T})
+function Base.show(io::IO, o::MV)
     s = OnlineStatsBase.name(o, true) * "("
     n = length(o.stats)
     for i in 1:min(10,n)
@@ -51,4 +51,4 @@ end
 
 value(o::MV) = map(value, o.stats)
 
-Base.merge!{T <: MV}(o1::T, o2::T, γ::Float64) = merge!.(o1.stats, o2.stats, γ)
+Base.merge!(o1::T, o2::T, γ::Float64) where {T <: MV} = merge!.(o1.stats, o2.stats, γ)

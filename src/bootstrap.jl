@@ -19,8 +19,8 @@ struct Bootstrap{I, O<:OnlineStat{I}, S<:Series{I, Tuple{O}}, D, F<:Function}
     f::F
 end
 
-function Bootstrap{I}(wt::Weight, o::OnlineStat{I}, nreps::Integer = 100, d = [0, 2],
-        f::Function = value)
+function Bootstrap(wt::Weight, o::OnlineStat{I}, nreps::Integer = 100, d = [0, 2],
+        f::Function = value) where {I}
     s = Series(wt, o)
     Bootstrap{I, typeof(o), typeof(s), typeof(d), typeof(f)}(s, [copy(o) for i in 1:nreps], d, f)
 end
