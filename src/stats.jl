@@ -2,7 +2,9 @@
 """
     CStat(stat)
 
-Track a univariate OnlineStat for complex numbers.
+Track a univariate OnlineStat for complex numbers.  A copy of `stat` is made to 
+separately track the real and imaginary parts.
+
 # Example
     y = randn(100) + randn(100)im
     Series(y, CStat(Mean()))
