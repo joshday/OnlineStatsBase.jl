@@ -3,7 +3,7 @@ abstract type Weight end
 
 Base.show(io::IO, w::Weight) = (print(io, name(w)); show_fields(io, w))
 
-function Base.:(==){T <: Weight}(w1::T, w2::T)
+function Base.:(==)(w1::T, w2::T) where {T <: Weight}
     nms = fieldnames(w1)
     all(getfield.(w1, nms) .== getfield.(w2, nms))
 end

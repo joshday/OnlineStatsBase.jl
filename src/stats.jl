@@ -492,7 +492,9 @@ mutable struct ReservoirSample{T<:Number} <: OnlineStat{0, EqualWeight}
     value::Vector{T}
     nobs::Int
 end
-ReservoirSample{T<:Number}(k::Integer, ::Type{T} = Float64) = ReservoirSample(zeros(T, k), 0)
+function ReservoirSample(k::Integer, ::Type{T} = Float64) where {T<:Number} 
+    ReservoirSample(zeros(T, k), 0)
+end
 
 function fit!(o::ReservoirSample, y::ScalarOb, γ::Float64)
     o.nobs += 1
@@ -518,11 +520,11 @@ mutable struct Sum{T <: Real} <: OnlineStat{0, EqualWeight}
     sum::T
 end
 Sum() = Sum(0.0)
-Sum{T<:Real}(::Type{T}) = Sum(zero(T))
+Sum(::Type{T}) where {T<:Real} = Sum(zero(T))
 Base.sum(o::Sum) = o.sum
-fit!{T<:AbstractFloat}(o::Sum{T}, x::Real, γ::Float64) = (v = convert(T, x); o.sum += v)
-fit!{T<:Integer}(o::Sum{T}, x::Real, γ::Float64) =       (v = round(T, x);   o.sum += v)
-Base.merge!{T <: Sum}(o::T, o2::T, γ::Float64) = (o.sum += o2.sum)
+fit!(o::Sum{T}, x::Real, γ::Float64) where {T<:AbstractFloat} = (v = convert(T, x); o.sum += v)
+fit!(o::Sum{T}, x::Real, γ::Float64) where {T<:Integer} =       (v = round(T, x);   o.sum += v)
+Base.merge!(o::T, o2::T, γ::Float64) where {T <: Sum} = (o.sum += o2.sum)
 
 #-----------------------------------------------------------------------# Variance
 """
