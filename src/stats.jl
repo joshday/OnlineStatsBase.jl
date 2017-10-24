@@ -2,10 +2,11 @@
 """
     CStat(stat)
 
-Track a univariate OnlineStat for complex numbers.  A copy of `stat` is made to 
+Track a univariate OnlineStat for complex numbers.  A copy of `stat` is made to
 separately track the real and imaginary parts.
 
 # Example
+
     y = randn(100) + randn(100)im
     Series(y, CStat(Mean()))
 """
@@ -24,7 +25,9 @@ fit!(o::CStat, y::Complex, γ::Float64) = (fit!(o.re_stat, y.re, γ); fit!(o.im_
 """
     CovMatrix(d)
 Covariance Matrix of `d` variables.
+
 # Example
+
     y = randn(100, 5)
     Series(y, CovMatrix(5))
 """
@@ -68,8 +71,11 @@ end
 #-----------------------------------------------------------------------# Diff
 """
     Diff()
+
 Track the difference and the last value.
+
 # Example
+
     s = Series(randn(1000), Diff())
     value(s)
 """
@@ -95,8 +101,11 @@ end
 #-----------------------------------------------------------------------# Extrema
 """
     Extrema()
+
 Maximum and minimum.
+
 # Example
+
     s = Series(randn(100), Extrema())
     value(s)
 """
@@ -140,8 +149,11 @@ end
 
 """
     HyperLogLog(b)  # 4 ≤ b ≤ 16
+
 Approximate count of distinct elements.
+
 # Example
+
     s = Series(rand(1:10, 1000), HyperLogLog(12))
     value(s)
 """
@@ -205,8 +217,11 @@ end
 #-----------------------------------------------------------------------# KMeans
 """
     KMeans(p, k)
+
 Approximate K-Means clustering of `k` clusters and `p` variables.
+
 # Example
+
     using OnlineStats, Distributions
     d = MixtureModel([Normal(0), Normal(5)])
     y = rand(d, 100_000, 1)
@@ -234,8 +249,11 @@ end
 """
     LinReg(p, λ::Float64 = 0.0)  # use λ for all parameters
     LinReg(p, λfactor::Vector{Float64})
+
 Ridge regression of `p` variables with elementwise regularization.
+
 # Example
+
     x = randn(100, 10)
     y = x * linspace(-1, 1, 10) + randn(100)
     o = LinReg(10)
@@ -294,8 +312,11 @@ end
 #-----------------------------------------------------------------------# Mean
 """
     Mean()
+
 Univariate mean.
+
 # Example
+
     s = Series(randn(100), Mean())
     value(s)
 """
@@ -311,8 +332,11 @@ Base.mean(o::Mean) = value(o)
 #-----------------------------------------------------------------------# Moments
 """
     Moments()
+
 First four non-central moments.
+
 # Example
+
     s = Series(randn(1000), Moments(10))
     value(s)
 """
@@ -348,8 +372,11 @@ end
 #-----------------------------------------------------------------------# OHistogram
 """
     OHistogram(range)
+
 Make a histogram with bins given by `range`.  Uses left-closed bins.
+
 # Example
+
     y = randn(100)
     s = Series(y, OHistogram(-4:.1:4))
     value(s)
@@ -372,7 +399,9 @@ end
 #-----------------------------------------------------------------------# OrderStats
 """
     OrderStats(b)
+
 Average order statistics with batches of size `b`.
+
 # Example
     s = Series(randn(1000), OrderStats(10))
     value(s)
@@ -401,8 +430,11 @@ end
 #-----------------------------------------------------------------------# QuantileMM
 """
     QuantileMM(q = [.25, .5, .75])
+
 Approximate quantiles via an online MM algorithm (OMAS).
+
 # Example
+
     s = Series(randn(1000), QuantileMM())
     value(s)
 """
@@ -430,8 +462,11 @@ end
 #-----------------------------------------------------------------------# QuantileMSPI
 """
     QuantileMSPI(q = [.25, .5, .75])
+
 Approximate quantiles via Majorized Stochastic Proximal Iteration (MSPI).
+
 # Example
+
     s = Series(randn(1000), QuantileMSPI())
     value(s)
 """
@@ -456,8 +491,11 @@ end
 #-----------------------------------------------------------------------# QuantileSGD
 """
     QuantileSGD(q = [.25, .5, .75])
+
 Approximate quantiles via an stochastic subgradient descent.
+
 # Example
+
     s = Series(randn(1000), QuantileSGD())
     value(s)
 """
@@ -482,8 +520,11 @@ end
 #-----------------------------------------------------------------------# ReservoirSample
 """
     ReservoirSample(k, t = Float64)
+
 Reservoir sample of `k` items.
+
 # Example
+
     o = ReservoirSample(k, Int)
     s = Series(o)
     fit!(s, 1:10000)
@@ -492,7 +533,7 @@ mutable struct ReservoirSample{T<:Number} <: OnlineStat{0, EqualWeight}
     value::Vector{T}
     nobs::Int
 end
-function ReservoirSample(k::Integer, ::Type{T} = Float64) where {T<:Number} 
+function ReservoirSample(k::Integer, ::Type{T} = Float64) where {T<:Number}
     ReservoirSample(zeros(T, k), 0)
 end
 
@@ -511,8 +552,11 @@ end
 #-----------------------------------------------------------------------# Sum
 """
     Sum()
+
 Track the overall sum.
+
 # Example
+
     s = Series(randn(1000), Sum())
     value(s)
 """
@@ -529,8 +573,11 @@ Base.merge!(o::T, o2::T, γ::Float64) where {T <: Sum} = (o.sum += o2.sum)
 #-----------------------------------------------------------------------# Variance
 """
     Variance()
+
 Univariate variance.
+
 # Example
+
     s = Series(randn(100), Variance())
     value(s)
 """

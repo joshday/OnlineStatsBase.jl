@@ -12,18 +12,24 @@ const Data = Union{ScalarOb, VectorOb, AbstractMatrix, Tuple{AbstractMatrix, Abs
 """
     Series(stats...)
     Series(weight, stats...)
-    Series(data, weight, stats...)
-    Series(weight, data, stats...)
+    Series(data, weight, stats...; dim = Rows())
+    Series(weight, data, stats...; dim = Rows())
 
 Track any number of OnlineStats using a given weighting mechanism.
+
+# Examples
 
     s = Series(ExponentialWeight(.1), Mean(), Variance(), Moments())
     fit!(s, randn(1000))
     value(s)
 
+    o = CovMatrix(5)
+    s = Series(randn(5, 1000), o; dim = Cols())
+    cor(o)
+
     x, y = randn(1000, 10), randn(1000)
     s = Series(LinReg(10))
-    fit!(s, (x,y))
+    fit!(s, (x, y))  # or fit!(s, x, y)
     value(s)
 """
 struct Series{I, T <: Tuple, W <: Weight}
@@ -52,6 +58,12 @@ stats(s::Series) = s.stats
 value(s::Series) = value.(stats(s))
 
 #---------------------------------------------------------------------------# fit helpers
+# Iterate over each observation in `data` by the given dimension (rows or cols).
+#
+# A `DataIterator` is created by `eachob(data, series, dim)` only if `data` represents
+# multiple observations to the `series`.  For example:
+#       > `eachob(data::Vector, s::Series{0}, dim) --> DataIterator(data, dim)`
+#       > `eachob(data::Vector, s::Series{1}, dim) --> (data,)`
 struct DataIterator{D <: ObsDimension, T}
     data::T
     dim::D
@@ -66,8 +78,10 @@ Base.length(o::DataIterator{Rows, T}) where {T<:AbstractMatrix} = size(o.data, 1
 Base.length(o::DataIterator{Cols, T}) where {T<:AbstractMatrix} = size(o.data, 2)
 
 # Tuple{AbstractMatrix, AbstractVector}
-Base.next(o::DataIterator{Rows, T}, i) where {T<:Tuple} = (@view(o.data[1][i, :]), o.data[2][i]), i + 1
-Base.next(o::DataIterator{Cols, T}, i) where {T<:Tuple} = (@view(o.data[1][:, i]), o.data[2][i]), i + 1
+Base.next(o::DataIterator{Rows, T}, i) where {T<:Tuple} =
+    (@view(o.data[1][i, :]), o.data[2][i]), i + 1
+Base.next(o::DataIterator{Cols, T}, i) where {T<:Tuple} =
+    (@view(o.data[1][:, i]), o.data[2][i]), i + 1
 Base.length(o::DataIterator{D, T}) where {D, T<:Tuple} = length(o.data[2])
 
 # For input == 0, any input should be iterated through element by element
