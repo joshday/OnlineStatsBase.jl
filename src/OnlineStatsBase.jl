@@ -55,7 +55,7 @@ end
 function default_weight(t::Tuple)
     W = default_weight(first(t))
     all(default_weight.(t) .== W) ||
-        error("Default weights don't match.  Found: $(default_weight.(t))")
+        error("Weight must be specified when defaults differ: Found: $(default_weight.(t)).")
     return W
 end
 
