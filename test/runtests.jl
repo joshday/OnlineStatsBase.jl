@@ -103,5 +103,45 @@ end
     fit!(b2, randn(10, 2))
 end
 
+@testset "mapblocks" begin
+    for o = [randn(6), randn(6,2), (randn(7,2), randn(7))]
+        i = 0
+        mapblocks(5, o) do x
+            i += 1
+        end
+        @test i == 2
+    end
+
+    # (1, 0) input
+    s = Series(LinReg(5))
+    x, y = randn(100,5), randn(100)
+    mapblocks(10, (x,y)) do xy
+        fit!(s, xy)
+    end
+    s2 = Series((x,y), LinReg(5))
+    @test nobs(s2) == nobs(s)
+    @test s == s2
+
+    s3 = Series(LinReg(5))
+    mapblocks(11, (x', y), Cols()) do xy
+        fit!(s3, xy, Cols())
+    end
+    @test nobs(s3) == 100
+    @test all(value(s) .≈ value(s3))
+
+    # 1 input
+    s4 = Series(CovMatrix(5))
+    mapblocks(11, x) do xi
+        fit!(s4, xi)
+    end
+    s5 = Series(CovMatrix(5))
+    mapblocks(11, x', Cols()) do xi
+        fit!(s5, xi, Cols())
+    end
+    @test s4 == s5
+
+    @test_throws Exception mapblocks(sum, 10, (x,y), Cols())
+end
+
 include("test_stats.jl")
 end #module
