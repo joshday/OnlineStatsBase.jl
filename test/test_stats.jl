@@ -163,6 +163,7 @@ end
 end
 
 @testset "OHistogram" begin
+    test_merge(OHistogram(-5:.1:5), OHistogram(-5:.1:5), y, y2)
     o = OHistogram(-5:.1:5)
     h = fit(Histogram, y, -5:.1:5; closed = :left)
     Series(y, o)

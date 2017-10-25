@@ -217,7 +217,7 @@ end
 
 function Base.merge!(o::HyperLogLog, o2::HyperLogLog, γ::Float64)
     length(o.M) == length(o2.M) || 
-        error("Can't merge HyperLogLog objects with different number of registers.")
+        error("Merge failed. HyperLogLog objects have different number of registers.")
     for j in eachindex(o.M)
         o.M[j] = max(o.M[j], o2.M[j])
     end
@@ -312,7 +312,7 @@ predict(o::LinReg, x::AbstractMatrix, dim::Rows = Rows()) = x * coef(o)
 predict(o::LinReg, x::AbstractMatrix, dim::Cols) = x'coef(o)
 
 function Base.merge!(o1::LinReg, o2::LinReg, γ::Float64)
-    o1.λfactor == o2.λfactor || error("LinReg objects have different λfactor")
+    o1.λfactor == o2.λfactor || error("Merge failed. LinReg objects have different λfactor")
     smooth!(o1.A, o2.A, γ)
     o1.nobs += o2.nobs
     coef(o1)
@@ -405,6 +405,7 @@ function fit!(o::OHistogram, y::ScalarOb, γ::Float64)
         @inbounds H.weights[k] += 1
     end
 end
+Base.merge!(o::T, o2::T, γ::Float64) where {T <: OHistogram} = merge!(o.h, o2.h)
 
 #-----------------------------------------------------------------------# OrderStats
 """
