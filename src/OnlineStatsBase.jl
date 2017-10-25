@@ -38,7 +38,10 @@ function Base.:(==)(o1::T, o2::T) where {T <: OnlineStat}
     nms = fieldnames(o1)
     all(getfield.(o1, nms) .== getfield.(o2, nms))
 end
-Base.merge(o::T, o2::T, wt::Float64) where {T <: OnlineStat}= merge!(copy(o), o2, wt)
+function Base.merge!(o::T, o2::T, γ::Float64) where {T<:OnlineStat} 
+    warn("Merging not well-defined for $(typeof(o)).  No merging occurred.")
+end
+Base.merge(o::T, o2::T, γ::Float64) where {T<:OnlineStat} = merge!(copy(o), o2, γ)
 
 # OnlineStat Interface (sans `fit!`)
 value(o::OnlineStat) = getfield(o, fieldnames(o)[1])

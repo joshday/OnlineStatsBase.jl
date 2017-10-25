@@ -143,5 +143,9 @@ end
     @test_throws Exception mapblocks(sum, 10, (x,y), Cols())
 end
 
+@testset "Other" begin
+    @test_warn "" merge(Diff(), Diff(), .5)
+end
+
 include("test_stats.jl")
 end #module
