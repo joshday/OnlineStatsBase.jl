@@ -411,7 +411,7 @@ Base.merge!(o::T, o2::T, γ::Float64) where {T <: OHistogram} = merge!(o.h, o2.h
 """
     OrderStats(b)
 
-Average order statistics with batches of size `b`.
+Average order statistics with batches of size `b`.  Ignores weight.
 
 # Example
     s = Series(randn(1000), OrderStats(10))
@@ -436,6 +436,14 @@ function fit!(o::OrderStats, y::Real, γ::Float64)
         smooth!(o.value, buffer, 1 / o.nreps)
     end
     o
+end
+function Base.merge!(o::OrderStats, o2::OrderStats, γ::Float64)
+    length(o.value) == length(o2.value) || 
+        error("Merge failed.  OrderStats track different batch sizes")
+    smooth!(o.value, o2.value, γ)
+    for j in 1:o2.i
+        fit!(o, o2.buffer[j])
+    end
 end
 
 #-----------------------------------------------------------------------# QuantileMM
@@ -466,7 +474,7 @@ function fit!(o::QuantileMM, y::Real, γ::Float64)
     end
 end
 function Base.merge!(o::QuantileMM, o2::QuantileMM, γ::Float64)
-    o.τ == o2.τ || error("Objects track different quantiles")
+    o.τ == o2.τ || error("Merge failed. QuantileMM objects track different quantiles.")
     smooth!(o.value, o2.value, γ)
 end
 
@@ -495,7 +503,7 @@ function fit!(o::QuantileMSPI, y::Real, γ::Float64)
     end
 end
 function Base.merge!(o::QuantileMSPI, o2::QuantileMSPI, γ::Float64)
-    o.τ == o2.τ || error("Objects track different quantiles")
+    o.τ == o2.τ || error("Merge failed. QuantileMSPI objects track different quantiles.")
     smooth!(o.value, o2.value, γ)
 end
 
@@ -523,7 +531,7 @@ function fit!(o::QuantileSGD, y::Real, γ::Float64)
     end
 end
 function Base.merge!(o::QuantileSGD, o2::QuantileSGD, γ::Float64)
-    o.τ == o2.τ || error("Objects track different quantiles")
+    o.τ == o2.τ || error("Merge failed. QuantileSGD objects track different quantiles.")
     smooth!(o.value, o2.value, γ)
 end
 

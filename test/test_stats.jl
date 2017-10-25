@@ -171,6 +171,7 @@ end
 end
 
 @testset "OrderStats" begin
+    test_merge(OrderStats(5), OrderStats(5), y, y2)
     test_exact(OrderStats(length(y)), y, sort)
     @test issorted(first(value(Series(y, OrderStats(5)))))
 end
