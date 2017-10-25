@@ -77,9 +77,16 @@ end
 @testset "HyperLogLog" begin
     o = HyperLogLog(10)
     @test value(o) == 0.0
-    Series(rand(1:5, 500), o)
+    s = Series(rand(1:5, 500), o)
     @test value(o) ≈ 5 atol=.5
     Series(randn(1000), HyperLogLog(4))
+
+    o2 = HyperLogLog(11)
+    @test_throws Exception merge(o, o2)
+    o3 = HyperLogLog(10)
+    s2 = Series(rand(6:10, 500), o3)
+    merge!(s, s2)
+    @test value(o) ≈ 10 atol=.5
 end
 
 @testset "KMeans" begin

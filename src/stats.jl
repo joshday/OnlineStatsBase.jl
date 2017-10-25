@@ -132,24 +132,6 @@ Base.extrema(o::Extrema) = value(o)
 
 #-----------------------------------------------------------------------# HyperLogLog
 # Mostly copy/pasted from StreamStats.jl
-hash32(d::Any) = hash(d) % UInt32
-maskadd32(x::UInt32, mask::UInt32, add::UInt32) = (x & mask) + add
-ρ(s::UInt32) = UInt32(leading_zeros(s)) + 0x00000001
-const toInt = Int
-const toUInt = UInt
-
-function α(m::UInt32)
-    if m == 0x00000010
-        return 0.673
-    elseif m == 0x00000020
-        return 0.697
-    elseif m == 0x00000040
-        return 0.709
-    else # if m >= UInt32(128)
-        return 0.7213 / (1 + 1.079 / m)
-    end
-end
-
 """
     HyperLogLog(b)  # 4 ≤ b ≤ 16
 
@@ -183,6 +165,23 @@ function Base.show(io::IO, counter::HyperLogLog)
     print(io, "HyperLogLog($(counter.m) registers, estimate = $(value(counter)))")
 end
 
+hash32(d::Any) = hash(d) % UInt32
+maskadd32(x::UInt32, mask::UInt32, add::UInt32) = (x & mask) + add
+ρ(s::UInt32) = UInt32(leading_zeros(s)) + 0x00000001
+
+function α(m::UInt32)
+    if m == 0x00000010          # m = 16
+        return 0.673
+    elseif m == 0x00000020      # 
+        return 0.697
+    elseif m == 0x00000040
+        return 0.709
+    else                        # if m >= UInt32(128)
+        return 0.7213 / (1 + 1.079 / m)
+    end
+end
+
+
 function fit!(o::HyperLogLog, v::Any, γ::Float64)
     x = hash32(v)
     j = maskadd32(x, o.mask, 0x00000001)
@@ -193,15 +192,15 @@ end
 
 function value(o::HyperLogLog)
     S = 0.0
-    for j in 1:o.m
+    for j in eachindex(o.M)
         S += 1 / (2 ^ o.M[j])
     end
     Z = 1 / S
-    E = α(o.m) * toUInt(o.m) ^ 2 * Z
+    E = α(o.m) * UInt(o.m) ^ 2 * Z
     if E <= 5//2 * o.m
         V = 0
         for j in 1:o.m
-            V += toInt(o.M[j] == 0x00000000)
+            V += Int(o.M[j] == 0x00000000)
         end
         if V != 0
             E_star = o.m * log(o.m / V)
@@ -214,6 +213,14 @@ function value(o::HyperLogLog)
         E_star = -2 ^ 32 * log(1 - E / (2 ^ 32))
     end
     return E_star
+end
+
+function Base.merge!(o::HyperLogLog, o2::HyperLogLog, γ::Float64)
+    length(o.M) == length(o2.M) || 
+        error("Can't merge HyperLogLog objects with different number of registers.")
+    for j in eachindex(o.M)
+        o.M[j] = max(o.M[j], o2.M[j])
+    end
 end
 
 
