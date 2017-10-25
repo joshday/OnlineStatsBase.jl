@@ -35,8 +35,13 @@ Y2 = randn(100, 4)
     o = CStat(Mean())
     y_im = y * im
     Series(y_im, o)
-    @test value(o)[1] ≈ 0.0
-    @test value(o)[2] ≈ mean(map(x -> x.im, y_im))
+    @test value(o)[1] == 0.0
+    imval = mean(map(x -> x.im, y_im))
+    @test value(o)[2] ≈ imval
+
+    o2 = CStat(Mean())
+    merge!(o, o2, .5) 
+    @test value(o)[2] ≈ imval / 2
 end
 @testset "CovMatrix" begin
     Series(randn(5), CovMatrix(5))
