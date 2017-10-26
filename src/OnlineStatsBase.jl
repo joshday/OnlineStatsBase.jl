@@ -51,7 +51,8 @@ default_weight(o::OnlineStat{I, W}) where {I, W}= W()
 function input_ndims(t::Tuple)
     I = input_ndims(first(t))
     for ti in t
-        input_ndims(ti) == I || error("Inputs don't match. Found: $(input_ndims.(t))")
+        input_ndims(ti) == I || 
+            error("Stats track observations of different dimensions. Found: $(input_ndims.(t))")
     end
     return I
 end
@@ -59,7 +60,7 @@ end
 function default_weight(t::Tuple)
     W = default_weight(first(t))
     all(default_weight.(t) .== W) ||
-        error("Weight must be specified when defaults differ: Found: $(default_weight.(t)).")
+        error("Weight must be specified when defaults differ.  Found: $(name.(default_weight.(t))).")
     return W
 end
 
