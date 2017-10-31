@@ -79,7 +79,7 @@ mutable struct ExponentialWeight <: Weight
     ExponentialWeight(λ::Real = 0.1) = new(λ, 0)
     ExponentialWeight(lookback::Integer) = new(2 / (lookback + 1), 0)
 end
-weight(w::ExponentialWeight, n2::Int = 1) = w.λ
+weight(w::ExponentialWeight, n2::Int = 1) = ifelse(nobs(w)==1, 1.0, w.λ)
 #-------------------------------------------------------------------------# LearningRate
 """
     LearningRate(r = .6)

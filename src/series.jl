@@ -147,6 +147,7 @@ function fit!(s::Series{(1,0)}, x::AbstractMatrix, y::AbstractVector, dim::ObsDi
     fit!(s, (x,y), dim)
 end
 
+fit!(o::OnlineStat, data) = (Series(data, o); o)
 
 
 #-----------------------------------------------------------------------# Base
