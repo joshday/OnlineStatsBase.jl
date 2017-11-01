@@ -3,7 +3,7 @@ module OnlineStatsBase
 
 import LearnBase: value, ObsDim, ObsDimension
 import StatsBase: Histogram, skewness, kurtosis, confint, coef, predict, nobs, fit!,
-    AbstractWeights, Weights
+    AbstractWeights, Weights, fweights
 
 export
     # Series
