@@ -168,9 +168,9 @@ end
     h = fit(Histogram, y, -5:.1:5; closed = :left)
     Series(y, o)
     @test o.h == h
-    @test mean(o) ≈ mean(y) atol=.01
-    @test var(o) ≈ var(y) atol=.01
-    @test std(o) ≈ std(y) atol=.01
+    @test mean(o) ≈ mean(y) atol=.05
+    @test var(o) ≈ var(y) atol=.05
+    @test std(o) ≈ std(y) atol=.05
     @test quantile(o, .5) ≈ quantile(y, .5) atol=.01
 end
 
