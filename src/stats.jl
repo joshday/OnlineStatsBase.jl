@@ -10,10 +10,12 @@ separately track the real and imaginary parts.
     y = randn(100) + randn(100)im
     Series(y, CStat(Mean()))
 """
-struct CStat{O <: OnlineStat{0}} <: OnlineStat{0, nothing}
+struct CStat{O <: OnlineStat} <: OnlineStat{Any, Any}
     re_stat::O
     im_stat::O
 end
+default_weight(o::CStat) = default_weight(o.re_stat)
+input_ndims(o::CStat) = input_ndims(o.re_stat)
 CStat(o::OnlineStat{0}) = CStat(o, deepcopy(o))
 Base.show(io::IO, o::CStat) = print(io, "CStat: re = $(o.re_stat), im = $(o.im_stat)")
 value(o::CStat) = value(o.re_stat), value(o.im_stat)

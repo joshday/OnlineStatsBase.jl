@@ -46,7 +46,7 @@ Base.merge(o::T, o2::T, γ::Float64) where {T<:OnlineStat} = merge!(copy(o), o2,
 # OnlineStat Interface (sans `fit!`)
 value(o::OnlineStat) = getfield(o, fieldnames(o)[1])
 input_ndims(o::OnlineStat{I}) where {I} = I
-default_weight(o::OnlineStat{I, W}) where {I, W}= W()
+default_weight(o::OnlineStat{I, W}) where {I, W} = W()
 
 function input_ndims(t::Tuple)
     I = input_ndims(first(t))
