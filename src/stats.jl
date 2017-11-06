@@ -19,7 +19,6 @@ input_ndims(o::CStat) = input_ndims(o.re_stat)
 CStat(o::OnlineStat{0}) = CStat(o, deepcopy(o))
 Base.show(io::IO, o::CStat) = print(io, "CStat: re = $(o.re_stat), im = $(o.im_stat)")
 value(o::CStat) = value(o.re_stat), value(o.im_stat)
-default_weight(o::CStat) = default_weight(o.re_stat)
 fit!(o::CStat, y::Complex, γ::Float64) = (fit!(o.re_stat, y.re, γ); fit!(o.im_stat, y.im, γ))
 function Base.merge!(o1::T, o2::T, γ::Float64) where {T<:CStat}
     merge!(o1.re_stat, o2.re_stat, γ)
