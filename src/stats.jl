@@ -1,3 +1,18 @@
+#-----------------------------------------------------------------------# Collection
+struct Stats{T <: Tuple} <: OnlineStat{Any, Any}
+    os::T
+end
+Stats(os::OnlineStat...) = Stats(os)
+default_weight(o::Stats) = default_weight(o.os)
+input_ndims(o::Stats) = input_ndims(o.os)
+
+function fit!(o::Stats, y, γ) 
+    ex = :(fit!(o.os[1], y, γ))
+    return quote
+
+    end
+end
+
 #-----------------------------------------------------------------------# CStat
 """
     CStat(stat)

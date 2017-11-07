@@ -32,30 +32,28 @@ Track any number of OnlineStats using a given weighting mechanism.
     fit!(s, (x, y))  # or fit!(s, x, y)
     value(s)
 """
-struct Series{I, T <: Tuple, W <: Weight}
+struct Series{I, O <: OnlineStat, W <: Weight}
     weight::W
-    stats::T
+    o::O
 end
-Series(wt::Weight, t::Tuple) = Series{input_ndims(t), typeof(t), typeof(wt)}(wt, t)
+Series(wt::Weight, o::OnlineStat) = Series{input_ndims(o), typeof(o), typeof(wt)}(wt, o)
+Series(o::OnlineStat, wt::Weight = default_weight(o)) = Series(wt, o)
 
-# empty
-Series(o::OnlineStat...) = Series(default_weight(o), o)
-Series(wt::Weight, o::OnlineStat...) = Series(wt, o)
 
-# Init with data
-function Series(y::Data, wt::Weight, o::OnlineStat...; dim::ObsDimension = Rows())
-    s = Series(wt, o)
-    fit!(s, y, dim)
-end
-Series(wt::Weight, y::Data, o::OnlineStat; kw...) = Series(y, wt, o; kw...)
-function Series(y::Data, o::OnlineStat...; dim::ObsDimension = Rows())
-    s = Series(o...)
-    fit!(s, y, dim)
-end
+# # Init with data
+# function Series(y::Data, wt::Weight, o::OnlineStat...; dim::ObsDimension = Rows())
+#     s = Series(wt, o)
+#     fit!(s, y, dim)
+# end
+# Series(wt::Weight, y::Data, o::OnlineStat; kw...) = Series(y, wt, o; kw...)
+# function Series(y::Data, o::OnlineStat...; dim::ObsDimension = Rows())
+#     s = Series(o...)
+#     fit!(s, y, dim)
+# end
 
-#-----------------------------------------------------------------------# Series Methods
-stats(s::Series) = s.stats
-value(s::Series) = value.(stats(s))
+# #-----------------------------------------------------------------------# Series Methods
+stat(s::Series) = s.o
+value(s::Series) = value(stat(s))
 
 #---------------------------------------------------------------------------# fit helpers
 # Iterate over each observation in `data` by the given dimension (rows or cols).
@@ -121,9 +119,7 @@ Update a Series with more data, optionally overriding the Weight.
 function fit!(s::Series, y::Data, dim::ObsDimension = Rows())
     for yi in eachob(y, s, dim)
         γ = weight!(s)
-        for o in stats(s)
-            fit!(o, yi, γ)
-        end
+        fit!(s.o, yi, γ)
     end
     s
 end
@@ -161,15 +157,16 @@ fit!(o::OnlineStat, data) = (Series(data, o); o)
 function Base.show(io::IO, s::Series)
     header(io, name(s, false))
     print(io, "┣━━ "); println(io, s.weight)
-    print(io, "┗━━━┓")
-    names = name.(stats(s))
-    n = length(names)
-    i = 0
-    for o in s.stats
-        i += 1
-        char = ifelse(i == n, "┗━━", "┣━━")
-        print(io, "\n    $char ", o)
-    end
+    print(io, "┗━━ "); println(io, stat(s))
+    # print(io, "     ")
+    # names = name.(stats(s))
+    # n = length(names)
+    # i = 0
+    # for o in s.stats
+    #     i += 1
+    #     char = ifelse(i == n, "┗━━", "┣━━")
+    #     print(io, "\n    $char ", o)
+    # end
 end
 
 Base.copy(o::Series) = deepcopy(o)
