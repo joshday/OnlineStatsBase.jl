@@ -6,11 +6,13 @@ Stats(os::OnlineStat...) = Stats(os)
 default_weight(o::Stats) = default_weight(o.os)
 input_ndims(o::Stats) = input_ndims(o.os)
 
-function fit!(o::Stats, y, γ) 
-    ex = :(fit!(o.os[1], y, γ))
-    return quote
-
+@generated function fit!(o::Stats, y, γ::Float64) 
+    N = length(matchall(r"\,", string(o))) + 1  # Number of stats in tuple
+    ex = :()
+    for i in 1:N
+        ex = :($ex; fit!(o.os[$i], y, γ);)
     end
+    return ex
 end
 
 #-----------------------------------------------------------------------# CStat
