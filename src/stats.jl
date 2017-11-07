@@ -413,7 +413,11 @@ _x(o::OHistogram) = (o.h.edges[1] - .5*step(o.h.edges[1]))[2:end]
 Base.mean(o::OHistogram) = mean(_x(o), fweights(o.h.weights))
 Base.var(o::OHistogram) = var(_x(o), fweights(o.h.weights); corrected=true)
 Base.std(o::OHistogram) = sqrt(var(o))
-Base.quantile(o::OHistogram, p) = quantile(_x(o), fweights(o.h.weights), p)
+
+function Base.quantile(o::OHistogram, p = [0, .25, .5, .75, 1]) 
+    inds = find(o.h.weights)  # filter out zero weights
+    quantile(_x(o)[inds], fweights(o.h.weights[inds]), p)
+end
 
 #-----------------------------------------------------------------------# OrderStats
 """
