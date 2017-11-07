@@ -121,23 +121,30 @@ Update a Series with more data, optionally overriding the Weight.
 function fit!(s::Series, y::Data, dim::ObsDimension = Rows())
     for yi in eachob(y, s, dim)
         γ = weight!(s)
-        foreach(s -> fit!(s, yi, γ), s.stats)
+        for o in stats(s)
+            fit!(o, yi, γ)
+        end
     end
     s
 end
 function fit!(s::Series, y::Data, w::Float64, dim::ObsDimension = Rows())
-    for yi in eachob(y, s, dim)
-        updatecounter!(s)
-        foreach(s -> fit!(s, yi, w), s.stats)
+    data_it = eachob(y, s, dim)
+    updatecounter!(s, length(data_it))
+    for yi in data_it
+        for o in stats(s)
+            fit!(o, yi, w)
+        end
     end
     s
 end
 function fit!(s::Series, y::Data, w::AbstractWeights, dim::ObsDimension = Rows())
     data_it = eachob(y, s, dim)
     length(w) == length(data_it) || throw(DimensionMismatch("weights don't match data length"))
+    updatecounter!(s, length(data_it))
     for (yi, wi) in zip(data_it, w)
-        updatecounter!(s)
-        foreach(s -> fit!(s, yi, wi), s.stats)
+        for o in stats(s)
+            fit!(o, yi, wi)
+        end
     end
     s
 end
