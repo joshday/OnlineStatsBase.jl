@@ -31,6 +31,9 @@ function Base.show(io::IO, s::Series)
     end
 end
 stats(s::Series) = s.stats
+for i in 1:10
+    @eval stats(s::Series, ::Val{$i}) = s.stats[$i]
+end
 weight(s::Series) = s.weight
 value(s::Series) = value.(stats(s))
 nobs(s::Series) = s.n
@@ -38,20 +41,28 @@ nobs(s::Series) = s.n
 nstats(s::Type{Series{N,T,W}}) where {N,T,W} = length(fieldnames(T))
 
 #-----------------------------------------------------------------------# fit! 0
-@generated function fit!(s::Series{0}, y::ScalarOb)
-    ex = :(fit!(s.stats[1], y, γ))
-    for i in 2:nstats(s)
-        ex = :($ex; fit!(s.stats[$i], y, γ))
-    end
-    fullexp = quote
-        s.n += 1
-        γ = s.weight(s.n)
-        $ex
-        s
-    end
-    println(fullexp)
-    return fullexp
+function fit!(s::Series{0}, y::ScalarOb)
+    s.n += 1
+    γ = s.weight(s.n)
+    map(x -> fit!(x, y, γ), stats(s))
 end
+# @generated function fit!(s::Series{0}, y::ScalarOb)
+#     str = "fit!(s.stats[1], y, γ);"
+#     for i in 2:nstats(s)
+#         str *= "fit!(s.stats[$i], y, γ);"
+#     end
+#     ex = parse(str)
+#     println(str)
+#     println(ex)
+#     fullexp = quote
+#         s.n += 1
+#         γ = s.weight(s.n)
+#         $ex
+#         s
+#     end
+#     println(fullexp)
+#     return fullexp
+# end
 function fit!(s::Series{0}, y::AbstractArray)
     for yi in y 
         fit!(s, yi)

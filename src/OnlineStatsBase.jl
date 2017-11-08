@@ -50,23 +50,21 @@ end
 
 Base.copy(o::OnlineStat) = deepcopy(o)
 
-# const SW = Union{OnlineStat, AbstractWeight}
-# function Base.:(==)(o1::T, o2::S) where {T <: SW, S <: SW}
-#     typeof(o1) == typeof(o2) || return false
-#     nms = fieldnames(o1)
-#     all(getfield.(o1, nms) .== getfield.(o2, nms))
-# end
+const SW = Union{OnlineStat, AbstractWeight}
+function Base.:(==)(o1::T, o2::S) where {T <: SW, S <: SW}
+    typeof(o1) == typeof(o2) || return false
+    nms = fieldnames(o1)
+    all(getfield.(o1, nms) .== getfield.(o2, nms))
+end
 
-# function Base.merge!(o::T, o2::T, γ::Float64) where {T<:OnlineStat} 
-#     warn("Merging not well-defined for $(typeof(o)).  No merging occurred.")
-# end
-# Base.merge(o::T, o2::T, γ::Float64) where {T<:OnlineStat} = merge!(copy(o), o2, γ)
-
-# # OnlineStat Interface (sans `fit!`)
-# value(o::OnlineStat) = getfield(o, fieldnames(o)[1])
+function Base.merge!(o::T, o2::T, γ::Float64) where {T<:OnlineStat} 
+    warn("Merging not well-defined for $(typeof(o)).  No merging occurred.")
+end
+Base.merge(o::T, o2::T, γ::Float64) where {T<:OnlineStat} = merge!(copy(o), o2, γ)
 
 
 
+input_ndims(o::OnlineStat) = error("Input sizes differ. Found")
 input_ndims(o::OnlineStat{N}...) where {N} = N
 input_ndims(t::Tuple) = input_ndims(t...)
 
