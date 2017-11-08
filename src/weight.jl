@@ -6,15 +6,21 @@ export Equal, Exponential, LearningRate, LearningRate2, Harmonic, Mcclain,
     Bounded, Scaled
 
 #-----------------------------------------------------------------------# Equal
+"""
+    Weight.Equal()
+
+Equally weighted observations: ``\gamma_t = 1 / t``
+"""
 struct Equal <: AbstractWeight end
 (::Equal)(n) = 1 / n
+
 #-----------------------------------------------------------------------# Exponential
 struct Exponential <: AbstractWeight 
     λ::Float64 
     Exponential(λ::Real = .1) = new(λ)
     Exponential(lookback::Integer) = new(2 / (lookback + 1))
 end
-(w::Exponential)(n) = w.λ
+(w::Exponential)(n) = n == 1 ? 1.0 : w.λ
 #-----------------------------------------------------------------------# LearningRate
 struct LearningRate <: AbstractWeight 
     r::Float64 
@@ -37,7 +43,7 @@ end
 mutable struct Mcclain <: AbstractWeight
     α::Float64
     last::Float64
-    Mcclain(α = .1) = new(α, 0)
+    Mcclain(α = .1) = new(α, 1.0)
 end
 (w::Mcclain)(n) = n == 1 ? 1.0 : (w.last = w.last / (1 + w.last - w.α))
 #-----------------------------------------------------------------------# Bounded

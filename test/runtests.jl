@@ -1,151 +1,215 @@
 module OnlineStatsBaseTests
-using OnlineStatsBase, Base.Test, StatsBase
+using OnlineStatsBase, Base.Test
+using OnlineStatsBase.Weight
+
 O = OnlineStatsBase
 
-
-
 #-----------------------------------------------------------------------# Printing
-for o in [MV(4, QuantileMM()), KMeans(4,3), 11*Mean(), HyperLogLog(10),
-        Bootstrap(Mean()), LinReg(5), CStat(Mean())]
+info("Messy output for show method coverage")
+for o in [4QuantileMM(), KMeans(4,3), 11Mean(), HyperLogLog(10), LinReg(5), 
+    CStat(Mean()), Series(Mean()), Series(Mean(), Variance())]
     println(o)
 end
+println("\n\n")
+
+#-----------------------------------------------------------------------# data
+y = randn(100)
+y2 = randn(100)
+x = randn(100, 5)
+x2 = randn(100, 5)
+
+#-----------------------------------------------------------------------# Weight
+@testset "Weight" begin
+function test_weight(w::O.AbstractWeight, f::Function)
+    @test w == copy(w)
+    for i in 1:20
+        @test w(i) == f(i)
+    end
+end
+test_weight(@inferred(Equal()),                   i -> 1 / i)
+test_weight(@inferred(Exponential(.1)),           i -> ifelse(i==1, 1.0, .1))
+test_weight(@inferred(LearningRate(.6)),                i -> 1 / i^.6)
+test_weight(@inferred(LearningRate2(.5)),               i -> 1 / (1 + .5*(i-1)))
+test_weight(@inferred(Harmonic(4.)),              i -> 4 / (4 + i - 1))
+test_weight(@inferred(Bounded(Equal(), .1)),      i -> max(.1, 1 / i))
+test_weight(@inferred(Bounded(LearningRate(.6), .1)),   i -> max(.1, 1 / i^.6))
+test_weight(@inferred(Scaled(Equal(), .1)),       i -> .1 * (1 / i))
+test_weight(@inferred(.1 * Equal()),              i -> .1 * (1 / i))
+
+@test Exponential(20) == Exponential(2 / 21)
+
+@testset "Mcclain" begin 
+    w = Mcclain(.1)
+    for i in 2:100
+        @test .1 < w(i) < 1
+    end
+end
+
+@testset "first weight is one" begin
+    for w in [Equal(), Exponential(), LearningRate(), LearningRate2(), Harmonic(), Mcclain()]
+        @test w(1) == 1 
+    end
+end
+end  # Weight
 
 #-----------------------------------------------------------------------# Series
-@testset "Series" begin
-    show(Series(Mean()))
-    show(Series(Mean(), Variance()))
-    println()
-    @test nobs(Series(Mean())) == 0
-    Series(LearningRate(), Mean())
-    @test nobs(Series(randn(100), Mean())) == 100
-    Series(randn(100), LearningRate(), Mean())
-    Series(LearningRate(), randn(100), Mean())
+@testset "Series" begin 
+@testset "Constructors" begin 
     @test Series(Mean()) == Series(Mean())
+    @test Series(Mean(), Variance()) == Series(Mean(), Variance())
     s = Series(Mean())
-    fit!(s, .1, .1)
-    fit!(s, randn(10), Weights(rand(10)))
-    s2 = copy(s)
-    @test s == s2
-    @test all(stats(s) .== s.stats)
-    @test all(value(s) .== value.(s.stats))
-    merge(s, s2, :singleton)
-    merge(s, s2, :mean)
-    merge(s, s2, .5)
-    merge!(s, s2, .5)
-    @test_throws Exception merge(s, s2, :bad_arg)
-
-    @testset "ObsDimension" begin
-        y = randn(100, 5)
-        s = Series(y, CovMatrix(5); dim = Rows())
-        s2 = Series(y', CovMatrix(5); dim = Cols())
-        @test value(s) == value(s2)
-    end
-
-    Series(Mean())
-    Series(Mean(), Variance())
-    Series(randn(100), Mean(), Variance())
-    Series(randn(100, 4), CovMatrix(4))
+    fit!(s, y)
+    @test s == Series(y, Mean())
+    @test_throws Exception Series(Mean(), CovMatrix(3))
+    @test Series(Weight.Equal(), Mean()) == Series(Weight.Equal(), Mean())
     @test_throws Exception Series(Mean(), QuantileMM())
 end
-
-#-----------------------------------------------------------------------# Test Weight
-@testset "Weight" begin
-    function test_weight(w::Weight, f::Function)
-        println(w)
-        @test nobs(w) == 0
-        for i in 1:10
-            @test O.weight!(w) ≈ f(i)
-            @test nobs(w) == i
-        end
-        for i in 11:20
-            OnlineStatsBase.updatecounter!(w)
-            @test O.weight(w) ≈ f(i)
-            @test nobs(w) == i
-        end
-        @test w == copy(w)
-    end
-
-    test_weight(@inferred(EqualWeight()),                   i -> 1 / i)
-    test_weight(@inferred(ExponentialWeight(.1)),           i -> ifelse(i==1, 1.0, .1))
-    test_weight(@inferred(LearningRate(.6)),                i -> 1 / i^.6)
-    test_weight(@inferred(LearningRate2(.5)),               i -> 1 / (1 + .5*(i-1)))
-    test_weight(@inferred(HarmonicWeight(4.)),              i -> 4 / (4 + i - 1))
-    test_weight(@inferred(Bounded(EqualWeight(), .1)),      i -> max(.1, 1 / i))
-    test_weight(@inferred(Bounded(LearningRate(.6), .1)),   i -> max(.1, 1 / i^.6))
-    test_weight(@inferred(Scaled(EqualWeight(), .1)),       i -> .1 / i)
-    test_weight(@inferred(.1 * EqualWeight()),              i -> .1 / i)
-
-    @test ExponentialWeight(20) == ExponentialWeight(2 / 21)
-
-    @testset "McclainWeight" begin
-        w = @inferred McclainWeight(.1)
-        println(w)
-        for j in 1:10000
-            O.updatecounter!(w)
-        end
-        @test .1 < O.weight(w) < 1.0
-        @test_throws ArgumentError McclainWeight(-1.)
-        @test_throws ArgumentError McclainWeight(1.1)
-    end
+@testset "methods" begin 
+    @test OnlineStatsBase.weight(Series(Mean())) == Weight.Equal()
 end
+end  # Series
 
-@testset "Bootstrap" begin
-    b = Bootstrap(Mean())
-    fit!(b, randn(100))
-    @test length(replicates(b)) == 100
-    @test nobs(b) == 100
-    @test value(b) == b.f.(replicates(b))
-    confint(b)
-    b.replicates[1].μ = NaN
-    confint(b)
-
-    b2 = Bootstrap(CovMatrix(2))
-    fit!(b2, randn(10, 2))
+#-----------------------------------------------------------------------# Stats 
+@testset "OnlineStats" begin 
+@testset "CStat" begin 
+    s = Series(CStat(Mean()))
 end
+end  # OnlineStats
 
-@testset "mapblocks" begin
-    for o = [randn(6), randn(6,2), (randn(7,2), randn(7))]
-        i = 0
-        mapblocks(5, o) do x
-            i += 1
-        end
-        @test i == 2
-    end
+# #-----------------------------------------------------------------------# Series
+# @testset "Series" begin
+#     show(Series(Mean()))
+#     show(Series(Mean(), Variance()))
+#     println()
+#     @test nobs(Series(Mean())) == 0
+#     Series(LearningRate(), Mean())
+#     @test nobs(Series(randn(100), Mean())) == 100
+#     Series(randn(100), LearningRate(), Mean())
+#     Series(LearningRate(), randn(100), Mean())
+#     @test Series(Mean()) == Series(Mean())
+#     s = Series(Mean())
+#     fit!(s, .1, .1)
+#     fit!(s, randn(10), Weights(rand(10)))
+#     s2 = copy(s)
+#     @test s == s2
+#     @test all(stats(s) .== s.stats)
+#     @test all(value(s) .== value.(s.stats))
+#     merge(s, s2, :singleton)
+#     merge(s, s2, :mean)
+#     merge(s, s2, .5)
+#     merge!(s, s2, .5)
+#     @test_throws Exception merge(s, s2, :bad_arg)
 
-    # (1, 0) input
-    s = Series(LinReg(5))
-    x, y = randn(100,5), randn(100)
-    mapblocks(10, (x,y)) do xy
-        fit!(s, xy)
-    end
-    s2 = Series((x,y), LinReg(5))
-    @test nobs(s2) == nobs(s)
-    @test s == s2
+#     @testset "ObsDimension" begin
+#         y = randn(100, 5)
+#         s = Series(y, CovMatrix(5); dim = Rows())
+#         s2 = Series(y', CovMatrix(5); dim = Cols())
+#         @test value(s) == value(s2)
+#     end
 
-    s3 = Series(LinReg(5))
-    mapblocks(11, (x', y), Cols()) do xy
-        fit!(s3, xy, Cols())
-    end
-    @test nobs(s3) == 100
-    @test all(value(s) .≈ value(s3))
+#     Series(Mean())
+#     Series(Mean(), Variance())
+#     Series(randn(100), Mean(), Variance())
+#     Series(randn(100, 4), CovMatrix(4))
+#     @test_throws Exception Series(Mean(), QuantileMM())
+# end
 
-    # 1 input
-    s4 = Series(CovMatrix(5))
-    mapblocks(11, x) do xi
-        fit!(s4, xi)
-    end
-    s5 = Series(CovMatrix(5))
-    mapblocks(11, x', Cols()) do xi
-        fit!(s5, xi, Cols())
-    end
-    @test s4 == s5
+# #-----------------------------------------------------------------------# Test Weight
+# @testset "Weight" begin
+#     function test_weight(w::Weight, f::Function)
+#         println(w)
+#         @test nobs(w) == 0
+#         for i in 1:10
+#             @test O.weight!(w) ≈ f(i)
+#             @test nobs(w) == i
+#         end
+#         for i in 11:20
+#             OnlineStatsBase.updatecounter!(w)
+#             @test O.weight(w) ≈ f(i)
+#             @test nobs(w) == i
+#         end
+#         @test w == copy(w)
+#     end
 
-    @test_throws Exception mapblocks(sum, 10, (x,y), Cols())
-end
+#     test_weight(@inferred(EqualWeight()),                   i -> 1 / i)
+#     test_weight(@inferred(ExponentialWeight(.1)),           i -> ifelse(i==1, 1.0, .1))
+#     test_weight(@inferred(LearningRate(.6)),                i -> 1 / i^.6)
+#     test_weight(@inferred(LearningRate2(.5)),               i -> 1 / (1 + .5*(i-1)))
+#     test_weight(@inferred(HarmonicWeight(4.)),              i -> 4 / (4 + i - 1))
+#     test_weight(@inferred(Bounded(EqualWeight(), .1)),      i -> max(.1, 1 / i))
+#     test_weight(@inferred(Bounded(LearningRate(.6), .1)),   i -> max(.1, 1 / i^.6))
+#     test_weight(@inferred(Scaled(EqualWeight(), .1)),       i -> .1 / i)
+#     test_weight(@inferred(.1 * EqualWeight()),              i -> .1 / i)
 
-@testset "Other" begin
-    @test_warn "" merge(Diff(), Diff(), .5)
-end
+#     @test ExponentialWeight(20) == ExponentialWeight(2 / 21)
 
-include("test_stats.jl")
+#     @testset "McclainWeight" begin
+#         w = @inferred McclainWeight(.1)
+#         println(w)
+#         for j in 1:10000
+#             O.updatecounter!(w)
+#         end
+#         @test .1 < O.weight(w) < 1.0
+#         @test_throws ArgumentError McclainWeight(-1.)
+#         @test_throws ArgumentError McclainWeight(1.1)
+#     end
+# end
+
+# @testset "Bootstrap" begin
+#     b = Bootstrap(Mean())
+#     fit!(b, randn(100))
+#     @test length(replicates(b)) == 100
+#     @test nobs(b) == 100
+#     @test value(b) == b.f.(replicates(b))
+#     confint(b)
+#     b.replicates[1].μ = NaN
+#     confint(b)
+
+#     b2 = Bootstrap(CovMatrix(2))
+#     fit!(b2, randn(10, 2))
+# end
+
+# @testset "mapblocks" begin
+#     for o = [randn(6), randn(6,2), (randn(7,2), randn(7))]
+#         i = 0
+#         mapblocks(5, o) do x
+#             i += 1
+#         end
+#         @test i == 2
+#     end
+
+#     # (1, 0) input
+#     s = Series(LinReg(5))
+#     x, y = randn(100,5), randn(100)
+#     mapblocks(10, (x,y)) do xy
+#         fit!(s, xy)
+#     end
+#     s2 = Series((x,y), LinReg(5))
+#     @test nobs(s2) == nobs(s)
+#     @test s == s2
+
+#     s3 = Series(LinReg(5))
+#     mapblocks(11, (x', y), Cols()) do xy
+#         fit!(s3, xy, Cols())
+#     end
+#     @test nobs(s3) == 100
+#     @test all(value(s) .≈ value(s3))
+
+#     # 1 input
+#     s4 = Series(CovMatrix(5))
+#     mapblocks(11, x) do xi
+#         fit!(s4, xi)
+#     end
+#     s5 = Series(CovMatrix(5))
+#     mapblocks(11, x', Cols()) do xi
+#         fit!(s5, xi, Cols())
+#     end
+#     @test s4 == s5
+
+#     @test_throws Exception mapblocks(sum, 10, (x,y), Cols())
+# end
+
+
+
+# include("test_stats.jl")
 end #module

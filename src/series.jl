@@ -9,12 +9,12 @@ end
 Series(o::OnlineStat{N}...) where {N} = Series(default_weight(o), o...)
 
 # init with data
-Series(y, o::OnlineStat{N}...) where {N} = (s = Series(o...); fit!(s, y))
-function Series(y, wt::Weight.AbstractWeight, o::OnlineStat{N}...) where {N}
+Series(y::Data, o::OnlineStat{N}...) where {N} = (s = Series(o...); fit!(s, y))
+function Series(y::Data, wt::Weight.AbstractWeight, o::OnlineStat{N}...) where {N}
     s = Series(wt, o...)
     fit!(s, y)
 end
-Series(wt::Weight.AbstractWeight, y, o::OnlineStat{N}...) where {N} = Series(y, wt, o...)
+Series(wt::Weight.AbstractWeight, y::Data, o::OnlineStat{N}...) where {N} = Series(y, wt, o...)
 
 
 #-----------------------------------------------------------------------# methods
@@ -30,15 +30,11 @@ function Base.show(io::IO, s::Series)
         print(io, "\n    $char $(name(o)): $(value(o))")
     end
 end
+
 stats(s::Series) = s.stats
-for i in 1:10
-    @eval stats(s::Series, ::Val{$i}) = s.stats[$i]
-end
 weight(s::Series) = s.weight
 value(s::Series) = value.(stats(s))
 nobs(s::Series) = s.n
-
-nstats(s::Type{Series{N,T,W}}) where {N,T,W} = length(fieldnames(T))
 
 #-----------------------------------------------------------------------# fit! 0
 function fit!(s::Series{0}, y::ScalarOb)
@@ -75,23 +71,55 @@ function fit!(s::Series{1}, y::VectorOb)
     map(x -> fit!(x, y, γ), stats(s))
     s
 end
-function fit!(s::Series{1}, y::AbstractMatrix, ::Rows = Rows())
+function fit!(s::Series{1}, y::VectorOb, γ::Float64)
     s.n += 1
-    γ = s.weight(s.n)
-    for i in 1:size(y, 1)
-        yi = @view(y[i, :])
-        map(x -> fit!(x, yi, γ), stats(s))
-    end
-    return s
+    map(x -> fit!(x, y, γ), stats(s))
+    s
 end
-function fit!(s::Series{1}, y::AbstractMatrix, ::Cols = Cols())
-    s.n += 1
-    γ = s.weight(s.n)
-    for i in 1:size(y, 1)
-        yi = @view(y[:, i])
-        map(x -> fit!(x, yi, γ), stats(s))
+function fit!(s::Series{1}, y::AbstractMatrix, ::Rows = Rows())
+    n, p = size(y)
+    buffer = Vector{eltype(y)}(p)
+    for i in 1:n
+        for j in 1:p
+            @inbounds buffer[j] = y[i, j]
+        end
+        fit!(s, buffer)
     end
-    return s
+    s
+end
+function fit!(s::Series{1}, y::AbstractMatrix, γ::Float64, ::Rows = Rows())
+    n, p = size(y)
+    buffer = Vector{eltype(y)}(p)
+    for i in 1:n
+        for j in 1:p
+            @inbounds buffer[j] = y[i, j]
+        end
+        fit!(s, buffer, γ)
+    end
+    s
+end
+function fit!(s::Series{1}, y::AbstractMatrix, γ::Vector{Float64}, ::Rows = Rows())
+    n, p = size(y)
+    n == length(γ) || error("Weight vector has length $(length(γ)) instead of $n")
+    buffer = Vector{eltype(y)}(p)
+    for i in 1:n
+        for j in 1:p
+            @inbounds buffer[j] = y[i, j]
+        end
+        @inbounds fit!(s, buffer, γ[i])
+    end
+    s
+end
+function fit!(s::Series{1}, y::AbstractMatrix, ::Cols)
+    p, n = size(y)
+    buffer = Vector{eltype(y)}(p)
+    for i in 1:n
+        for j in 1:p
+            @inbounds buffer[j] = y[j, i]
+        end
+        fit!(s, buffer)
+    end
+    s
 end
 
 #-----------------------------------------------------------------------# merging

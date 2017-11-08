@@ -10,7 +10,7 @@ separately track the real and imaginary parts.
     y = randn(100) + randn(100)im
     Series(y, CStat(Mean()))
 """
-struct CStat{O <: OnlineStat} <: OnlineStat{Any}
+struct CStat{O <: OnlineStat} <: OnlineStat{0}
     re_stat::O
     im_stat::O
 end

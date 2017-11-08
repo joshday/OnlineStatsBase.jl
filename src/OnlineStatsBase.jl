@@ -5,8 +5,8 @@ import LearnBase: value, fit!
 import StatsBase: Histogram
 
 export
-    # LearnBase
-    value, fit!,
+    # functions
+    value, fit!, stats,
     # Weight 
     Weight,
     # OnlineStatsBase
@@ -20,6 +20,7 @@ export
 # Aliases
 const ScalarOb = Union{Number, AbstractString, Symbol}  # for OnlineStat{0}
 const VectorOb = Union{AbstractVector, Tuple}           # for OnlineStat{1}
+const Data = Union{ScalarOb, VectorOb}
 
 # OnlineStat
 abstract type OnlineStat{I} end
@@ -36,8 +37,9 @@ struct Cols <: ObLoc end
 
 
 #-----------------------------------------------------------------------# OnlineStat
+# default value(o) returns the first field
 @generated function value(o::OnlineStat)
-    r = fieldnames(o)[1]
+    r = first(fieldnames(o))
     return :(o.$r)
 end
 
@@ -48,32 +50,15 @@ function Base.show(io::IO, o::OnlineStat)
     print(io, ")")
 end
 
-Base.copy(o::OnlineStat) = deepcopy(o)
-
-const SW = Union{OnlineStat, AbstractWeight}
-function Base.:(==)(o1::T, o2::S) where {T <: SW, S <: SW}
-    typeof(o1) == typeof(o2) || return false
-    nms = fieldnames(o1)
-    all(getfield.(o1, nms) .== getfield.(o2, nms))
-end
+Base.copy(o::Union{OnlineStat, AbstractWeight}) = deepcopy(o)
 
 function Base.merge!(o::T, o2::T, γ::Float64) where {T<:OnlineStat} 
     warn("Merging not well-defined for $(typeof(o)).  No merging occurred.")
 end
 Base.merge(o::T, o2::T, γ::Float64) where {T<:OnlineStat} = merge!(copy(o), o2, γ)
 
-
-
-input_ndims(o::OnlineStat) = error("Input sizes differ. Found")
-input_ndims(o::OnlineStat{N}...) where {N} = N
-input_ndims(t::Tuple) = input_ndims(t...)
-
 default_weight(o::OnlineStat) = Weight.Equal()
 default_weight(o::StochasticStat) = Weight.LearningRate()
-
-
-
-
 function default_weight(t::Tuple)
     W = default_weight(first(t))
     all(default_weight.(t) .== W) ||
@@ -134,9 +119,16 @@ const ϵ = 1e-6
 include("weight.jl")
 include("stats.jl")
 include("series.jl")
+include("mv.jl")
+include("bootstrap.jl")
 
-# include("mv.jl")
-# include("bootstrap.jl")
+#-----------------------------------------------------------------------# ==
+const __Thing = Union{OnlineStat, AbstractWeight, Series}
+function Base.:(==)(o1::T, o2::S) where {T <: __Thing, S <: __Thing}
+    typeof(o1) == typeof(o2) || return false
+    nms = fieldnames(o1)
+    all(getfield.(o1, nms) .== getfield.(o2, nms))
+end
 
 #-----------------------------------------------------------------------# mapblocks
 """

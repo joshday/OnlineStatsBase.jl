@@ -10,7 +10,7 @@ Track `p` univariate OnlineStats `o`.
     o = MV(5, Mean())
     s = Series(y, o)
 """
-struct MV{T} <: OnlineStat{1, Any}
+struct MV{T} <: OnlineStat{1}
     stats::Vector{T}
 end
 
