@@ -37,6 +37,8 @@ function Base.:(==)(o1::OnlineStat, o2::OnlineStat)
     all(getfield.(o1, nms) .== getfield.(o2, nms))
 end
 
+Base.copy(o::OnlineStat) = deepcopy(o)
+
 function Base.merge!(o::T, o2::T, γ::Float64) where {T<:OnlineStat} 
     warn("Merging not well-defined for $(typeof(o)).  No merging occurred.")
 end
@@ -69,7 +71,5 @@ function name(o, withmodule = false, withparams = true)
     end
     s
 end
-
-
 
 end #module
