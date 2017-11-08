@@ -1,20 +1,3 @@
-#-----------------------------------------------------------------------# Collection
-struct Stats{T <: Tuple} <: OnlineStat{Any, Any}
-    os::T
-end
-Stats(os::OnlineStat...) = Stats(os)
-default_weight(o::Stats) = default_weight(o.os)
-input_ndims(o::Stats) = input_ndims(o.os)
-
-@generated function fit!(o::Stats, y, γ::Float64) 
-    N = length(matchall(r"\,", string(o))) + 1  # Number of stats in tuple
-    ex = :()
-    for i in 1:N
-        ex = :($ex; fit!(o.os[$i], y, γ);)
-    end
-    return ex
-end
-
 #-----------------------------------------------------------------------# CStat
 """
     CStat(stat)
@@ -27,7 +10,7 @@ separately track the real and imaginary parts.
     y = randn(100) + randn(100)im
     Series(y, CStat(Mean()))
 """
-struct CStat{O <: OnlineStat} <: OnlineStat{Any, Any}
+struct CStat{O <: OnlineStat} <: OnlineStat{Any}
     re_stat::O
     im_stat::O
 end
@@ -52,7 +35,7 @@ Covariance Matrix of `d` variables.
     y = randn(100, 5)
     Series(y, CovMatrix(5))
 """
-mutable struct CovMatrix <: OnlineStat{1, EqualWeight}
+mutable struct CovMatrix <: OnlineStat{1}
     value::Matrix{Float64}
     cormat::Matrix{Float64}
     A::Matrix{Float64}  # X'X / n
@@ -100,7 +83,7 @@ Track the difference and the last value.
     s = Series(randn(1000), Diff())
     value(s)
 """
-mutable struct Diff{T <: Real} <: OnlineStat{0, EqualWeight}
+mutable struct Diff{T <: Real} <: OnlineStat{0}
     diff::T
     lastval::T
 end
@@ -130,7 +113,7 @@ Maximum and minimum.
     s = Series(randn(100), Extrema())
     value(s)
 """
-mutable struct Extrema <: OnlineStat{0, EqualWeight}
+mutable struct Extrema <: OnlineStat{0}
     min::Float64
     max::Float64
     Extrema() = new(Inf, -Inf)
@@ -160,7 +143,7 @@ Approximate count of distinct elements.
     s = Series(rand(1:10, 1000), HyperLogLog(12))
     value(s)
 """
-mutable struct HyperLogLog <: OnlineStat{0, EqualWeight}
+mutable struct HyperLogLog <: OnlineStat{0}
     m::UInt32
     M::Vector{UInt32}
     mask::UInt32
@@ -255,7 +238,7 @@ Approximate K-Means clustering of `k` clusters and `p` variables.
     y = rand(d, 100_000, 1)
     s = Series(y, LearningRate(.6), KMeans(1, 2))
 """
-mutable struct KMeans <: OnlineStat{1, LearningRate}
+mutable struct KMeans <: StochasticStat{1}
     value::Matrix{Float64}
     v::Vector{Float64}
     KMeans(p::Integer, k::Integer) = new(randn(p, k), zeros(k))
@@ -288,7 +271,7 @@ Ridge regression of `p` variables with elementwise regularization.
     Series((x,y), o)
     value(o)
 """
-mutable struct LinReg <: OnlineStat{(1,0), EqualWeight}
+mutable struct LinReg <: OnlineStat{(1,0)}
     β::Vector{Float64}
     A::Matrix{Float64}
     λfactor::Vector{Float64}
@@ -348,7 +331,7 @@ Univariate mean.
     s = Series(randn(100), Mean())
     value(s)
 """
-mutable struct Mean <: OnlineStat{0, EqualWeight}
+mutable struct Mean <: OnlineStat{0}
     μ::Float64
     Mean() = new(0.0)
 end
@@ -368,7 +351,7 @@ First four non-central moments.
     s = Series(randn(1000), Moments(10))
     value(s)
 """
-mutable struct Moments <: OnlineStat{0, EqualWeight}
+mutable struct Moments <: OnlineStat{0}
     m::Vector{Float64}
     nobs::Int
     Moments() = new(zeros(4), 0)
@@ -409,7 +392,7 @@ Make a histogram with bins given by `range`.  Uses left-closed bins.
     s = Series(y, OHistogram(-4:.1:4))
     value(s)
 """
-struct OHistogram{H <: Histogram} <: OnlineStat{0, EqualWeight}
+struct OHistogram{H <: Histogram} <: OnlineStat{0}
     h::H
 end
 OHistogram(r::Range) = OHistogram(Histogram(r, :left))
@@ -446,7 +429,7 @@ Average order statistics with batches of size `b`.  Ignores weight.
     s = Series(randn(1000), OrderStats(10))
     value(s)
 """
-mutable struct OrderStats <: OnlineStat{0, EqualWeight}
+mutable struct OrderStats <: OnlineStat{0}
     value::Vector{Float64}
     buffer::Vector{Float64}
     i::Int
@@ -486,7 +469,7 @@ Approximate quantiles via an online MM algorithm (OMAS).
     s = Series(randn(1000), QuantileMM())
     value(s)
 """
-struct QuantileMM <: OnlineStat{0, LearningRate}
+struct QuantileMM <: StochasticStat{0}
     value::Vector{Float64}
     τ::Vector{Float64}
     s::Vector{Float64}
@@ -518,7 +501,7 @@ Approximate quantiles via Majorized Stochastic Proximal Iteration (MSPI).
     s = Series(randn(1000), QuantileMSPI())
     value(s)
 """
-struct QuantileMSPI <: OnlineStat{0, LearningRate}
+struct QuantileMSPI <: StochasticStat{0}
     value::Vector{Float64}
     τ::Vector{Float64}
     QuantileMSPI(τ = [.25, .5, .75]) = new(zeros(τ), collect(τ))
@@ -547,7 +530,7 @@ Approximate quantiles via an stochastic subgradient descent.
     s = Series(randn(1000), QuantileSGD())
     value(s)
 """
-struct QuantileSGD <: OnlineStat{0, LearningRate}
+struct QuantileSGD <: StochasticStat{0}
     value::Vector{Float64}
     τ::Vector{Float64}
     QuantileSGD(τ = [.25, .5, .75]) = new(zeros(τ), collect(τ))
@@ -577,7 +560,7 @@ Reservoir sample of `k` items.
     s = Series(o)
     fit!(s, 1:10000)
 """
-mutable struct ReservoirSample{T<:Number} <: OnlineStat{0, EqualWeight}
+mutable struct ReservoirSample{T<:Number} <: OnlineStat{0}
     value::Vector{T}
     nobs::Int
 end
@@ -608,7 +591,7 @@ Track the overall sum.
     s = Series(randn(1000), Sum())
     value(s)
 """
-mutable struct Sum{T <: Real} <: OnlineStat{0, EqualWeight}
+mutable struct Sum{T <: Real} <: OnlineStat{0}
     sum::T
 end
 Sum() = Sum(0.0)
@@ -629,7 +612,7 @@ Univariate variance.
     s = Series(randn(100), Variance())
     value(s)
 """
-mutable struct Variance <: OnlineStat{0, EqualWeight}
+mutable struct Variance <: OnlineStat{0}
     σ2::Float64     # biased variance
     μ::Float64
     nobs::Int

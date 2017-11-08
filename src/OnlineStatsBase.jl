@@ -2,12 +2,19 @@ __precompile__(true)
 module OnlineStatsBase
 
 import LearnBase: value, fit!
+import StatsBase: Histogram
 
 export
     # LearnBase
     value, fit!,
+    # Weight 
+    Weight,
     # OnlineStatsBase
-    Series
+    Series, 
+    CStat, CovMatrix, Diff, Extrema, HyperLogLog, KMeans, LinReg, Mean, Moments, 
+    OHistogram, OrderStats, QuantileMM, QuantileMSPI, QuantileSGD, ReservoirSample, 
+    Sum, Variance
+
 
 #-----------------------------------------------------------------------# Types
 # Aliases
@@ -29,7 +36,10 @@ struct Cols <: ObLoc end
 
 
 #-----------------------------------------------------------------------# OnlineStat
-# value(o::OnlineStat) = getfield(o, fieldnames(o)[1])
+@generated function value(o::OnlineStat)
+    r = fieldnames(o)[1]
+    return :(o.$r)
+end
 
 # Base functions
 function Base.show(io::IO, o::OnlineStat)
@@ -101,33 +111,34 @@ function show_fields(io::IO, o, nms = fieldnames(o))
     print(io, ")")
 end
 
-# #-----------------------------------------------------------------------# Common
-# smooth(x, y, γ) = x + γ * (y - x)
+#-----------------------------------------------------------------------# Common
+smooth(x, y, γ) = x + γ * (y - x)
 
-# function smooth!(x, y, γ)
-#     length(x) == length(y) || 
-#         throw(DimensionMismatch("can't smooth arrays of different length"))
-#     for i in eachindex(x)
-#         @inbounds x[i] = smooth(x[i], y[i], γ)
-#     end
-# end
+function smooth!(x, y, γ)
+    length(x) == length(y) || 
+        throw(DimensionMismatch("can't smooth arrays of different length"))
+    for i in eachindex(x)
+        @inbounds x[i] = smooth(x[i], y[i], γ)
+    end
+end
 
-# function smooth_syr!(A::AbstractMatrix, x, γ::Float64)
-#     size(A, 1) == length(x) || throw(DimensionMismatch())
-#     for j in 1:size(A, 2), i in 1:j
-#         @inbounds A[i, j] = (1.0 - γ) * A[i, j] + γ * x[i] * x[j]
-#     end
-# end
+function smooth_syr!(A::AbstractMatrix, x, γ::Float64)
+    size(A, 1) == length(x) || throw(DimensionMismatch())
+    for j in 1:size(A, 2), i in 1:j
+        @inbounds A[i, j] = (1.0 - γ) * A[i, j] + γ * x[i] * x[j]
+    end
+end
 
-# unbias(o) = o.nobs / (o.nobs - 1)
+unbias(o) = o.nobs / (o.nobs - 1)
 
-# const ϵ = 1e-6
+const ϵ = 1e-6
 
 
 #-----------------------------------------------------------------------# includes
 include("weight.jl")
-# include("series.jl")
-# include("stats.jl")
+include("stats.jl")
+include("series.jl")
+
 # include("mv.jl")
 # include("bootstrap.jl")
 

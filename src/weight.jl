@@ -2,6 +2,9 @@ module Weight
 
 import ..AbstractWeight 
 
+export Equal, Exponential, LearningRate, LearningRate2, Harmonic, Mcclain,
+    Bounded, Scaled
+
 #-----------------------------------------------------------------------# Equal
 struct Equal <: AbstractWeight end
 (::Equal)(n) = 1 / n
