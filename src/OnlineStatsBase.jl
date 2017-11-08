@@ -6,9 +6,11 @@ import StatsBase: Histogram
 
 export
     value, fit!, stats, mapblocks,
-    Weight, Cols, Rows,
-    # OnlineStatsBase
-    Series, 
+    OnlineStat, Cols, Rows, Series,
+    # Weights
+    EqualWeight, ExponentialWeight, LearningRate, LearningRate2, HarmonicWeight, 
+    McclainWeight, Bounded, Scaled,
+    # Stats
     CStat, CovMatrix, Diff, Extrema, HyperLogLog, KMeans, LinReg, Mean, Moments, 
     OHistogram, OrderStats, QuantileMM, QuantileMSPI, QuantileSGD, ReservoirSample, 
     Sum, Variance
@@ -22,10 +24,11 @@ const Data = Union{ScalarOb, VectorOb, AbstractMatrix, Tuple{VectorOb, ScalarOb}
 
 # OnlineStat
 abstract type OnlineStat{I} end
+abstract type ExactStat{N}      <: OnlineStat{N} end
 abstract type StochasticStat{N} <: OnlineStat{N} end
 
 # Weight
-abstract type AbstractWeight end
+abstract type Weight end
 
 # ObLoc 
 abstract type ObLoc end 
@@ -53,8 +56,8 @@ function Base.merge!(o::T, o2::T, γ::Float64) where {T<:OnlineStat}
 end
 Base.merge(o::T, o2::T, γ::Float64) where {T<:OnlineStat} = merge!(copy(o), o2, γ)
 
-default_weight(o::OnlineStat) = Weight.Equal()
-default_weight(o::StochasticStat) = Weight.LearningRate()
+default_weight(o::OnlineStat) = EqualWeight()
+default_weight(o::StochasticStat) = LearningRate()
 function default_weight(t::Tuple)
     W = default_weight(first(t))
     all(default_weight.(t) .== W) ||
@@ -119,7 +122,7 @@ include("mv.jl")
 include("bootstrap.jl")
 
 #-----------------------------------------------------------------------# ==
-const __Thing = Union{OnlineStat, AbstractWeight, Series}
+const __Thing = Union{OnlineStat, Weight, Series}
 function Base.:(==)(o1::T, o2::S) where {T <: __Thing, S <: __Thing}
     typeof(o1) == typeof(o2) || return false
     nms = fieldnames(o1)

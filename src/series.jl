@@ -18,43 +18,44 @@ mutable struct Series{N, T <: Tuple, W}
     weight::W
     n::Int
 end
-function Series(w::Weight.AbstractWeight, o::OnlineStat{N}...) where {N} 
+function Series(w::Weight, o::OnlineStat{N}...) where {N} 
     Series{N, typeof(o), typeof(w)}(o, w, 0)
 end
 Series(o::OnlineStat{N}...) where {N} = Series(default_weight(o), o...)
 
 # init with data
 Series(y::Data, o::OnlineStat{N}...) where {N} = (s = Series(o...); fit!(s, y))
-function Series(y::Data, wt::Weight.AbstractWeight, o::OnlineStat{N}...) where {N}
+function Series(y::Data, wt::Weight, o::OnlineStat{N}...) where {N}
     s = Series(wt, o...)
     fit!(s, y)
 end
-Series(wt::Weight.AbstractWeight, y::Data, o::OnlineStat{N}...) where {N} = Series(y, wt, o...)
+Series(wt::Weight, y::Data, o::OnlineStat{N}...) where {N} = Series(y, wt, o...)
 
 
 #-----------------------------------------------------------------------# methods
 function Base.show(io::IO, s::Series)
     header(io, name(s))
-    print(io, "┣━━━━━━ "); println(io, "$(weight(s)), nobs = $(nobs(s))")
-    print(io, "┗━━━┓")
+    print(io, "┣━━━ "); println(io, "$(s.weight), nobs = $(nobs(s))")
+    print(io, "┗━┓")
     n = length(stats(s))
     i = 0
     for o in stats(s)
         i += 1
         char = ifelse(i == n, "┗━━", "┣━━")
-        print(io, "\n    $char $(name(o)): $(value(o))")
+        print(io, "\n  $char $(name(o)): $(value(o))")
     end
 end
 
 stats(s::Series) = s.stats
-weight(s::Series) = s.weight
 value(s::Series) = value.(stats(s))
 nobs(s::Series) = s.n
 
+weight(s::Series) = s.weight(s.n)
+weight!(s::Series, n2::Int = 1) = (s.n += n2; weight(s))
+
 #-----------------------------------------------------------------------# fit! 0
 function fit!(s::Series{0}, y::ScalarOb)
-    s.n += 1
-    γ = s.weight(s.n)
+    γ = weight!(s)
     map(x -> fit!(x, y, γ), stats(s))
 end
 function fit!(s::Series{0}, y::ScalarOb, γ::Float64)
@@ -158,6 +159,24 @@ function fit!(s::Series{1}, y::AbstractMatrix, γ::Vector{Float64}, ::Cols)
         @inbounds fit!(s, buffer, γ[i])
     end
     s
+end
+
+#-----------------------------------------------------------------------# fit! (1, 0)
+function fit!(s::Series{(1,0)}, xy::Tuple{<:VectorOb, <:ScalarOb})
+    s.n += 1
+    γ = s.weight(s.n)
+    map(x -> fit!(x, xy[1], xy[2], γ))
+end
+function fit!(s::Series{(1,0)}, xy::Tuple{<:AbstractMatrix, <:VectorOb}, ::Rows = Rows())
+    x, y = xy
+    n, p = size(x)
+    buffer = Vector{eltype(x)}(p)
+    for i in 1:n 
+        for j in 1:p 
+            buffer[j] = x[i, j]
+        end
+        fit!(s, (buffer, y[i]))
+    end
 end
 
 #-----------------------------------------------------------------------# merging

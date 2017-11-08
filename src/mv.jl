@@ -26,7 +26,7 @@ Base.length(o::MV) = length(o.stats)
 Base.:*(n::Integer, o::OnlineStat{0}) = MV(n, o)
 
 function Base.show(io::IO, o::MV)
-    s = OnlineStatsBase.name(o, true) * "("
+    s = name(o) * "("
     n = length(o.stats)
     for i in 1:min(10,n)
         s *= "$(value(o.stats[i]))"
