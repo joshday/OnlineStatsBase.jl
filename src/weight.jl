@@ -1,9 +1,14 @@
 Base.show(io::IO, w::Weight) = print(io, name(w))
+function Base.:(==)(o1::Weight, o2::Weight)
+    typeof(o1) == typeof(o2) || return false
+    nms = fieldnames(o1)
+    all(getfield.(o1, nms) .== getfield.(o2, nms))
+end
+Base.copy(w::Weight) = deepcopy(w)
 
 #-----------------------------------------------------------------------# EqualWeight
 struct EqualWeight <: Weight end
 (::EqualWeight)(n) = 1 / n
-
 #-----------------------------------------------------------------------# ExponentialWeight
 struct ExponentialWeight <: Weight 
     λ::Float64 

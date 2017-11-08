@@ -1,44 +1,24 @@
 __precompile__(true)
 module OnlineStatsBase
 
-import LearnBase: value, fit!
-import StatsBase: Histogram
+import LearnBase: value, fit!, nobs
 
-export
-    value, fit!, stats, mapblocks,
-    OnlineStat, Cols, Rows, Series,
-    # Weights
-    EqualWeight, ExponentialWeight, LearningRate, LearningRate2, HarmonicWeight, 
-    McclainWeight, Bounded, Scaled,
-    # Stats
-    CStat, CovMatrix, Diff, Extrema, HyperLogLog, KMeans, LinReg, Mean, Moments, 
-    OHistogram, OrderStats, QuantileMM, QuantileMSPI, QuantileSGD, ReservoirSample, 
-    Sum, Variance
-
-
-#-----------------------------------------------------------------------# Types
-# Aliases
-const ScalarOb = Union{Number, AbstractString, Symbol}  # for OnlineStat{0}
-const VectorOb = Union{AbstractVector, Tuple}           # for OnlineStat{1}
-const Data = Union{ScalarOb, VectorOb, AbstractMatrix, Tuple{VectorOb, ScalarOb}}
-
-# OnlineStat
-abstract type OnlineStat{I} end
-abstract type ExactStat{N}      <: OnlineStat{N} end
-abstract type StochasticStat{N} <: OnlineStat{N} end
-
-# Weight
-abstract type Weight end
-
-# ObLoc 
-abstract type ObLoc end 
-struct Rows <: ObLoc end 
-struct Cols <: ObLoc end
-
-
+#-----------------------------------------------------------------------# Data
+const ScalarOb = Union{Number, AbstractString, Symbol}  # 0
+const VectorOb = Union{AbstractVector, Tuple}           # 1 
+const XyOb     = Tuple{VectorOb, ScalarOb}              # (1, 0)
+const Data = Union{ScalarOb, VectorOb, AbstractMatrix, XyOb}
 
 #-----------------------------------------------------------------------# OnlineStat
-# default value(o) returns the first field
+abstract type OnlineStat{I} end
+
+"An OnlineStat which can be updated exactly."
+abstract type ExactStat{N}      <: OnlineStat{N} end
+
+"An OnlineStat which must be updated approximately."
+abstract type StochasticStat{N} <: OnlineStat{N} end
+
+# The default value(o) returns the first field
 @generated function value(o::OnlineStat)
     r = first(fieldnames(o))
     return :(o.$r)
@@ -51,12 +31,19 @@ function Base.show(io::IO, o::OnlineStat)
     print(io, ")")
 end
 
+function Base.:(==)(o1::OnlineStat, o2::OnlineStat)
+    typeof(o1) == typeof(o2) || return false
+    nms = fieldnames(o1)
+    all(getfield.(o1, nms) .== getfield.(o2, nms))
+end
+
 function Base.merge!(o::T, o2::T, γ::Float64) where {T<:OnlineStat} 
     warn("Merging not well-defined for $(typeof(o)).  No merging occurred.")
 end
 Base.merge(o::T, o2::T, γ::Float64) where {T<:OnlineStat} = merge!(copy(o), o2, γ)
 
-default_weight(o::OnlineStat) = EqualWeight()
+default_weight(o::OnlineStat) = error("$(typeof(o)) needs to overload `default_weight`")
+default_weight(o::ExactStat) = EqualWeight()
 default_weight(o::StochasticStat) = LearningRate()
 function default_weight(t::Tuple)
     W = default_weight(first(t))
@@ -65,10 +52,11 @@ function default_weight(t::Tuple)
     return W
 end
 
+#-----------------------------------------------------------------------# Weight
+abstract type Weight end 
+include("weight.jl")
 
-#-----------------------------------------------------------------------# Show helpers
-header(io::IO, s::AbstractString) = println(io, "▦ $s" )
-
+#-----------------------------------------------------------------------# helpers
 function name(o, withmodule = false, withparams = true)
     s = string(typeof(o))
     if !withmodule
@@ -82,104 +70,6 @@ function name(o, withmodule = false, withparams = true)
     s
 end
 
-function show_fields(io::IO, o, nms = fieldnames(o))
-    print(io, "(")
-    for nm in nms
-        print(io, "$nm = $(getfield(o, nm))")
-        nm != nms[end] && print(io, ", ")
-    end
-    print(io, ")")
-end
 
-#-----------------------------------------------------------------------# Common
-smooth(x, y, γ) = x + γ * (y - x)
-
-function smooth!(x, y, γ)
-    length(x) == length(y) || 
-        throw(DimensionMismatch("can't smooth arrays of different length"))
-    for i in eachindex(x)
-        @inbounds x[i] = smooth(x[i], y[i], γ)
-    end
-end
-
-function smooth_syr!(A::AbstractMatrix, x, γ::Float64)
-    size(A, 1) == length(x) || throw(DimensionMismatch())
-    for j in 1:size(A, 2), i in 1:j
-        @inbounds A[i, j] = (1.0 - γ) * A[i, j] + γ * x[i] * x[j]
-    end
-end
-
-unbias(o) = o.nobs / (o.nobs - 1)
-
-const ϵ = 1e-6
-
-
-#-----------------------------------------------------------------------# includes
-include("weight.jl")
-include("stats.jl")
-include("series.jl")
-include("mv.jl")
-include("bootstrap.jl")
-
-#-----------------------------------------------------------------------# ==
-const __Thing = Union{OnlineStat, Weight, Series}
-function Base.:(==)(o1::T, o2::S) where {T <: __Thing, S <: __Thing}
-    typeof(o1) == typeof(o2) || return false
-    nms = fieldnames(o1)
-    all(getfield.(o1, nms) .== getfield.(o2, nms))
-end
-Base.copy(o::__Thing) = deepcopy(o)
-
-#-----------------------------------------------------------------------# mapblocks
-"""
-    mapblocks(f::Function, b::Int, data, dim::ObsDimension = Rows())
-
-Map `data` in batches of size `b` to the function `f`.  If data includes an AbstractMatrix, the batches will be based on rows or columns, depending on `dim`.  Most usage is through Julia's `do` block syntax.
-
-# Examples
-
-    s = Series(Mean())
-    mapblocks(10, randn(100)) do yi
-        fit!(s, yi)
-        info("nobs: \$(nobs(s))")
-    end
-
-    x = [1 2 3 4; 
-         1 2 3 4; 
-         1 2 3 4;
-         1 2 3 4]
-    mapblocks(println, 2, x)
-    mapblocks(println, 2, x, Cols())
-"""
-function mapblocks(f::Function, b::Integer, y, dim::ObLoc = Rows())
-    n = _nobs(y, dim)
-    i = 1
-    while i <= n
-        rng = i:min(i + b - 1, n)
-        yi = getblock(y, rng, dim)
-        f(yi)
-        i += b
-    end
-end
-
-_nobs(y::VectorOb, ::ObLoc) = length(y)
-_nobs(y::AbstractMatrix, ::Rows) = size(y, 1)
-_nobs(y::AbstractMatrix, ::Cols) = size(y, 2)
-function _nobs(y::Tuple{AbstractMatrix, VectorOb}, dim::ObLoc)
-    n = _nobs(first(y), dim)
-    if all(_nobs.(y, dim) .== n)
-        return n
-    else
-        error("Data objects have different nobs")
-    end
-end
-
-
-getblock(y::VectorOb, rng, ::ObLoc) = @view y[rng]
-getblock(y::AbstractMatrix, rng, ::Rows) = @view y[rng, :]
-getblock(y::AbstractMatrix, rng, ::Cols) = @view y[:, rng]
-function getblock(y::Tuple{AbstractMatrix, VectorOb}, rng, dim::ObLoc)
-    map(x -> getblock(x, rng, dim), y)
-end
 
 end #module
