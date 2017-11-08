@@ -1,31 +1,35 @@
 __precompile__(true)
 module OnlineStatsBase
 
-import LearnBase: value, ObsDim, ObsDimension
-import StatsBase: Histogram, skewness, kurtosis, confint, coef, predict, nobs, fit!,
-    AbstractWeights, Weights, fweights
+import LearnBase: value, fit!
 
 export
-    # Series
-    Series,
-    # Weight
-    Weight,
-    EqualWeight, ExponentialWeight, LearningRate, LearningRate2, McclainWeight,
-    HarmonicWeight, Bounded, Scaled,
-    # OnlineStats
-    OnlineStat,
-    CStat, CovMatrix, Diff, Extrema, HyperLogLog, LinReg, KMeans, Mean, Moments, MV,
-    OHistogram, OrderStats, QuantileMM, QuantileMSPI, QuantileSGD, ReservoirSample, Sum, 
-    Variance,
-    # Other
-    Bootstrap, Rows, Cols,
-    # functions
-    nobs, fit!, value, stats, predict, coef, replicates, confint, skewness, kurtosis,
-    mapblocks,
-    Weights # StatsBase.Weights, not be confused with OnlineStatsBase.Weight
+    # LearnBase
+    value, fit!,
+    # OnlineStatsBase
+    Series
+
+#-----------------------------------------------------------------------# Types
+# Aliases
+const ScalarOb = Union{Number, AbstractString, Symbol}  # for OnlineStat{0}
+const VectorOb = Union{AbstractVector, Tuple}           # for OnlineStat{1}
+
+# OnlineStat
+abstract type OnlineStat{I} end
+abstract type StochasticStat{N} <: OnlineStat{N} end
+
+# Weight
+abstract type AbstractWeight end
+
+# ObLoc 
+abstract type ObLoc end 
+struct Rows <: ObLoc end 
+struct Cols <: ObLoc end
+
+
 
 #-----------------------------------------------------------------------# OnlineStat
-abstract type OnlineStat{I, W} end
+# value(o::OnlineStat) = getfield(o, fieldnames(o)[1])
 
 # Base functions
 function Base.show(io::IO, o::OnlineStat)
@@ -33,51 +37,46 @@ function Base.show(io::IO, o::OnlineStat)
     showcompact(io, value(o))
     print(io, ")")
 end
-Base.copy(o::OnlineStat) = deepcopy(o)
-function Base.:(==)(o1::T, o2::T) where {T <: OnlineStat}
-    nms = fieldnames(o1)
-    all(getfield.(o1, nms) .== getfield.(o2, nms))
-end
-function Base.merge!(o::T, o2::T, γ::Float64) where {T<:OnlineStat} 
-    warn("Merging not well-defined for $(typeof(o)).  No merging occurred.")
-end
-Base.merge(o::T, o2::T, γ::Float64) where {T<:OnlineStat} = merge!(copy(o), o2, γ)
 
-# OnlineStat Interface (sans `fit!`)
-value(o::OnlineStat) = getfield(o, fieldnames(o)[1])
-input_ndims(o::OnlineStat{I}) where {I} = I
-default_weight(o::OnlineStat{I, W}) where {I, W} = W()
+# Base.copy(o::OnlineStat) = deepcopy(o)
 
-function input_ndims(t::Tuple)
-    I = input_ndims(first(t))
-    for ti in t
-        input_ndims(ti) == I || 
-            error("Stats track observations of different dimensions. Found: $(input_ndims.(t))")
-    end
-    return I
-end
+# const SW = Union{OnlineStat, AbstractWeight}
+# function Base.:(==)(o1::T, o2::S) where {T <: SW, S <: SW}
+#     typeof(o1) == typeof(o2) || return false
+#     nms = fieldnames(o1)
+#     all(getfield.(o1, nms) .== getfield.(o2, nms))
+# end
 
-function default_weight(t::Tuple)
-    W = default_weight(first(t))
-    all(default_weight.(t) .== W) ||
-        error("Weight must be specified when defaults differ.  Found: $(name.(default_weight.(t))).")
-    return W
-end
+# function Base.merge!(o::T, o2::T, γ::Float64) where {T<:OnlineStat} 
+#     warn("Merging not well-defined for $(typeof(o)).  No merging occurred.")
+# end
+# Base.merge(o::T, o2::T, γ::Float64) where {T<:OnlineStat} = merge!(copy(o), o2, γ)
+
+# # OnlineStat Interface (sans `fit!`)
+# value(o::OnlineStat) = getfield(o, fieldnames(o)[1])
+
+
+# input_ndims(o::OnlineStat{I}) where {I} = I
+# default_weight(o::OnlineStat{I, W}) where {I, W} = W()
+
+# function input_ndims(t::Tuple)
+#     I = input_ndims(first(t))
+#     for ti in t
+#         input_ndims(ti) == I || 
+#             error("Stats track observations of different dimensions. Found: $(input_ndims.(t))")
+#     end
+#     return I
+# end
+
+# function default_weight(t::Tuple)
+#     W = default_weight(first(t))
+#     all(default_weight.(t) .== W) ||
+#         error("Weight must be specified when defaults differ.  Found: $(name.(default_weight.(t))).")
+#     return W
+# end
 
 
 #-----------------------------------------------------------------------# Show helpers
-function show_fields(io::IO, o)
-    nms = fields_to_show(o)
-    print(io, "(")
-    for nm in nms
-        print(io, "$nm = $(getfield(o, nm))")
-        nm != nms[end] && print(io, ", ")
-    end
-    print(io, ")")
-end
-
-fields_to_show(o) = fieldnames(o)
-
 header(io::IO, s::AbstractString) = println(io, "▦ $s" )
 
 function name(o, withmodule = false, withparams = true)
@@ -93,37 +92,44 @@ function name(o, withmodule = false, withparams = true)
     s
 end
 
-#-----------------------------------------------------------------------# Common
-smooth(x, y, γ) = x + γ * (y - x)
-
-function smooth!(x, y, γ)
-    length(x) == length(y) || 
-        throw(DimensionMismatch("can't smooth arrays of different length"))
-    for i in eachindex(x)
-        @inbounds x[i] = smooth(x[i], y[i], γ)
+function show_fields(io::IO, o, nms = fieldnames(o))
+    print(io, "(")
+    for nm in nms
+        print(io, "$nm = $(getfield(o, nm))")
+        nm != nms[end] && print(io, ", ")
     end
+    print(io, ")")
 end
 
-function smooth_syr!(A::AbstractMatrix, x, γ::Float64)
-    size(A, 1) == length(x) || throw(DimensionMismatch())
-    for j in 1:size(A, 2), i in 1:j
-        @inbounds A[i, j] = (1.0 - γ) * A[i, j] + γ * x[i] * x[j]
-    end
-end
+# #-----------------------------------------------------------------------# Common
+# smooth(x, y, γ) = x + γ * (y - x)
 
-unbias(o) = o.nobs / (o.nobs - 1)
+# function smooth!(x, y, γ)
+#     length(x) == length(y) || 
+#         throw(DimensionMismatch("can't smooth arrays of different length"))
+#     for i in eachindex(x)
+#         @inbounds x[i] = smooth(x[i], y[i], γ)
+#     end
+# end
 
-const ϵ = 1e-6
+# function smooth_syr!(A::AbstractMatrix, x, γ::Float64)
+#     size(A, 1) == length(x) || throw(DimensionMismatch())
+#     for j in 1:size(A, 2), i in 1:j
+#         @inbounds A[i, j] = (1.0 - γ) * A[i, j] + γ * x[i] * x[j]
+#     end
+# end
 
-# (1, 0) hack
-fit!(o::OnlineStat{(1,0)}, t::Tuple, γ::Float64) = fit!(o, t..., γ)
+# unbias(o) = o.nobs / (o.nobs - 1)
+
+# const ϵ = 1e-6
+
 
 #-----------------------------------------------------------------------# includes
 include("weight.jl")
-include("series.jl")
-include("stats.jl")
-include("mv.jl")
-include("bootstrap.jl")
+# include("series.jl")
+# include("stats.jl")
+# include("mv.jl")
+# include("bootstrap.jl")
 
 #-----------------------------------------------------------------------# mapblocks
 """
@@ -146,7 +152,7 @@ Map `data` in batches of size `b` to the function `f`.  If data includes an Abst
     mapblocks(println, 2, x)
     mapblocks(println, 2, x, Cols())
 """
-function mapblocks(f::Function, b::Integer, y, dim::ObsDimension = Rows())
+function mapblocks(f::Function, b::Integer, y, dim::ObLoc = Rows())
     n = _nobs(y, dim)
     i = 1
     while i <= n
@@ -157,10 +163,10 @@ function mapblocks(f::Function, b::Integer, y, dim::ObsDimension = Rows())
     end
 end
 
-_nobs(y::VectorOb, ::ObsDimension) = length(y)
+_nobs(y::VectorOb, ::ObLoc) = length(y)
 _nobs(y::AbstractMatrix, ::Rows) = size(y, 1)
 _nobs(y::AbstractMatrix, ::Cols) = size(y, 2)
-function _nobs(y::Tuple{AbstractMatrix, VectorOb}, dim::ObsDimension)
+function _nobs(y::Tuple{AbstractMatrix, VectorOb}, dim::ObLoc)
     n = _nobs(first(y), dim)
     if all(_nobs.(y, dim) .== n)
         return n
@@ -170,10 +176,10 @@ function _nobs(y::Tuple{AbstractMatrix, VectorOb}, dim::ObsDimension)
 end
 
 
-getblock(y::VectorOb, rng, ::ObsDimension) = @view y[rng]
+getblock(y::VectorOb, rng, ::ObLoc) = @view y[rng]
 getblock(y::AbstractMatrix, rng, ::Rows) = @view y[rng, :]
 getblock(y::AbstractMatrix, rng, ::Cols) = @view y[:, rng]
-function getblock(y::Tuple{AbstractMatrix, VectorOb}, rng, dim::ObsDimension)
+function getblock(y::Tuple{AbstractMatrix, VectorOb}, rng, dim::ObLoc)
     map(x -> getblock(x, rng, dim), y)
 end
 

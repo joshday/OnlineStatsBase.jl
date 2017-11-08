@@ -41,11 +41,11 @@ Series(o::OnlineStat, wt::Weight = default_weight(o)) = Series(wt, o)
 
 
 # Init with data
-function Series(y::Data, wt::Weight, o::OnlineStat)
+function Series(y::VectorOb, wt::Weight, o::OnlineStat{0})
     s = Series(wt, o)
     fit!(s, y)
 end
-Series(y::Data, o::OnlineStat) = Series(y, default_weight(o), o)
+Series(y::VectorOb, o::OnlineStat{0}) = Series(y, default_weight(o), o)
 # Series(wt::Weight, y::Data, o::OnlineStat; kw...) = Series(y, wt, o; kw...)
 # function Series(y::Data, o::OnlineStat...; dim::ObsDimension = Rows())
 #     s = Series(o...)
