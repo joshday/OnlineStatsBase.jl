@@ -1,3 +1,18 @@
+"""
+    Series(stats...)
+    Series(weight, stats...)
+    Series(data, weight, stats...)
+    Series(data, stats...)
+    Series(weight, data, stats...)
+
+Track any number of OnlineStats.
+
+# Example 
+
+    Series(Mean())
+    Series(randn(100), Mean())
+    Series(randn(100), Weight.Exponential(), Mean())
+"""
 mutable struct Series{N, T <: Tuple, W}
     stats::T
     weight::W
@@ -121,6 +136,29 @@ function fit!(s::Series{1}, y::AbstractMatrix, ::Cols)
     end
     s
 end
+function fit!(s::Series{1}, y::AbstractMatrix, γ::Float64, ::Cols)
+    p, n = size(y)
+    buffer = Vector{eltype(y)}(p)
+    for i in 1:n
+        for j in 1:p
+            @inbounds buffer[j] = y[j, i]
+        end
+        fit!(s, buffer, γ)
+    end
+    s
+end
+function fit!(s::Series{1}, y::AbstractMatrix, γ::Vector{Float64}, ::Cols)
+    p, n = size(y)
+    n == length(γ) || error("Weight vector has length $(length(γ)) instead of $n")
+    buffer = Vector{eltype(y)}(p)
+    for i in 1:n
+        for j in 1:p
+            @inbounds buffer[j] = y[j, i]
+        end
+        @inbounds fit!(s, buffer, γ[i])
+    end
+    s
+end
 
 #-----------------------------------------------------------------------# merging
 function Base.merge(s1::T, s2::T, w::Float64) where {T <: Series}
@@ -132,13 +170,15 @@ end
 function Base.merge!(s1::T, s2::T, method::Symbol = :append) where {T <: Series}
     n2 = nobs(s2)
     n2 == 0 && return s1
-    updatecounter!(s1, n2)
+    s1.n += n2
     if method == :append
-        merge!.(s1.stats, s2.stats, weight(s1, n2))
+        merge!.(s1.stats, s2.stats, s1.weight(n2))
     elseif method == :mean
-        merge!.(s1.stats, s2.stats, (weight(s1) + weight(s2)))
+        γ1 = s1.weight(s1.n)
+        γ2 = s2.weight(s2.n)
+        merge!.(s1.stats, s2.stats, .5 * (γ1 + γ2))
     elseif method == :singleton
-        merge!.(s1.stats, s2.stats, weight(s1))
+        merge!.(s1.stats, s2.stats, s1.weight(s1.n))
     else
         throw(ArgumentError("method must be :append, :mean, or :singleton"))
     end
@@ -148,7 +188,7 @@ function Base.merge!(s1::T, s2::T, w::Float64) where {T <: Series}
     n2 = nobs(s2)
     n2 == 0 && return s1
     0 <= w <= 1 || throw(ArgumentError("weight must be between 0 and 1"))
-    updatecounter!(s1, n2)
+    s1.n += n2
     merge!.(s1.stats, s2.stats, w)
     s1
 end

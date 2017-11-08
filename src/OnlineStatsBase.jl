@@ -5,10 +5,8 @@ import LearnBase: value, fit!
 import StatsBase: Histogram
 
 export
-    # functions
-    value, fit!, stats,
-    # Weight 
-    Weight,
+    value, fit!, stats, mapblocks,
+    Weight, Cols, Rows,
     # OnlineStatsBase
     Series, 
     CStat, CovMatrix, Diff, Extrema, HyperLogLog, KMeans, LinReg, Mean, Moments, 
@@ -20,7 +18,7 @@ export
 # Aliases
 const ScalarOb = Union{Number, AbstractString, Symbol}  # for OnlineStat{0}
 const VectorOb = Union{AbstractVector, Tuple}           # for OnlineStat{1}
-const Data = Union{ScalarOb, VectorOb}
+const Data = Union{ScalarOb, VectorOb, AbstractMatrix, Tuple{VectorOb, ScalarOb}}
 
 # OnlineStat
 abstract type OnlineStat{I} end
@@ -49,8 +47,6 @@ function Base.show(io::IO, o::OnlineStat)
     showcompact(io, value(o))
     print(io, ")")
 end
-
-Base.copy(o::Union{OnlineStat, AbstractWeight}) = deepcopy(o)
 
 function Base.merge!(o::T, o2::T, γ::Float64) where {T<:OnlineStat} 
     warn("Merging not well-defined for $(typeof(o)).  No merging occurred.")
@@ -129,6 +125,7 @@ function Base.:(==)(o1::T, o2::S) where {T <: __Thing, S <: __Thing}
     nms = fieldnames(o1)
     all(getfield.(o1, nms) .== getfield.(o2, nms))
 end
+Base.copy(o::__Thing) = deepcopy(o)
 
 #-----------------------------------------------------------------------# mapblocks
 """
