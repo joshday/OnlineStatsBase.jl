@@ -46,56 +46,81 @@ function fit!(s::Series{0}, y::ScalarOb)
     γ = s.weight(s.n)
     map(x -> fit!(x, y, γ), stats(s))
 end
-# @generated function fit!(s::Series{0}, y::ScalarOb)
-#     str = "fit!(s.stats[1], y, γ);"
-#     for i in 2:nstats(s)
-#         str *= "fit!(s.stats[$i], y, γ);"
-#     end
-#     ex = parse(str)
-#     println(str)
-#     println(ex)
-#     fullexp = quote
-#         s.n += 1
-#         γ = s.weight(s.n)
-#         $ex
-#         s
-#     end
-#     println(fullexp)
-#     return fullexp
-# end
+function fit!(s::Series{0}, y::ScalarOb, γ::Float64)
+    s.n += 1
+    map(x -> fit!(x, y, γ), stats(s))
+end
 function fit!(s::Series{0}, y::AbstractArray)
     for yi in y 
         fit!(s, yi)
     end
     s
 end
+function fit!(s::Series{0}, y::AbstractArray, γ::Float64)
+    for yi in y 
+        fit!(s, yi, γ)
+    end
+    s
+end
+function fit!(s::Series{0}, y::AbstractArray, γ::Vector{Float64})
+    for (yi, γi) in zip(y, γ) 
+        fit!(s, yi, γi)
+    end
+    s
+end
+#-----------------------------------------------------------------------# fit! 1 
+function fit!(s::Series{1}, y::VectorOb)
+    s.n += 1
+    γ = s.weight(s.n)
+    map(x -> fit!(x, y, γ), stats(s))
+    s
+end
+function fit!(s::Series{1}, y::AbstractMatrix, ::Rows = Rows())
+    s.n += 1
+    γ = s.weight(s.n)
+    for i in 1:size(y, 1)
+        yi = @view(y[i, :])
+        map(x -> fit!(x, yi, γ), stats(s))
+    end
+    return s
+end
+function fit!(s::Series{1}, y::AbstractMatrix, ::Cols = Cols())
+    s.n += 1
+    γ = s.weight(s.n)
+    for i in 1:size(y, 1)
+        yi = @view(y[:, i])
+        map(x -> fit!(x, yi, γ), stats(s))
+    end
+    return s
+end
+
 #-----------------------------------------------------------------------# merging
-# function Base.merge(s1::T, s2::T, w::Float64) where {T <: Series}
-#     merge!(copy(s1), s2, w)
-# end
-# function Base.merge(s1::T, s2::T, method::Symbol = :append) where {T <: Series}
-#     merge!(copy(s1), s2, method)
-# end
-# function Base.merge!(s1::T, s2::T, method::Symbol = :append) where {T <: Series}
-#     n2 = nobs(s2)
-#     n2 == 0 && return s1
-#     updatecounter!(s1, n2)
-#     if method == :append
-#         merge!.(s1.stats, s2.stats, weight(s1, n2))
-#     elseif method == :mean
-#         merge!.(s1.stats, s2.stats, (weight(s1) + weight(s2)))
-#     elseif method == :singleton
-#         merge!.(s1.stats, s2.stats, weight(s1))
-#     else
-#         throw(ArgumentError("method must be :append, :mean, or :singleton"))
-#     end
-#     s1
-# end
-# function Base.merge!(s1::T, s2::T, w::Float64) where {T <: Series}
-#     n2 = nobs(s2)
-#     n2 == 0 && return s1
-#     0 <= w <= 1 || throw(ArgumentError("weight must be between 0 and 1"))
-#     updatecounter!(s1, n2)
-#     merge!.(s1.stats, s2.stats, w)
-#     s1
-# end
+function Base.merge(s1::T, s2::T, w::Float64) where {T <: Series}
+    merge!(copy(s1), s2, w)
+end
+function Base.merge(s1::T, s2::T, method::Symbol = :append) where {T <: Series}
+    merge!(copy(s1), s2, method)
+end
+function Base.merge!(s1::T, s2::T, method::Symbol = :append) where {T <: Series}
+    n2 = nobs(s2)
+    n2 == 0 && return s1
+    updatecounter!(s1, n2)
+    if method == :append
+        merge!.(s1.stats, s2.stats, weight(s1, n2))
+    elseif method == :mean
+        merge!.(s1.stats, s2.stats, (weight(s1) + weight(s2)))
+    elseif method == :singleton
+        merge!.(s1.stats, s2.stats, weight(s1))
+    else
+        throw(ArgumentError("method must be :append, :mean, or :singleton"))
+    end
+    s1
+end
+function Base.merge!(s1::T, s2::T, w::Float64) where {T <: Series}
+    n2 = nobs(s2)
+    n2 == 0 && return s1
+    0 <= w <= 1 || throw(ArgumentError("weight must be between 0 and 1"))
+    updatecounter!(s1, n2)
+    merge!.(s1.stats, s2.stats, w)
+    s1
+end
