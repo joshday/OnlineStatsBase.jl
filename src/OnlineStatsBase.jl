@@ -48,7 +48,7 @@ function Base.show(io::IO, o::OnlineStat)
     print(io, ")")
 end
 
-# Base.copy(o::OnlineStat) = deepcopy(o)
+Base.copy(o::OnlineStat) = deepcopy(o)
 
 # const SW = Union{OnlineStat, AbstractWeight}
 # function Base.:(==)(o1::T, o2::S) where {T <: SW, S <: SW}
@@ -66,24 +66,22 @@ end
 # value(o::OnlineStat) = getfield(o, fieldnames(o)[1])
 
 
-# input_ndims(o::OnlineStat{I}) where {I} = I
-# default_weight(o::OnlineStat{I, W}) where {I, W} = W()
 
-# function input_ndims(t::Tuple)
-#     I = input_ndims(first(t))
-#     for ti in t
-#         input_ndims(ti) == I || 
-#             error("Stats track observations of different dimensions. Found: $(input_ndims.(t))")
-#     end
-#     return I
-# end
+input_ndims(o::OnlineStat{N}...) where {N} = N
+input_ndims(t::Tuple) = input_ndims(t...)
 
-# function default_weight(t::Tuple)
-#     W = default_weight(first(t))
-#     all(default_weight.(t) .== W) ||
-#         error("Weight must be specified when defaults differ.  Found: $(name.(default_weight.(t))).")
-#     return W
-# end
+default_weight(o::OnlineStat) = Weight.Equal()
+default_weight(o::StochasticStat) = Weight.LearningRate()
+
+
+
+
+function default_weight(t::Tuple)
+    W = default_weight(first(t))
+    all(default_weight.(t) .== W) ||
+        error("Weight must be specified when defaults differ.  Found: $(name.(default_weight.(t))).")
+    return W
+end
 
 
 #-----------------------------------------------------------------------# Show helpers
