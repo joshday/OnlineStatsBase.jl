@@ -2,14 +2,19 @@ module OnlineStatsBaseTests
 using Base.Test
 import OnlineStatsBase: OnlineStat, ExactStat, StochasticStat, Weight, EqualWeight, 
     ExponentialWeight, LearningRate, LearningRate2, HarmonicWeight, McclainWeight, 
-    Bounded, Scaled, value, default_weight
+    Bounded, Scaled, value, default_weight, name
 
-#-----------------------------------------------------------------------# Weight
-@testset "Weight" begin
+#-----------------------------------------------------------------------# show
 for w in [EqualWeight(), ExponentialWeight(), LearningRate(), LearningRate2(),
           HarmonicWeight()]
     println(w)
 end
+struct Thing{T} a::T end
+println(name(Thing(1)))
+println(name(Thing(1), true, false))
+
+#-----------------------------------------------------------------------# Weight
+@testset "Weight" begin
 function test_weight(w::Weight, f::Function)
     @test w == copy(w)
     for i in 1:20
@@ -50,6 +55,8 @@ FakeStat() = FakeStat(0.0)
 
 struct FakeStat2 <: StochasticStat{0} end
 
+struct FakeStat3 <: OnlineStat{0} end
+
 @testset "OnlineStat" begin 
     println(FakeStat())
     @test value(FakeStat()) == 0.0
@@ -59,5 +66,6 @@ struct FakeStat2 <: StochasticStat{0} end
     @test default_weight(FakeStat2()) == LearningRate()
     @test_throws Exception default_weight((FakeStat(), FakeStat2()))
     @test default_weight((FakeStat(), FakeStat())) == EqualWeight()
+    @test_throws Exception default_weight(FakeStat3())
 end
 end #module
