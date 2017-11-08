@@ -4,28 +4,26 @@
 |------------------|--------------|---------------|
 | [![](https://img.shields.io/badge/docs-stable-blue.svg)](https://joshday.github.io/OnlineStats.jl/stable) [![](https://img.shields.io/badge/docs-latest-blue.svg)](https://joshday.github.io/OnlineStats.jl/latest) | [![Build Status](https://travis-ci.org/joshday/OnlineStatsBase.jl.svg?branch=master)](https://travis-ci.org/joshday/OnlineStatsBase.jl) [![Build status](https://ci.appveyor.com/api/projects/status/99i0vq2crpwgqonp/branch/master?svg=true)](https://ci.appveyor.com/project/joshday/onlinestatsbase-jl/branch/master) | [![codecov](https://codecov.io/gh/joshday/OnlineStatsBase.jl/branch/master/graph/badge.svg)](https://codecov.io/gh/joshday/OnlineStatsBase.jl) |
 
-
 - This package defines the basic types interface for [OnlineStats](https://github.com/joshday/OnlineStats.jl).  
 - Extending functionality of OnlineStats should be accomplished through OnlineStatsBase.
 
-
-
-# Creating a new OnlineStat
+## Creating a new OnlineStat
 
 ### Make a subtype of OnlineStat and give it a `fit!` method.
 
 ```julia
-using OnlineStatsBase
+import OnlineStatsBase: fit!, ExactStat
 
-mutable struct MyMean <: OnlineStat{0, EqualWeight}
+mutable struct MyMean <: ExactStat{0}
     value::Float64
     MyMean() = new(0.0)
 end
 
-OnlineStatsBase.fit!(o::MyMean, y::Real, w::Float64) = (o.value += w * (y - o.value))
+fit!(o::MyMean, y::Real, w::Float64) = (o.value += w * (y - o.value))
 ```
 
 ### That's all there is to it
+
 ```julia
 using OnlineStats
 
@@ -41,10 +39,9 @@ value(s)
 mean(y), var(y)
 ```
 
+## Details
 
-# Details
-
-- An OnlineStat is parameterized by the size of a single observation (and default weight).
+- An OnlineStat is parameterized by the size of a single observation.
   - 0: a `Number`, `Symbol`, or `String`
   - 1: an `AbstractVector` or `Tuple`
   - (1, 0): one of each
