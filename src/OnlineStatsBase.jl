@@ -19,6 +19,11 @@ abstract type ExactStat{N}      <: OnlineStat{N} end
 abstract type StochasticStat{N} <: OnlineStat{N} end
 
 # The default value(o) returns the first field
+"""
+    value(o::OnlineStat)
+
+Return the value of the OnlineStat.
+"""
 @generated function value(o::OnlineStat)
     r = first(fieldnames(o))
     return :(o.$r)
