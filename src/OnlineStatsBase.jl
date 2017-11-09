@@ -10,7 +10,7 @@ const XyOb     = Tuple{VectorOb, ScalarOb}              # (1, 0)
 const Data = Union{ScalarOb, VectorOb, AbstractMatrix, XyOb}
 
 #-----------------------------------------------------------------------# OnlineStat
-abstract type OnlineStat{I} end
+abstract type OnlineStat{N} end
 
 "An OnlineStat which can be updated exactly."
 abstract type ExactStat{N}      <: OnlineStat{N} end
@@ -49,9 +49,10 @@ function Base.merge!(o::T, o2::T, γ::Float64) where {T<:OnlineStat}
 end
 Base.merge(o::T, o2::T, γ::Float64) where {T<:OnlineStat} = merge!(copy(o), o2, γ)
 
-default_weight(o::OnlineStat) = error("$(typeof(o)) needs to overload `default_weight`")
-default_weight(o::ExactStat) = EqualWeight()
-default_weight(o::StochasticStat) = LearningRate()
+default_weight(o::OnlineStat)       = error("$(typeof(o)) has no `default_weight` method")
+default_weight(o::ExactStat)        = EqualWeight()
+default_weight(o::StochasticStat)   = LearningRate()
+
 function default_weight(t::Tuple)
     W = default_weight(first(t))
     all(default_weight.(t) .== W) ||
@@ -60,6 +61,15 @@ function default_weight(t::Tuple)
 end
 
 #-----------------------------------------------------------------------# Weight
+"""
+`Weight` is an abstract type.  Subtypes must be callable have a method to produce the
+weight given the current number of observations in an OnlineStat `n` and the number of 
+observations included in the update (`n2`).
+
+```
+MyWeight(n, n2 = 1)
+```
+"""
 abstract type Weight end 
 include("weight.jl")
 
