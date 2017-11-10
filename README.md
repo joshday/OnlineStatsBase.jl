@@ -9,17 +9,24 @@
 
 ## Creating a new OnlineStat
 
-### Make a subtype of OnlineStat and give it a `fit!` method.
+### Make a subtype of OnlineStat and give it a `_fit!` method.
 
 ```julia
-import OnlineStatsBase: fit!, ExactStat
+import OnlineStatsBase: ExactStat, _fit!
 
+# MyMean
 mutable struct MyMean <: ExactStat{0}
     value::Float64
     MyMean() = new(0.0)
 end
+_fit!(o::MyMean, y::Real, w::Float64) = (o.value += w * (y - o.value))
 
-fit!(o::MyMean, y::Real, w::Float64) = (o.value += w * (y - o.value))
+# Counter
+mutable struct Counter <: ExactStat{0}
+    value::Int
+    Counter() = new(0)
+end
+_fit!(o::Counter, y::Real, w::Float64) = (o.value += 1)
 ```
 
 ### That's all there is to it
@@ -29,14 +36,14 @@ using OnlineStats
 
 y = randn(1000)
 
-s = Series(MyMean(), Variance())
+s = Series(MyMean(), Counter(), Variance())
 
 for yi in y
     fit!(s, yi)
 end
 
 value(s)
-mean(y), var(y)
+mean(y), nobs(s), var(y)
 ```
 
 ## Details
@@ -46,9 +53,9 @@ mean(y), var(y)
   - 1: an `AbstractVector` or `Tuple`
   - (1, 0): one of each
 - OnlineStat Interface
-  - `fit!(o, new_observation, w::Float64)`
+  - `_fit!(o, new_observation, w::Float64)`
     - Update the "sufficient statistics", not necessarily the value
-  - `value(o)`
+  - `_value(o)`
     - Create the value from the "sufficient statistics".  By default, this will return the first field of an OnlineStat
-  - `merge!(o1, o2, w::Float64)`
+  - `Base.merge!(o1, o2, w::Float64)`
     - merge `o2` into `o1`, where `w` is the amount of influence `o2` has.

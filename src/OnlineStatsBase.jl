@@ -26,6 +26,7 @@ Return the value of the OnlineStat.
     r = first(fieldnames(o))
     return :(o.$r)
 end
+_fit!(o::OnlineStat, ob, γ::Float64) = error("typeof(o) needs method: OnlineStatsBase._fit!")
 
 function Base.show(io::IO, o::OnlineStat)
     print(io, name(o), "(")
