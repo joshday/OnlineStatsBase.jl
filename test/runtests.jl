@@ -67,6 +67,6 @@ struct FakeStat3 <: OnlineStat{0} end
     @test_throws Exception default_weight((FakeStat(), FakeStat2()))
     @test default_weight((FakeStat(), FakeStat())) == EqualWeight()
     @test_throws Exception default_weight(FakeStat3())
-    @test_throws Exception _fit!(FakeStat())
+    @test_throws Exception _fit!(FakeStat(), rand(), rand())
 end
 end #module
