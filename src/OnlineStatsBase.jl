@@ -1,8 +1,6 @@
 __precompile__(true)
 module OnlineStatsBase
 
-import LearnBase: value, fit!, nobs
-
 #-----------------------------------------------------------------------# Data
 const ScalarOb = Union{Number, AbstractString, Symbol}  # 0
 const VectorOb = Union{AbstractVector, Tuple}           # 1 
@@ -24,15 +22,14 @@ abstract type StochasticStat{N} <: OnlineStat{N} end
 
 Return the value of the OnlineStat.
 """
-@generated function value(o::OnlineStat)
+@generated function _value(o::OnlineStat)
     r = first(fieldnames(o))
     return :(o.$r)
 end
 
-# Base functions
 function Base.show(io::IO, o::OnlineStat)
     print(io, name(o), "(")
-    showcompact(io, value(o))
+    showcompact(io, _value(o))
     print(io, ")")
 end
 
