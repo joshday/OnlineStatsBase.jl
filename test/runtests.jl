@@ -2,7 +2,7 @@ module OnlineStatsBaseTests
 using Base.Test
 import OnlineStatsBase: OnlineStat, ExactStat, StochasticStat, Weight, EqualWeight, 
     ExponentialWeight, LearningRate, LearningRate2, HarmonicWeight, McclainWeight, 
-    Bounded, Scaled, value, default_weight, name
+    Bounded, Scaled, _value, default_weight, name
 
 #-----------------------------------------------------------------------# show
 for w in [EqualWeight(), ExponentialWeight(), LearningRate(), LearningRate2(),
@@ -59,7 +59,7 @@ struct FakeStat3 <: OnlineStat{0} end
 
 @testset "OnlineStat" begin 
     println(FakeStat())
-    @test value(FakeStat()) == 0.0
+    @test _value(FakeStat()) == 0.0
     @test FakeStat() == FakeStat()
     @test_warn "defined" merge(FakeStat(), FakeStat(), .5)
     @test default_weight(FakeStat()) == EqualWeight()
