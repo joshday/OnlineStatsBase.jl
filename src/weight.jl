@@ -120,7 +120,7 @@ end
 
 Bound the weight by a constant.
 
-``γ_bounded(t) = max(γ(t), λ)``
+``γ_{bounded}(t) = max(γ(t), λ)``
 
 # Example
 
@@ -138,7 +138,7 @@ end
 
 Scale a weight by a constant.
 
-``γ_scaled(t) = λ * γ(t)``
+``γ_{scaled}(t) = λ * γ(t)``
 
 # Example
 
