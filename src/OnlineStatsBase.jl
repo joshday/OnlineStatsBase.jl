@@ -23,8 +23,12 @@ An OnlineStat which must be approximated.  Subtypes of `StochasticStat` use
 `LearningRate()` as the default weight.  Additionally, subtypes should be parameterized
 by an algorithm, which is an optional last argument.  For example:
 
-    OnlineStats.Quantile([.5, .8])
-    OnlineStats.Quantile([.5, .8], OnlineStats.SGD())
+    struct Quantile{T <: Updater} <: StochasticStat{0}
+        value::Vector{Float64}
+        τ::Vector{Float64}
+        updater::T 
+    end
+    Quantile(τ::AbstractVector = [.25, .5, .75], u::Updater = SGD()) = ...
 """
 abstract type StochasticStat{N} <: OnlineStat{N} end
 
