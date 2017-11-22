@@ -136,7 +136,9 @@ struct Bounded{W <: Weight} <: Weight
     λ::Float64 
 end
 (w::Bounded)(n, n2=1) = max(w.λ, w.weight(n, n2))
-Base.show(io::IO, w::Bounded) = print(io, "Bounded by $(w.λ): $(w.weight)")
+Base.show(io::IO, w::Bounded) = print(io, "max($(w.λ), $(w.weight))")
+Base.max(w::Weight, λ::Float64) = Bounded(w, λ)
+Base.max(λ::Float64, w::Weight) = Bounded(w, λ)
 
 #-----------------------------------------------------------------------# Scaled
 """
@@ -157,5 +159,6 @@ struct Scaled{W <: Weight} <: Weight
     λ::Float64
 end
 Base.:*(λ::Real, w::Weight) = Scaled(w, Float64(λ))
+Base.:*(w::Weight, λ::Real) = Scaled(w, Float64(λ))
 (w::Scaled)(n, n2=1) = w.λ * w.weight(n, n2)
-Base.show(io::IO, w::Scaled) = print(io, "Scaled by $(w.λ): $(w.weight)")
+Base.show(io::IO, w::Scaled) = print(io, "$(w.λ) * $(w.weight)")
