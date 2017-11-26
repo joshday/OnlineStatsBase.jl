@@ -1,9 +1,11 @@
 __precompile__(true)
 module OnlineStatsBase
 
+using NamedTuples
+
 #-----------------------------------------------------------------------# Data
 const ScalarOb = Union{Number, AbstractString, Symbol}  # 0
-const VectorOb = Union{AbstractVector, Tuple}           # 1 
+const VectorOb = Union{AbstractVector, Tuple, NamedTuple} # 1 
 const XyOb     = Tuple{VectorOb, ScalarOb}              # (1, 0)
 const Data = Union{ScalarOb, VectorOb, AbstractMatrix, XyOb}
 
