@@ -42,7 +42,9 @@ abstract type StochasticStat{N} <: OnlineStat{N} end
 end
 
 #-----------------------------------------------------------------------# _fit!
-_fit!(o::OnlineStat, ob, γ::Float64) = error("typeof(o) needs method: OnlineStatsBase._fit!")
+function _fit!(o::OnlineStat, ob, γ::Float64) 
+    error("Need method: OnlineStatsBase._fit!(::$(typeof(o)), ob, γ::Float64")
+end
 
 #-----------------------------------------------------------------------# show
 function Base.show(io::IO, o::OnlineStat)
