@@ -41,6 +41,12 @@ abstract type StochasticStat{N} <: OnlineStat{N} end
     return :(o.$r)
 end
 
+""" 
+    _fit!(o::OnlineStat, observation::TypeOfObservation, γ::Float64)
+
+Update an `OnlineStat` with a single `observation` by a weight `γ`.  `TypeOfObservation`
+depends on `typof(o)`.
+"""
 function _fit! end
 
 #-----------------------------------------------------------------------# show
