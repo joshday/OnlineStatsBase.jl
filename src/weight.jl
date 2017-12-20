@@ -19,7 +19,7 @@ Equally weighted observations.
     Series(randn(100), EqualWeight(), Variance())
 """
 struct EqualWeight <: Weight end
-(::EqualWeight)(n, n2 = 1) = n2 / n
+(::EqualWeight)(n) = 1 / n
 
 #-----------------------------------------------------------------------# ExponentialWeight
 """
@@ -39,7 +39,7 @@ struct ExponentialWeight <: Weight
     ExponentialWeight(λ::Real = .1) = new(λ)
     ExponentialWeight(lookback::Integer) = new(2 / (lookback + 1))
 end
-(w::ExponentialWeight)(n, n2=1) = n == 1 ? 1.0 : w.λ
+(w::ExponentialWeight)(n) = n == 1 ? 1.0 : w.λ
 Base.show(io::IO, w::ExponentialWeight) = print(io, name(w) * "(λ = $(w.λ))")
 
 #-----------------------------------------------------------------------# LearningRate
@@ -58,7 +58,7 @@ struct LearningRate <: Weight
     r::Float64 
     LearningRate(r = .6) = new(r)
 end
-(w::LearningRate)(n, n2=1) = 1 / n ^ w.r
+(w::LearningRate)(n) = 1 / n ^ w.r
 Base.show(io::IO, w::LearningRate) = print(io, name(w) * "(r = $(w.r))")
 
 #-----------------------------------------------------------------------# LearningRate2
@@ -77,7 +77,7 @@ struct LearningRate2 <: Weight
     c::Float64 
     LearningRate2(c = .5) = new(c)
 end
-(w::LearningRate2)(n, n2=1) = 1 / (1 + w.c * (n - 1))
+(w::LearningRate2)(n) = 1 / (1 + w.c * (n - 1))
 Base.show(io::IO, w::LearningRate2) = print(io, name(w) * "(c = $(w.c))")
 
 #-----------------------------------------------------------------------# HarmonicWeight
@@ -96,7 +96,7 @@ struct HarmonicWeight <: Weight
     a::Float64 
     HarmonicWeight(a = 10.0) = new(a)
 end
-(w::HarmonicWeight)(n, n2=1) = w.a / (w.a + n - 1)
+(w::HarmonicWeight)(n) = w.a / (w.a + n - 1)
 Base.show(io::IO, w::HarmonicWeight) = print(io, name(w) * "(a = $(w.a))")
 
 #-----------------------------------------------------------------------# McclainWeight
@@ -116,7 +116,7 @@ mutable struct McclainWeight <: Weight
     last::Float64
     McclainWeight(α = .1) = new(α, 1.0)
 end
-(w::McclainWeight)(n, n2=1) = n == 1 ? 1.0 : (w.last = w.last / (1 + w.last - w.α))
+(w::McclainWeight)(n) = n == 1 ? 1.0 : (w.last = w.last / (1 + w.last - w.α))
 Base.show(io::IO, w::McclainWeight) = print(io, name(w) * "(α = $(w.α))")
 
 #-----------------------------------------------------------------------# Bounded
@@ -135,7 +135,7 @@ struct Bounded{W <: Weight} <: Weight
     weight::W 
     λ::Float64 
 end
-(w::Bounded)(n, n2=1) = max(w.λ, w.weight(n, n2))
+(w::Bounded)(n) = max(w.λ, w.weight(n))
 Base.show(io::IO, w::Bounded) = print(io, "max($(w.λ), $(w.weight))")
 Base.max(w::Weight, λ::Float64) = Bounded(w, λ)
 Base.max(λ::Float64, w::Weight) = Bounded(w, λ)
@@ -160,5 +160,5 @@ struct Scaled{W <: Weight} <: Weight
 end
 Base.:*(λ::Real, w::Weight) = Scaled(w, Float64(λ))
 Base.:*(w::Weight, λ::Real) = Scaled(w, Float64(λ))
-(w::Scaled)(n, n2=1) = w.λ * w.weight(n, n2)
+(w::Scaled)(n) = w.λ * w.weight(n)
 Base.show(io::IO, w::Scaled) = print(io, "$(w.λ) * $(w.weight)")
