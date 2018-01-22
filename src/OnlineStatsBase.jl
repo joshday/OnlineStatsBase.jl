@@ -4,35 +4,29 @@ module OnlineStatsBase
 using NamedTuples
 
 #-----------------------------------------------------------------------# Data
-const ScalarOb = Union{Number, AbstractString, Symbol, Dates.TimeType}  # 0
+const ScalarOb = Any #Union{Number, AbstractString, Symbol, Dates.TimeType}  # 0
 const VectorOb = Union{AbstractVector, Tuple, NamedTuple} # 1 
 const XyOb     = Tuple{VectorOb, ScalarOb}              # (1, 0)
 const Data = Union{ScalarOb, VectorOb, AbstractMatrix, XyOb}
 
 #-----------------------------------------------------------------------# OnlineStat
 abstract type OnlineStat{N} end
+default_weight(o::OnlineStat) = error("$(typeof(o)) has no `default_weight` method")
 
-#-----------------------------------------------------------------------# ExactStat
-"""
-An OnlineStat which can be updated exactly.  Subtypes of `ExactStat` use `EqualWeight()`
-as the default weight.
-"""
+"An OnlineStat which can be `fit!`-ted and `merge!`-ed exactly"
 abstract type ExactStat{N} <: OnlineStat{N} end
+default_weight(o::ExactStat) = EqualWeight()
 
-#-----------------------------------------------------------------------# StochasticStat
-"""
-An OnlineStat which must be approximated.  Subtypes of `StochasticStat` use 
-`LearningRate()` as the default weight.  Additionally, subtypes should be parameterized
-by an algorithm, which is an optional last argument.  For example:
-
-    struct Quantile{T <: Updater} <: StochasticStat{0}
-        value::Vector{Float64}
-        τ::Vector{Float64}
-        updater::T 
-    end
-    Quantile(τ::AbstractVector = [.25, .5, .75], u::Updater = SGD()) = ...
-"""
+"An OnlineStat that must be approximated.  Subtypes are parameterized by an [`Updater`](@ref)"
 abstract type StochasticStat{N} <: OnlineStat{N} end
+default_weight(o::StochasticStat) = LearningRate()
+
+function default_weight(t::Tuple)
+    W = default_weight(first(t))
+    all(default_weight.(t) .== W) ||
+        error("Weight must be specified when defaults differ.  Found: $(name.(default_weight.(t))).")
+    return W
+end
 
 #-----------------------------------------------------------------------# _value
 # The default value(o) returns the first field
@@ -72,17 +66,6 @@ function Base.merge!(o::T, o2::T, γ::Float64) where {T<:OnlineStat}
 end
 Base.merge(o::T, o2::T, γ::Float64) where {T<:OnlineStat} = merge!(copy(o), o2, γ)
 
-#-----------------------------------------------------------------------# default_weight
-default_weight(o::OnlineStat)       = error("$(typeof(o)) has no `default_weight` method")
-default_weight(o::ExactStat)        = EqualWeight()
-default_weight(o::StochasticStat)   = LearningRate()
-
-function default_weight(t::Tuple)
-    W = default_weight(first(t))
-    all(default_weight.(t) .== W) ||
-        error("Weight must be specified when defaults differ.  Found: $(name.(default_weight.(t))).")
-    return W
-end
 
 #-----------------------------------------------------------------------# Weight
 """
