@@ -4,10 +4,8 @@ module OnlineStatsBase
 using NamedTuples
 
 #-----------------------------------------------------------------------# Data
-const ScalarOb = Any #Union{Number, AbstractString, Symbol, Dates.TimeType}  # 0
 const VectorOb = Union{AbstractVector, Tuple, NamedTuple} # 1 
-const XyOb     = Tuple{VectorOb, ScalarOb}              # (1, 0)
-const Data = Union{ScalarOb, VectorOb, AbstractMatrix, XyOb}
+const XyOb     = Tuple{VectorOb, Any}              # (1, 0)
 
 #-----------------------------------------------------------------------# OnlineStat
 abstract type OnlineStat{N} end
