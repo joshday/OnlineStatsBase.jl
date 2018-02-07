@@ -26,9 +26,10 @@ struct EqualWeight <: Weight end
     ExponentialWeight(λ::Float64)
     ExponentialWeight(lookback::Int)
 
-Exponentially weighted observations.  
+Exponentially weighted observations.  The first weight is 1.0 and all else are 
+`λ = 2 / (lookback + 1)`.
 
-``γ(t) = λ = 2 / (lookback + 1)``
+``γ(t) = (t == 1) ? 1.0 : λ``
 
 # Example
 
