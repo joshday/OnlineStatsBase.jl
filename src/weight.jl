@@ -7,33 +7,33 @@ end
 Base.copy(w::Weight) = deepcopy(w)
 
 #-----------------------------------------------------------------------# EqualWeight
-"""
+doc"""
     EqualWeight()
 
 Equally weighted observations.  
 
-``γ(t) = 1 / t``
+``\gamma_t = \frac{1}{t}``
 
 # Example
 
-    Series(randn(100), EqualWeight(), Variance())
+    series(randn(100), EqualWeight(), Variance())
 """
 struct EqualWeight <: Weight end
 (::EqualWeight)(n) = 1 / n
 
 #-----------------------------------------------------------------------# ExponentialWeight
-"""
+doc"""
     ExponentialWeight(λ::Float64)
     ExponentialWeight(lookback::Int)
 
 Exponentially weighted observations.  The first weight is 1.0 and all else are 
 `λ = 2 / (lookback + 1)`.
 
-``γ(t) = (t == 1) ? 1.0 : λ``
+``\gamma_1 = 1, \gamma_t = \lambda``
 
 # Example
 
-    Series(randn(100), ExponentialWeight(), Variance())
+    series(randn(100), ExponentialWeight(), Variance())
 """
 struct ExponentialWeight <: Weight 
     λ::Float64 
@@ -44,12 +44,13 @@ end
 Base.show(io::IO, w::ExponentialWeight) = print(io, name(w) * "(λ = $(w.λ))")
 
 #-----------------------------------------------------------------------# LearningRate
-"""
+doc"""
     LearningRate(r = .6)
 
-Slowly decreasing weight.  
+Slowly decreasing weight.  Satisfies the standard stochastic approximation assumption 
+``\sum \gamma_t = \infty, \sum \gamma_t^2 < \infty`` if ``r\in(.5, 1]``.
 
-``γ(t) = 1 / t^r``
+``\gamma_t = \frac{1}{t^r}``
 
 # Example
 
@@ -63,12 +64,12 @@ end
 Base.show(io::IO, w::LearningRate) = print(io, name(w) * "(r = $(w.r))")
 
 #-----------------------------------------------------------------------# LearningRate2
-"""
+doc"""
     LearningRate2(c = .5)
 
 Slowly decreasing weight.  
 
-``γ(t) = 1 / (1 + c * (t - 1))``
+``\gamma_t = \frac{1}{1 + c(t-1)}``
 
 # Example
 
@@ -82,12 +83,12 @@ end
 Base.show(io::IO, w::LearningRate2) = print(io, name(w) * "(c = $(w.c))")
 
 #-----------------------------------------------------------------------# HarmonicWeight
-"""
+doc"""
     HarmonicWeight(a = 10.0)
 
 Weight determined by harmonic series.  
 
-``γ(t) = a / (a + t - 1)``
+``\gamma_t = \frac{a}{a + t - 1}``
 
 # Example
 
@@ -101,12 +102,12 @@ end
 Base.show(io::IO, w::HarmonicWeight) = print(io, name(w) * "(a = $(w.a))")
 
 #-----------------------------------------------------------------------# McclainWeight
-"""
+doc"""
     McclainWeight(α = .1)
 
 Weight which decreases into a constant.
 
-``γ(t) = γ(t-1) / (1 + γ(t) - α)``
+``\gamma_t = \frac{\gamma_{t-1}}{1 + \gamma_{t-1} - \alpha}``
 
 # Example
 
