@@ -122,12 +122,12 @@ end
 Base.show(io::IO, w::McclainWeight) = print(io, name(w) * "(α = $(w.α))")
 
 #-----------------------------------------------------------------------# Bounded
-"""
+doc"""
     Bounded(w::Weight, λ::Float64)
 
 Bound the weight by a constant.
 
-``γ_{bounded}(t) = max(γ(t), λ)``
+``\gamma_t^* = \text{max}(\gamma_t, \lambda)``
 
 # Example
 
@@ -143,12 +143,12 @@ Base.max(w::Weight, λ::Float64) = Bounded(w, λ)
 Base.max(λ::Float64, w::Weight) = Bounded(w, λ)
 
 #-----------------------------------------------------------------------# Scaled
-"""
+doc"""
     Scaled(w::Weight, λ::Float64)
 
 Scale a weight by a constant.
 
-``γ_{scaled}(t) = λ * γ(t)``
+``\gamma_t^* = \lambda * \gamma_t``
 
 # Example
 
