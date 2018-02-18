@@ -59,10 +59,10 @@ end
 Base.copy(o::OnlineStat) = deepcopy(o)
 
 #-----------------------------------------------------------------------# merge
-function Base.merge!(o::T, o2::T, γ::Float64) where {T<:OnlineStat} 
+function Base.merge!(o::OnlineStat, o2::OnlineStat, γ)
     warn("Merging not well-defined for $(typeof(o)).  No merging occurred.")
 end
-Base.merge(o::T, o2::T, γ::Float64) where {T<:OnlineStat} = merge!(copy(o), o2, γ)
+Base.merge(o::OnlineStat, o2::OnlineStat, γ::Number) = merge!(copy(o), o2, γ)
 
 
 #-----------------------------------------------------------------------# Weight
