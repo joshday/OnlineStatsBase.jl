@@ -2,6 +2,8 @@ __precompile__(true)
 module OnlineStatsBase
 
 using NamedTuples
+import LearnBase: value 
+import StatsBase: fit!
 
 #-----------------------------------------------------------------------# Data
 const VectorOb = Union{AbstractVector, Tuple, NamedTuple} # 1 
@@ -26,25 +28,19 @@ function default_weight(t::Tuple)
     return W
 end
 
-#-----------------------------------------------------------------------# _value
-# The default value(o) returns the first field
-@generated function _value(o::OnlineStat)
+#-----------------------------------------------------------------------# fit! and value
+@deprecate _value(o::OnlineStat) value(o::OnlineStat)
+@deprecate _fit!(o::OnlineStat, y, w) fit!(o::OnlineStat, y, w)
+
+@generated function value(o::OnlineStat)
     r = first(fieldnames(o))
     return :(o.$r)
 end
 
-""" 
-    _fit!(o::OnlineStat, observation::TypeOfObservation, γ::Float64)
-
-Update an `OnlineStat` with a single `observation` by a weight `γ`.  `TypeOfObservation`
-depends on `typof(o)`.
-"""
-function _fit! end
-
 #-----------------------------------------------------------------------# show
 function Base.show(io::IO, o::OnlineStat)
     print(io, name(o), "(")
-    showcompact(io, _value(o))
+    showcompact(io, value(o))
     print(io, ")")
 end
 
@@ -60,31 +56,28 @@ Base.copy(o::OnlineStat) = deepcopy(o)
 
 #-----------------------------------------------------------------------# merge
 function Base.merge!(o::OnlineStat, o2::OnlineStat, γ)
-    warn("Merging not well-defined for $(typeof(o)).  No merging occurred.")
+    warn("Merging $(name(o2)) into $(name(o)) is not well-defined.  No merging occurred.")
 end
 Base.merge(o::OnlineStat, o2::OnlineStat, γ) = merge!(copy(o), o2, γ)
 
 
 #-----------------------------------------------------------------------# Weight
-"""
-Subtypes of `Weight` must be callable to produce the weight given the current number of 
-observations in an OnlineStat `n` and the number of new observations (`n2`).
-
-    MyWeight(n, n2 = 1)
-"""
 abstract type Weight end 
 include("weight.jl")
 
 #-----------------------------------------------------------------------# name
+# Example:
+# name(o::OnlineStats.CountMap{Int}, false, true)   --> CountMap{Int}
+# name(o::OnlineStats.CountMap{Int}, false, false)  --> CountMap
+# name(o::OnlineStats.CountMap{Int}, true, true)    --> OnlineStats.CountMap{Int}
+# name(o::OnlineStats.CountMap{Int}, true, false)   --> OnlineStats.CountMap
 function name(o, withmodule = false, withparams = true)
     s = string(typeof(o))
     if !withmodule
-        # remove text that ends in period:  OnlineStats.Mean -> Mean
-        s = replace(s, r"([a-zA-Z]*\.)", "")
+        s = replace(s, r"([a-zA-Z]*\.)", "")  # remove text that ends in period
     end
     if !withparams
-        # replace everything from "{" to the end of the string
-        s = replace(s, r"\{(.*)", "")
+        s = replace(s, r"\{(.*)", "")  # remove "{" to the end of the string
     end
     s
 end

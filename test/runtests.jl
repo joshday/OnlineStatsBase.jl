@@ -2,7 +2,7 @@ module OnlineStatsBaseTests
 using Base.Test
 import OnlineStatsBase: OnlineStat, ExactStat, StochasticStat, Weight, EqualWeight, 
     ExponentialWeight, LearningRate, LearningRate2, HarmonicWeight, McclainWeight, 
-    Bounded, Scaled, _value, default_weight, name
+    Bounded, Scaled, value, fit!, default_weight, name
 
 #-----------------------------------------------------------------------# show
 struct Thing{T} a::T end
@@ -49,10 +49,11 @@ end
 end
 end  # Weight
 
-struct FakeStat <: ExactStat{0}
+mutable struct FakeStat <: ExactStat{0}
     μ::Float64
 end
 FakeStat() = FakeStat(0.0)
+fit!(o::FakeStat, y, w) = (o.μ = y)
 
 struct FakeStat2 <: StochasticStat{0} end
 
@@ -60,7 +61,7 @@ struct FakeStat3 <: OnlineStat{0} end
 
 @testset "OnlineStat" begin 
     println(FakeStat())
-    @test _value(FakeStat()) == 0.0
+    @test value(FakeStat()) == 0.0
     @test FakeStat() == FakeStat()
     @test_warn "defined" merge(FakeStat(), FakeStat(), .5)
     @test default_weight(FakeStat()) == EqualWeight()
@@ -68,6 +69,9 @@ struct FakeStat3 <: OnlineStat{0} end
     @test_throws Exception default_weight((FakeStat(), FakeStat2()))
     @test default_weight((FakeStat(), FakeStat())) == EqualWeight()
     @test_throws Exception default_weight(FakeStat3())
-    @test_throws Exception _fit!(FakeStat(), rand(), rand())
+
+    o = FakeStat()
+    fit!(o, .5, .5)
+    @test value(o) == .5
 end
 end #module
