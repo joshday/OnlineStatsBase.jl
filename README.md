@@ -11,10 +11,10 @@
 
 ## Interface
 
-- **`fit!(o, y, w)`**: Update the "sufficient statistics" of the estimator from a single observation `y` and arbitrary weight (in (0, 1]) `w`.
-- **`value(o, args...)`** (optional):  Calculate the value of the estimator from the "sufficient statistics".  By default, this returns the first field of the OnlineStat.
-- **`merge!(o1, o2, w)`** (optional, no default): Merge OnlineStat `o2` into `o1` where `w` (in (0, 1]) is the amount of influence `o2` has over `o1`.
-- **`default_weight(o)`** (optional): The default weighting mechanism of the OnlineStat.
+- **`fit!(stat, y, w)`**: Update the "sufficient statistics" of the estimator from a single observation `y` and arbitrary weight (in (0, 1]) `w`.
+- **`value(stat, args...)`** (optional):  Calculate the value of the estimator from the "sufficient statistics".  By default, this returns the first field of the OnlineStat.
+- **`merge!(stat1, stat2, w)`** (optional, no default): Merge OnlineStat `stat2` into `o1` where `w` (in (0, 1]) is the amount of influence `stat2` has over `stat1`.
+- **`default_weight(stat)`** (optional): The default weighting mechanism of the OnlineStat.
   - For `<: ExactStat{N}`, something that can reproduce the same estimate as its offline counterpart, this is `EqualWeight()`.
   - For `<: StochasticStat{N}`, something that uses stochastic approximation, this is `LearningRate(.6)`
 
