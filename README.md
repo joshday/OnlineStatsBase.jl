@@ -41,14 +41,14 @@ using OnlineStats
 
 y = randn(1000)
 
-s = Series(MyMean(), Counter(), Variance())
+s = Series(MyMean(), Variance())
 
 for yi in y
     fit!(s, yi)
 end
 
 value(s)
-mean(y), nobs(s), var(y)
+mean(y), var(y)
 ```
 
 ## Other Notes
