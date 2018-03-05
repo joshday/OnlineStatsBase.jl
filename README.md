@@ -6,8 +6,7 @@
 
 
 
-- This package defines the basic types and interface for [OnlineStats](https://github.com/joshday/OnlineStats.jl).  
-- Extending functionality of OnlineStats for use with [OnlineStats](https://github.com/joshday/OnlineStats.jl) and [JuliaDB](https://github.com/JuliaComputing/JuliaDB.jl) should be accomplished through OnlineStatsBase.
+This package defines the basic types and interface for [OnlineStats](https://github.com/joshday/OnlineStats.jl).  
 
 ## Interface
 
