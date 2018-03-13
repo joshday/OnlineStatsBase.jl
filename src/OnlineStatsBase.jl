@@ -1,25 +1,20 @@
 __precompile__(true)
 module OnlineStatsBase
 
-using NamedTuples
+import NamedTuples
 import LearnBase: fit!, value
 
 #-----------------------------------------------------------------------# Data
-const VectorOb = Union{AbstractVector, Tuple, NamedTuple} # 1 
+const VectorOb = Union{AbstractVector, Tuple, NamedTuples.NamedTuple} # 1 
 const XyOb     = Tuple{VectorOb, Any}              # (1, 0)
 
 #-----------------------------------------------------------------------# OnlineStat
 abstract type OnlineStat{N} end
-default_weight(o::OnlineStat) = error("$(typeof(o)) has no `default_weight` method")
+default_weight(o::OnlineStat) = error("$(typeof(o)) needs a `default_weight` method.")
 
-"An OnlineStat that can be `fit!`-ted and `merge!`-ed exactly"
 abstract type ExactStat{N} <: OnlineStat{N} end
 default_weight(o::ExactStat) = EqualWeight()
 
-"""
-An OnlineStat that uses stochastic approximation.  Subtypes should be  parameterized by 
-an [`Updater`](@ref).
-"""
 abstract type StochasticStat{N} <: OnlineStat{N} end
 default_weight(o::StochasticStat) = LearningRate()
 
