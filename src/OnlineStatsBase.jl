@@ -18,10 +18,12 @@ default_weight(o::ExactStat) = EqualWeight()
 abstract type StochasticStat{N} <: OnlineStat{N} end
 default_weight(o::StochasticStat) = LearningRate()
 
-function default_weight(t::Tuple)
+function default_weight(t::Union{Tuple, NamedTuples.NamedTuple})
     W = default_weight(first(t))
-    all(default_weight.(t) .== W) ||
-        error("Weight must be specified when defaults differ.  Found: $(name.(default_weight.(t))).")
+    for item in t 
+        default_weight(item) != W && 
+        error("Weight must be specified when defaults differ. Found:")
+    end
     return W
 end
 
