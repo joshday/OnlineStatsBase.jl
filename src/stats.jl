@@ -89,6 +89,58 @@ function probs(o::CountMap, kys = keys(o.value))
 end
 pdf(o::CountMap, y) = y in keys(o.value) ? o.value[y] / nobs(o) : 0.0
 
+#-----------------------------------------------------------------------# CovMatrix 
+"""
+    CovMatrix(p=0; weight)
+
+Calculate a covariance/correlation matrix of `p` variables.  If the number of variables is 
+unknown, leave the default `p=0`.
+
+# Example 
+
+    fit!(CovMatrix(), randn(100, 4))
+"""
+mutable struct CovMatrix{W} <: OnlineStat{1}
+    value::Matrix{Float64}
+    A::Matrix{Float64}  # x'x/n
+    b::Vector{Float64}  # 1'x/n
+    weight::W
+    n::Int
+end
+CovMatrix(p::Int=0;weight = inv) = CovMatrix(zeros(p,p), zeros(p,p), zeros(p), weight, 0)
+function _fit!(o::CovMatrix, x)
+    γ = o.weight(o.n += 1)
+    if isempty(o.A)
+        p = length(x)
+        o.b = Vector{Float64}(undef, p) 
+        o.A = Matrix{Float64}(undef, p, p)
+        o.value = Matrix{Float64}(undef, p, p)
+    end
+    smooth!(o.b, x, γ)
+    smooth_syr!(o.A, x, γ)
+end
+function value(o::CovMatrix; corrected::Bool = true)
+    o.value[:] = Matrix(Symmetric((o.A - o.b * o.b')))
+    corrected && rmul!(o.value, unbias(o))
+    o.value
+end
+function Base.merge!(o::CovMatrix, o2::CovMatrix)
+    γ = o2.n / (o.n += o2.n)
+    smooth!(o.A, o2.A, γ)
+    smooth!(o.b, o2.b, γ)
+    o
+end
+Base.cov(o::CovMatrix; corrected::Bool = true) = value(o; corrected=corrected)
+Base.mean(o::CovMatrix) = o.b
+Base.var(o::CovMatrix; kw...) = diag(value(o; kw...))
+function Base.cor(o::CovMatrix; kw...)
+    value(o; kw...)
+    v = 1.0 ./ sqrt.(diag(o.value))
+    rmul!(o.value, Diagonal(v))
+    lmul!(Diagonal(v), o.value)
+    o.value
+end
+
 #-----------------------------------------------------------------------# CStat
 """
     CStat(stat)
@@ -114,6 +166,70 @@ function Base.merge!(o::T, o2::T) where {T<:CStat}
     merge!(o.re_stat, o2.re_stat)
     merge!(o.im_stat, o2.im_stat)
 end
+
+#-----------------------------------------------------------------------# Diff
+"""
+    Diff(T::Type = Float64)
+
+Track the difference and the last value.
+
+# Example
+
+    o = Diff()
+    fit!(o, [1.0, 2.0])
+    last(o)
+    diff(o)
+"""
+mutable struct Diff{T <: Real} <: OnlineStat{0}
+    diff::T
+    lastval::T
+end
+Diff(T::Type = Float64) = Diff(zero(T), zero(T))
+function _fit!(o::Diff{T}, x) where {T<:AbstractFloat}
+    v = convert(T, x)
+    o.diff = v - last(o)
+    o.lastval = v
+end
+function _fit!(o::Diff{T}, x) where {T<:Integer}
+    v = round(T, x)
+    o.diff = v - last(o)
+    o.lastval = v
+end
+Base.last(o::Diff) = o.lastval
+Base.diff(o::Diff) = o.diff
+
+
+#-----------------------------------------------------------------------# Extrema
+"""
+    Extrema(T::Type = Float64)
+
+Maximum and minimum.
+
+# Example
+
+    fit!(Extrema(), rand(10^5))
+"""
+mutable struct Extrema{T} <: OnlineStat{0}
+    min::T
+    max::T
+    n::Int
+end
+Extrema(T::Type = Float64) = Extrema{T}(typemax(T), typemin(T), 0)
+function _fit!(o::Extrema, y::Real)
+    o.min = min(o.min, y)
+    o.max = max(o.max, y)
+    o.n += 1
+end
+function Base.merge!(o::Extrema, o2::Extrema)
+    o.min = min(o.min, o2.min)
+    o.max = max(o.max, o2.max)
+    o.n += o2.n
+    o
+end
+value(o::Extrema) = (o.min, o.max)
+Base.extrema(o::Extrema) = value(o)
+Base.maximum(o::Extrema) = o.max 
+Base.minimum(o::Extrema) = o.min
 
 #-----------------------------------------------------------------------# FTSeries 
 """
@@ -151,6 +267,101 @@ end
 
 always(x) = true
 
+#-----------------------------------------------------------------------# HyperLogLog
+# Mostly copy/pasted from StreamStats.jl
+"""
+    HyperLogLog(b)  # 4 ≤ b ≤ 16
+
+Approximate count of distinct elements.
+
+# Example
+
+    fit!(HyperLogLog(12), rand(1:10,10^5))
+"""
+mutable struct HyperLogLog <: OnlineStat{0}
+    m::UInt32
+    M::Vector{UInt32}
+    mask::UInt32
+    altmask::UInt32
+    n::Int
+    function HyperLogLog(b::Integer)
+        !(4 ≤ b ≤ 16) && throw(ArgumentError("b must be an Integer between 4 and 16"))
+        m = 0x00000001 << b
+        M = zeros(UInt32, m)
+        mask = 0x00000000
+        for i in 1:(b - 1)
+            mask |= 0x00000001
+            mask <<= 1
+        end
+        mask |= 0x00000001
+        altmask = ~mask
+        new(m, M, mask, altmask, 0)
+    end
+end
+function Base.show(io::IO, o::HyperLogLog)
+    print(io, "HyperLogLog($(o.m) registers, estimate = $(value(o)))")
+end
+
+hash32(d::Any) = hash(d) % UInt32
+maskadd32(x::UInt32, mask::UInt32, add::UInt32) = (x & mask) + add
+ρ(s::UInt32) = UInt32(leading_zeros(s)) + 0x00000001
+
+function α(m::UInt32)
+    if m == 0x00000010          # m = 16
+        return 0.673
+    elseif m == 0x00000020      # 
+        return 0.697
+    elseif m == 0x00000040
+        return 0.709
+    else                        # if m >= UInt32(128)
+        return 0.7213 / (1 + 1.079 / m)
+    end
+end
+
+function _fit!(o::HyperLogLog, v)
+    o.n += 1
+    x = hash32(v)
+    j = maskadd32(x, o.mask, 0x00000001)
+    w = x & o.altmask
+    o.M[j] = max(o.M[j], ρ(w))
+    o
+end
+
+function value(o::HyperLogLog)
+    S = 0.0
+    for j in eachindex(o.M)
+        S += 1 / (2 ^ o.M[j])
+    end
+    Z = 1 / S
+    E = α(o.m) * UInt(o.m) ^ 2 * Z
+    if E <= 5//2 * o.m
+        V = 0
+        for j in 1:o.m
+            V += Int(o.M[j] == 0x00000000)
+        end
+        if V != 0
+            E_star = o.m * log(o.m / V)
+        else
+            E_star = E
+        end
+    elseif E <= 1//30 * 2 ^ 32
+        E_star = E
+    else
+        E_star = -2 ^ 32 * log(1 - E / (2 ^ 32))
+    end
+    return E_star
+end
+
+function Base.merge!(o::HyperLogLog, o2::HyperLogLog)
+    length(o.M) == length(o2.M) || 
+        error("Merge failed. HyperLogLog objects have different number of registers.")
+    o.n += o2.n
+    for j in eachindex(o.M)
+        o.M[j] = max(o.M[j], o2.M[j])
+    end
+    o
+end
+
 
 #-----------------------------------------------------------------------# Mean
 """
@@ -182,6 +393,48 @@ function Base.merge!(o::Mean, o2::Mean)
     o
 end
 Base.mean(o::Mean) = o.μ
+
+#-----------------------------------------------------------------------# ProbMap
+"""
+    ProbMap(T::Type; weight)
+    ProbMap(A::AbstractDict; weight)
+
+Track a dictionary that maps unique values to its probability.  Similar to 
+[`CountMap`](@ref), but uses a weighting mechanism.
+
+# Example 
+    
+    fit!(ProbMap(Int), rand(1:10, 1000))
+"""
+mutable struct ProbMap{A<:AbstractDict, W} <: OnlineStat{0}
+    value::A 
+    weight::W 
+    n::Int
+end
+ProbMap(T::Type; weight = inv) = ProbMap(OrderedDict{T, Float64}(), weight, 0)
+function _fit!(o::ProbMap, y)
+    γ = o.weight(o.n += 1)
+    get!(o.value, y, 0.0)   # initialize class probability at 0 if it isn't present
+    for ky in keys(o.value)
+        if ky == y 
+            o.value[ky] = smooth(o.value[ky], 1.0, γ)
+        else 
+            o.value[ky] *= (1 - γ)
+        end
+    end
+end
+function Base.merge!(o::ProbMap, o2::ProbMap) 
+    o.n += o2.n
+    merge!((a, b)->smooth(a, b, o.n2 / o.n), o.value, o2.value)
+    o
+end
+function probs(o::ProbMap, levels = keys(o))
+    out = zeros(length(levels))
+    for (i, ky) in enumerate(levels)
+        out[i] = get(o.value, ky, 0.0)
+    end
+    sum(out) == 0.0 ? out : out ./ sum(out)
+end
 
 #-----------------------------------------------------------------------# Series
 """

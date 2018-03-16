@@ -18,7 +18,7 @@ function test_merge(o, y1, y2, compare = ≈; kw...)
     fit!(o2, y1)
     for (v1, v2) in zip(value(o), value(o2))
         result = compare(v1, v2; kw...)
-        result || @warn("Test Failure: $v1 != $v2")
+        result || @warn("Test Merge Failure: $v1 != $v2")
         @test result
     end
     @test nobs(o) == nobs(o2)
@@ -27,7 +27,9 @@ end
 function test_exact(o, y, fo, fy, compare = ≈; kw...)
     fit!(o, y)
     for (v1, v2) in zip(fo(o), fy(y))
-        @test compare(v1, v2; kw...)
+        result = compare(v1, v2; kw...)
+        result || @warn("Test Exact Failure: $v1 != $v2")
+        @test result
     end
 end
 
@@ -101,6 +103,16 @@ end
     @test probs(o) == fill(.25, 4)
     @test probs(o, 7:9) == zeros(3)
 end
+#-----------------------------------------------------------------------# CovMatrix
+@testset "CovMatrix" begin 
+    test_exact(CovMatrix(5), x, var, x -> var(x, dims=1))
+    test_exact(CovMatrix(), x, std, x -> std(x, dims=1))
+    test_exact(CovMatrix(5), x, mean, x -> mean(x, dims=1))
+    test_exact(CovMatrix(), x, cor, cor)
+    test_exact(CovMatrix(5), x, cov, cov)
+    test_exact(CovMatrix(), x, o->cov(o;corrected=false), x->cov(x,corrected=false))
+    test_merge(CovMatrix(), x, x2)
+end
 #-----------------------------------------------------------------------# CStat 
 @testset "CStat" begin 
     data = y + y2 * im 
@@ -110,6 +122,26 @@ end
     test_exact(CStat(Mean()), data, nobs, length, ==)
     test_merge(CStat(Mean()), y, y2)
     test_merge(CStat(Mean()), data, data2)
+end
+#-----------------------------------------------------------------------# Diff 
+@testset "Diff" begin 
+    test_exact(Diff(), y, value, y -> y[end] - y[end-1])
+    o = fit!(Diff(Int), 1:10)
+    @test diff(o) == 1
+    @test last(o) == 10
+end
+#-----------------------------------------------------------------------# Extrema
+@testset "Extrema" begin 
+    test_exact(Extrema(), y, extrema, extrema, ==)
+    test_exact(Extrema(), y, maximum, maximum, ==)
+    test_exact(Extrema(), y, minimum, minimum, ==)
+    test_exact(Extrema(Int), rand(Int, 100), minimum, minimum, ==)
+    test_merge(Extrema(), y, y2, ==)
+end
+#-----------------------------------------------------------------------# HyperLogLog 
+@testset "HyperLogLog" begin 
+    test_exact(HyperLogLog(12), y, value, y->length(unique(y)), atol=30)
+    test_merge(HyperLogLog(4), y, y2)
 end
 #-----------------------------------------------------------------------# Mean 
 @testset "Mean" begin 

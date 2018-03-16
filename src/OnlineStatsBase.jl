@@ -1,6 +1,8 @@
 __precompile__(true)
 module OnlineStatsBase
 
+using LinearAlgebra
+
 import LearnBase: fit!, nobs, value, predict
 import StatsBase: autocov, autocor, confint
 import DataStructures: OrderedDict
