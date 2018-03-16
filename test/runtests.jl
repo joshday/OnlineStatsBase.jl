@@ -18,7 +18,7 @@ function test_merge(o, y1, y2, compare = ≈; kw...)
     fit!(o2, y1)
     for (v1, v2) in zip(value(o), value(o2))
         result = compare(v1, v2; kw...)
-        result || @warn("Test Merge Failure: $v1 != $v2")
+        result || Compat.@warn("Test Merge Failure: $v1 != $v2")
         @test result
     end
     @test nobs(o) == nobs(o2)
@@ -28,7 +28,7 @@ function test_exact(o, y, fo, fy, compare = ≈; kw...)
     fit!(o, y)
     for (v1, v2) in zip(fo(o), fy(y))
         result = compare(v1, v2; kw...)
-        result || @warn("Test Exact Failure: $v1 != $v2")
+        result || Compat.@warn("Test Exact Failure: $v1 != $v2")
         @test result
     end
 end
