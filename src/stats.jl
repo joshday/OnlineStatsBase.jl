@@ -394,6 +394,47 @@ function Base.merge!(o::Mean, o2::Mean)
 end
 Base.mean(o::Mean) = o.μ
 
+#-----------------------------------------------------------------------# Moments
+"""
+    Moments(; weight)
+
+First four non-central moments.
+
+# Example
+
+    s = Series(randn(1000), Moments(10))
+    value(s)
+"""
+mutable struct Moments{W} <: OnlineStat{0}
+    m::Vector{Float64}
+    weight::W
+    n::Int
+end
+Moments(;weight = inv) = Moments(zeros(4), weight, 0)
+function _fit!(o::Moments, y::Real)
+    γ = o.weight(o.n += 1)
+    y2 = y * y
+    @inbounds o.m[1] = smooth(o.m[1], y, γ)
+    @inbounds o.m[2] = smooth(o.m[2], y2, γ)
+    @inbounds o.m[3] = smooth(o.m[3], y * y2, γ)
+    @inbounds o.m[4] = smooth(o.m[4], y2 * y2, γ)
+end
+Base.mean(o::Moments) = o.m[1]
+Base.var(o::Moments) = (o.m[2] - o.m[1] ^ 2) * unbias(o)
+function skewness(o::Moments)
+    v = value(o)
+    (v[3] - 3.0 * v[1] * var(o) - v[1] ^ 3) / var(o) ^ 1.5
+end
+function kurtosis(o::Moments)
+    v = value(o)
+    (v[4] - 4.0 * v[1] * v[3] + 6.0 * v[1] ^ 2 * v[2] - 3.0 * v[1] ^ 4) / var(o) ^ 2 - 3.0
+end
+function Base.merge!(o::Moments, o2::Moments)
+    γ = o2.n / (o.n += o2.n)
+    smooth!(o.m, o2.m, γ)
+    o
+end
+
 #-----------------------------------------------------------------------# ProbMap
 """
     ProbMap(T::Type; weight)
@@ -436,6 +477,44 @@ function probs(o::ProbMap, levels = keys(o))
     sum(out) == 0.0 ? out : out ./ sum(out)
 end
 
+#-----------------------------------------------------------------------# ReservoirSample
+"""
+    ReservoirSample(k::Int, T::Type = Float64)
+
+Reservoir sample of `k` items.
+
+# Example
+
+    fit!(ReservoirSample(100, Int), 1:1000)
+"""
+mutable struct ReservoirSample{T<:Number} <: OnlineStat{0}
+    value::Vector{T}
+    n::Int
+end
+function ReservoirSample(k::Int, T::Type = Float64)
+    ReservoirSample(zeros(T, k), 0)
+end
+function _fit!(o::ReservoirSample, y)
+    o.n += 1
+    if o.n <= length(o.value)
+        o.value[o.n] = y
+    else
+        j = rand(1:o.n)
+        if j < length(o.value)
+            o.value[j] = y
+        end
+    end
+end
+function Base.merge!(o::T, o2::T) where {T<:ReservoirSample}
+    length(o.value) == length(o2.value) || error("Can't merge different-sized samples.")
+    p = o.n / (o.n + o2.n)
+    for j in eachindex(o.value)
+        if rand() > p 
+            o.value[j] = o2.value[j]
+        end
+    end
+end
+
 #-----------------------------------------------------------------------# Series
 """
     Series(stats...)
@@ -456,6 +535,26 @@ Series(stats::OnlineStat{N}...) where {N} = Series{N, typeof(stats)}(stats)
     :(Base.Cartesian.@nexprs $N i -> @inbounds(_fit!(o.stats[i], y[i])))
 end
 Base.merge!(o::Series, o2::Series) = (merge!.(o.stats, o2.stats); o)
+
+#-----------------------------------------------------------------------# Sum
+"""
+    Sum(T::Type = Float64)
+
+Track the overall sum.
+
+# Example
+
+    fit!(Sum(Int), fill(1, 100))
+"""
+mutable struct Sum{T} <: OnlineStat{0}
+    sum::T
+    n::Int
+end
+Sum(T::Type = Float64) = Sum(T(0), 0)
+Base.sum(o::Sum) = o.sum
+_fit!(o::Sum{T}, x::Real) where {T<:AbstractFloat} = (o.sum += convert(T, x); o.n += 1)
+_fit!(o::Sum{T}, x::Real) where {T<:Integer} =       (o.sum += round(T, x); o.n += 1)
+Base.merge!(o::T, o2::T) where {T <: Sum} = (o.sum += o2.sum; o.n += o2.n; o)
 
 #-----------------------------------------------------------------------# Variance 
 """

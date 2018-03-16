@@ -1,15 +1,17 @@
 __precompile__(true)
 module OnlineStatsBase
 
-using LinearAlgebra
+using Compat
+using Compat.LinearAlgebra
 
 import LearnBase: fit!, nobs, value, predict
-import StatsBase: autocov, autocor, confint
+import StatsBase: autocov, autocor, confint, skewness, kurtosis
 import DataStructures: OrderedDict
+import NamedTuples  # Remove in 0.7
 
 export 
 # functions 
-    fit!, nobs, value, autocov, autocor, predict, confint, probs,
+    fit!, nobs, value, autocov, autocor, predict, confint, probs, skewness, kurtosis,
 # weights 
     EqualWeight, ExponentialWeight, LearningRate, LearningRate2, HarmonicWeight, 
     McclainWeight, Bounded, Scaled,
@@ -36,7 +38,7 @@ export
 
 
 
-const Tup      = Union{Tuple, NamedTuple}
+const Tup      = Union{Tuple, NamedTuples.NamedTuple}
 const VectorOb = Union{AbstractVector, Tup} # 1 
 const XyOb     = Tuple{VectorOb, Any}              # (1, 0)
 

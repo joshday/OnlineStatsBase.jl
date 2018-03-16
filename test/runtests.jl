@@ -148,6 +148,34 @@ end
     test_exact(Mean(), y, mean, mean)
     test_merge(Mean(), y, y2)
 end
+#-----------------------------------------------------------------------# Moments
+@testset "Moments" begin 
+    test_exact(Moments(), y, value, x ->[mean(x), mean(x .^ 2), mean(x .^ 3), mean(x .^4) ])
+    test_exact(Moments(), y, skewness, skewness, atol = .1)
+    test_exact(Moments(), y, kurtosis, kurtosis, atol = .1)
+    test_exact(Moments(), y, mean, mean)
+    test_exact(Moments(), y, var, var)
+    test_exact(Moments(), y, std, std)
+    test_merge(Moments(), y, y2)
+end
+#-----------------------------------------------------------------------# ReservoirSample
+@testset "ReservoirSample" begin 
+    test_exact(ReservoirSample(1000), y, value, identity, ==)
+    # merge
+    o1 = fit!(ReservoirSample(9), y)
+    o2 = fit!(ReservoirSample(9), y2)
+    merge!(o1, o2)
+    fit!(o2, y)
+    for yi in value(o1)
+        @test (yi ∈ y) || (yi ∈ y2)
+    end
+end
+#-----------------------------------------------------------------------# Sum 
+@testset "Sum" begin 
+    test_exact(Sum(), y, sum, sum)
+    test_exact(Sum(Int), 1:100, sum, sum)
+    test_merge(Sum(), y, y2)
+end
 #-----------------------------------------------------------------------# Variance 
 @testset "Variance" begin 
     test_exact(Variance(), y, mean, mean)
