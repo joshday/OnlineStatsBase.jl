@@ -21,7 +21,7 @@ function test_merge(o, y1, y2, compare = ≈; kw...)
         result || Compat.@warn("Test Merge Failure: $v1 != $v2")
         @test result
     end
-    @test nobs(o) == nobs(o2)
+    @test nobs(o) == nobs(o2) == (size(y1, 1) + size(y2, 1))
 end
 
 function test_exact(o, y, fo, fy, compare = ≈; kw...)
@@ -31,6 +31,7 @@ function test_exact(o, y, fo, fy, compare = ≈; kw...)
         result || Compat.@warn("Test Exact Failure: $v1 != $v2")
         @test result
     end
+    @test nobs(o) == size(y, 1)
 end
 
 #-----------------------------------------------------------------------# Weight
@@ -94,7 +95,7 @@ end
     test_exact(CountMap(Int), rand(1:10, 100), nobs, length, ==)
     test_exact(CountMap(Int), rand(1:10, 100), o->sort(value(o)), x->sort(countmap(x)), ==)
     test_exact(CountMap(Int), [1,2,3,4], o->O.pdf(o,1), x->.25, ==)
-    test_merge(CountMap(SortedDict{Bool, Int}()), [rand(Bool, 100)], rand(Bool, 100), ==)
+    test_merge(CountMap(SortedDict{Bool, Int}()), rand(Bool, 100), rand(Bool, 100), ==)
     test_merge(CountMap(SortedDict{Bool, Int}()), trues(100), falses(100), ==)
     test_merge(CountMap(SortedDict{Int, Int}()), rand(1:4, 100), rand(5:123, 50), ==)
     test_merge(CountMap(SortedDict{Int, Int}()), rand(1:4, 100), rand(5:123, 50), ==)
@@ -181,23 +182,23 @@ end
     test_merge(Moments(), y, y2)
 end
 #-----------------------------------------------------------------------# Quantile
-# @testset "Quantile/PQuantile" begin 
-#     data = randn(10_000)
-#     data2 = randn(10_000)
-#     τ = .1:.1:.9
-#     for o in [
-#             Quantile(τ, SGD()), 
-#             Quantile(τ, MSPI()), 
-#             Quantile(τ, OMAS()),
-#             Quantile(τ, ADAGRAD())
-#             ]
-#         test_exact(o, data, value, x -> quantile(x,τ), (a,b) -> ≈(a,b,atol=.5))
-#         test_merge(o, data, data2, (a,b) -> ≈(a,b,atol=.5))
-#     end
-#     for τi in τ
-#         test_exact(PQuantile(τi), data, value, x->quantile(x, τi), (a,b) -> ≈(a,b;atol=.3))
-#     end
-# end
+@testset "Quantile/PQuantile" begin 
+    data = randn(10_000)
+    data2 = randn(10_000)
+    τ = .1:.1:.9
+    for o in [
+            Quantile(τ; alg = SGD()), 
+            # Quantile(τ, MSPI()), 
+            # Quantile(τ, OMAS()),
+            # Quantile(τ; alg = ADAGRAD())
+            ]
+        test_exact(copy(o), data, value, x -> quantile(x,τ), atol = .5)
+        test_merge(copy(o), data, data2, atol = .5)
+    end
+    # for τi in τ
+    #     test_exact(P2Quantile(τi), data, value, x->quantile(x, τi), atol = .3)
+    # end
+end
 #-----------------------------------------------------------------------# ReservoirSample
 @testset "ReservoirSample" begin 
     test_exact(ReservoirSample(1000), y, value, identity, ==)

@@ -183,17 +183,20 @@ Track the difference and the last value.
 mutable struct Diff{T <: Real} <: OnlineStat{0}
     diff::T
     lastval::T
+    n::Int
 end
-Diff(T::Type = Float64) = Diff(zero(T), zero(T))
+Diff(T::Type = Float64) = Diff(zero(T), zero(T), 0)
 function _fit!(o::Diff{T}, x) where {T<:AbstractFloat}
     v = convert(T, x)
     o.diff = v - last(o)
     o.lastval = v
+    o.n += 1
 end
 function _fit!(o::Diff{T}, x) where {T<:Integer}
     v = round(T, x)
     o.diff = v - last(o)
     o.lastval = v
+    o.n += 1
 end
 Base.last(o::Diff) = o.lastval
 Base.diff(o::Diff) = o.diff
@@ -509,6 +512,86 @@ function probs(o::ProbMap, levels = keys(o))
     end
     sum(out) == 0.0 ? out : out ./ sum(out)
 end
+
+#-----------------------------------------------------------------------# P2Quantile 
+"""
+    P2Quantile(τ = 0.5)
+
+Calculate the approximate quantile via the P^2 algorithm.  It is more computationally
+expensive than the algorithms used by [`Quantile`](@ref), but also more exact.
+
+Ref: [https://www.cse.wustl.edu/~jain/papers/ftp/psqr.pdf](https://www.cse.wustl.edu/~jain/papers/ftp/psqr.pdf)
+"""
+mutable struct P2Quantile <: OnlineStat{0}
+    q::Vector{Float64}  # marker heights
+    n::Vector{Int}      # marker position
+    nprime::Vector{Float64}
+    τ::Float64
+    nobs::Int
+end
+function P2Quantile(τ::Real = 0.5)
+    @assert 0 < τ < 1
+    nprime = [1, 1 + 2τ, 1 + 4τ, 3 + 2τ, 5]
+    P2Quantile(zeros(5), collect(1:5), nprime, τ, 0)
+end
+Base.show(io::IO, o::P2Quantile) = print(io, "P2Quantile($(o.τ), $(value(o)))")
+value(o::P2Quantile) = o.q[3]
+nobs(o::P2Quantile) = o.nobs
+function _fit!(o::P2Quantile, y::Real)
+    o.nobs += 1
+    q = o.q
+    n = o.n
+    nprime = o.nprime
+    @inbounds if o.nobs > 5
+        # B1
+        k = searchsortedfirst(q, y) - 1
+        k = min(k, 4)
+        k = max(k, 1)
+        q[1] = min(q[1], y)
+        q[5] = max(q[5], y)
+        # B2
+        for i in (k+1):5
+            n[i] += 1
+        end
+        nprime[2] += o.τ / 2
+        nprime[3] += o.τ
+        nprime[4] += (1 + o.τ) / 2
+        nprime[5] += 1
+        # B3
+        for i in 2:4
+            _interpolate!(o.q, o.n, nprime[i] - n[i], i)
+        end
+    # A
+    elseif o.nobs < 5
+        @inbounds o.q[o.nobs] = y
+    else 
+        @inbounds o.q[o.nobs] = y
+        sort!(o.q)
+    end
+end
+
+function _interpolate!(q, n, di, i)
+    @inbounds q1, q2, q3 = q[i-1], q[i], q[i+1]
+    @inbounds n1, n2, n3 = n[i-1], n[i], n[i+1]
+    @inbounds if (di ≥ 1 && n3 - n2 > 1) || (di ≤ -1 && n1 - n2 < -1)
+        d = Int(sign(di))
+        df = sign(di)
+        v1 = (n2 - n1 + d) * (q3 - q2) / (n3 - n2) 
+        v2 = (n3 - n2 - d) * (q2 - q1) / (n2 - n1) 
+        qi = q2 + df / (n3 - n1) * (v1 + v2) 
+        if q1 < qi < q3 
+            q[i] = qi
+        else
+            q[i] += df * (q[i + d] - q2) / (n[i + d] - n2)
+        end
+        n[i] += d
+    end
+end
+
+# function parabolic_interpolate(q1, q2, q3, n1, n2, n3, d)
+#     qi = q2 + d / (n3 - n1) * 
+#         ((n2 - n1 + d) * (q3 - q2) / (n3 - n2) + (n3 - n2 - d) * (q2 - q1) / (n2 - n1))
+# end
 
 #-----------------------------------------------------------------------# Quantile
 """

@@ -36,3 +36,41 @@ nvars(o::NBClassifier) = length(o.init)
 nobs(o::NBClassifier) = isempty(o.d) ? 0 : sum(nobs, values(o))
 probs(o::NBClassifier) = isempty(o.d) ? zeros(0) : map(nobs, values(o)) ./ nobs(o)
 
+function _predict(o::NBClassifier, x::VectorOb, p = zeros(nkeys(o)), n = nobs(o))
+    for (k, gk) in enumerate(values(o))
+        # P(Ck)
+        p[k] = log(nobs(gk) / n + ϵ) 
+        # P(xj | Ck)
+        for j in 1:length(x)
+            p[k] += log(pdf(gk[j], x[j]) + ϵ)
+        end
+        p[k] = exp(p[k])
+    end
+    sp = sum(p)
+    sp == 0.0 ? p : scale!(p, inv(sp))
+end
+function _classify(o::NBClassifier, x::VectorOb, p = zeros(nkeys(o)), n = nobs(o)) 
+    _, k = findmax(_predict(o, x, p, n))
+    index_to_key(o, k)
+end
+function index_to_key(d, i)
+    for (k, ky) in enumerate(keys(d))
+        k == i && return ky 
+    end
+end
+predict(o::NBClassifier, x::VectorOb) = _predict(o, x)
+classify(o::NBClassifier, x::VectorOb) = _classify(o, x)
+function predict(o::NBClassifier, x::AbstractMatrix)
+    n = nobs(o)
+    p = zeros(nkeys(o))
+    mapslices(xi -> _predict(o, xi, p, n), x, 2)
+end
+function classify(o::NBClassifier, x::AbstractMatrix)
+    n = nobs(o)
+    p = zeros(nkeys(o))
+    mapslices(xi -> _classify(o, xi, p, n), x, 2)
+end
+function classify_node(o::NBClassifier)
+    _, k = findmax([nobs(g) for g in values(o)])
+    index_to_key(o, k)
+end

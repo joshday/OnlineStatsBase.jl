@@ -34,6 +34,8 @@ export
     Mean,
     Moments,
     ProbMap,
+    P2Quantile,
+    Quantile,
     ReservoirSample,
     Series, FTSeries,
     Sum,

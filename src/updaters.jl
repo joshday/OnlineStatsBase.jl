@@ -16,7 +16,7 @@ function direction!(o::SGD)
         o.δ[i] = γ * o.δ[i]
     end
 end
-Base.merge!(o::SGD, o2::SGD) = (o.n += o2.n; o)
+Base.merge!(o::SGD, o2::SGD) = (o.n += o2.n; info(o.n); o)
 
 #-----------------------------------------------------------------------# ADAGRAD 
 mutable struct ADAGRAD{W} <: SGUpdater 
