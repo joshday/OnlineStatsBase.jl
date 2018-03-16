@@ -1,19 +1,37 @@
 __precompile__(true)
 module OnlineStatsBase
 
+import LearnBase: fit!, nobs, value, predict
+import StatsBase: autocov, autocor, confint
+
 export 
 # functions 
-    fit!, 
-    nobs, 
-    value,
+    fit!, nobs, value, autocov, autocor, predict, confint,
 # weights 
     EqualWeight, ExponentialWeight, LearningRate, LearningRate2, HarmonicWeight, 
     McclainWeight, Bounded, Scaled,
 # stats
+    AutoCov,
+    Bootstrap,
+    Count,
+    CountMap,
+    CovMatrix,
+    CStat,
+    Diff,
+    Extrema,
+    FitBeta, FitCauchy, FitGamma, FitLogNormal, FitNormal, FitMultinomial, FitMVNormal,
+    Group,
+    HyperLogLog,
+    Lag,
     Mean,
-    Series, FTSeries
+    Moments,
+    ProbMap,
+    ReservoirSample,
+    Series, FTSeries,
+    Sum,
+    Variance
 
-import LearnBase: fit!, nobs, value
+
 
 const Tup      = Union{Tuple, NamedTuple}
 const VectorOb = Union{AbstractVector, Tup} # 1 
@@ -43,7 +61,7 @@ function smooth_syr!(A::AbstractMatrix, x, γ::Number)
 end
 
 unbias(o) = nobs(o) / (nobs(o) - 1)
-std(o::OnlineStat; kw...) = sqrt.(var(o; kw...))
+Base.std(o::OnlineStat; kw...) = sqrt.(var(o; kw...))
 
 #-----------------------------------------------------------------------# fit!
 _fit!(o::OnlineStat, arg) = error("$o hasn't implemented `_fit!` yet.")
