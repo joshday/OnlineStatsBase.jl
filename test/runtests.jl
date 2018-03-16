@@ -105,9 +105,9 @@ end
 end
 #-----------------------------------------------------------------------# CovMatrix
 @testset "CovMatrix" begin 
-    @compat test_exact(CovMatrix(5), x, var, x -> var(x, dims=1))
-    @compat test_exact(CovMatrix(), x, std, x -> std(x, dims=1))
-    @compat test_exact(CovMatrix(5), x, mean, x -> mean(x, dims=1))
+    test_exact(CovMatrix(5), x, var, x -> var(x, 1))
+    test_exact(CovMatrix(), x, std, x -> std(x, 1))
+    test_exact(CovMatrix(5), x, mean, x -> mean(x, 1))
     test_exact(CovMatrix(), x, cor, cor)
     test_exact(CovMatrix(5), x, cov, cov)
     test_exact(CovMatrix(), x, o->cov(o;corrected=false), x->cov(x,corrected=false))
@@ -180,6 +180,24 @@ end
     test_exact(Moments(), y, std, std)
     test_merge(Moments(), y, y2)
 end
+#-----------------------------------------------------------------------# Quantile
+# @testset "Quantile/PQuantile" begin 
+#     data = randn(10_000)
+#     data2 = randn(10_000)
+#     τ = .1:.1:.9
+#     for o in [
+#             Quantile(τ, SGD()), 
+#             Quantile(τ, MSPI()), 
+#             Quantile(τ, OMAS()),
+#             Quantile(τ, ADAGRAD())
+#             ]
+#         test_exact(o, data, value, x -> quantile(x,τ), (a,b) -> ≈(a,b,atol=.5))
+#         test_merge(o, data, data2, (a,b) -> ≈(a,b,atol=.5))
+#     end
+#     for τi in τ
+#         test_exact(PQuantile(τi), data, value, x->quantile(x, τi), (a,b) -> ≈(a,b;atol=.3))
+#     end
+# end
 #-----------------------------------------------------------------------# ReservoirSample
 @testset "ReservoirSample" begin 
     test_exact(ReservoirSample(1000), y, value, identity, ==)
