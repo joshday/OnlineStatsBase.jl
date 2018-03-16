@@ -158,6 +158,8 @@ end
 include("weight.jl")
 include("updaters.jl")
 include("stats.jl")
+include("hist.jl")
 include("distributions.jl")
 include("fasttree.jl")
+include("nbclassifier.jl")
 end
