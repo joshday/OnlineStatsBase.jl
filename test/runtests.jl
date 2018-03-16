@@ -110,7 +110,7 @@ end
     test_exact(CovMatrix(5), x, mean, x -> mean(x, 1))
     test_exact(CovMatrix(), x, cor, cor)
     test_exact(CovMatrix(5), x, cov, cov)
-    test_exact(CovMatrix(), x, o->cov(o;corrected=false), x->cov(x,corrected=false))
+    test_exact(CovMatrix(), x, o->cov(o;corrected=false), x->cov(x, 1, false))
     test_merge(CovMatrix(), x, x2)
 end
 #-----------------------------------------------------------------------# CStat 
@@ -151,9 +151,9 @@ end
     @test o[1] == first(o) == Mean()
     @test o[5] == last(o) == Variance()
 
-    @compat test_exact(o, x, values, x -> vcat(mean(x, dims=1)[1:3], var(x, dims=1)[4:5]))
-    @compat test_exact(5Mean(), x, values, x->mean(x, dims=1))
-    @compat test_exact(5Variance(), x, values, x->var(x, dims=1))
+    test_exact(o, x, values, x -> vcat(mean(x, 1)[1:3], var(x, 1)[4:5]))
+    test_exact(5Mean(), x, values, x->mean(x, 1))
+    test_exact(5Variance(), x, values, x->var(x, 1))
 
     test_merge([Mean() Variance() Sum() Moments() Mean()], x, x2, (a,b) -> all(value.(a) .≈ value.(b)))
     test_merge(5Mean(), x, x2, (a,b) -> all(value.(a) .≈ value.(b)))

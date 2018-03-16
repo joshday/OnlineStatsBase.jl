@@ -25,7 +25,7 @@ mutable struct ADAGRAD{W} <: SGUpdater
     n::Int
     h::Vector{Float64}
 end
-ADAGRAD(p=0; rate = LearningRate()) = ADAGRAD(zeros(p), rate, 0, zeros(p))
+ADAGRAD(p=0; rate=LearningRate()) = ADAGRAD(zeros(p), rate, 0, zeros(p))
 init!(o::ADAGRAD, p) = (o.δ = zeros(p); o.h = zeros(p))
 function direction!(o::ADAGRAD)
     γ = o.weight(o.n)
@@ -38,6 +38,27 @@ function Base.merge!(o::ADAGRAD, o2::ADAGRAD)
     o.n += o2.n 
     smooth!(o.h, o2.h, nobs(o2) / nobs(o))
     o
+end
+
+#-----------------------------------------------------------------------# ADADELTA 
+mutable struct ADADELTA{W} <: SGUpdater 
+    δ::Vector{Float64}
+    weight::W 
+    n::Int 
+    v::Vector{Float64}
+    Δ::Vector{Float64}
+    ρ::Float64
+end
+ADADELTA(p=0; rate=LearningRate(), ρ = .95) = ADADELTA(zeros(p), rate, 0, zeros(p), zeros(p), ρ)
+init!(o::ADADELTA, p) = (o.δ = zeros(p); o.v = zeros(p); o.Δ = zeros(p))
+function direction!(o::ADADELTA)
+    for i in eachindex(o.δ)
+        g = o.δ[i]
+        o.v[i] = smooth(g * g, o.v[i], o.ρ)
+        Δi = (sqrt(o.Δ[i]) + ϵ) / (sqrt(o.v[i]) + ϵ)
+        o.δ[i] *= Δi
+        o.Δ[i] = smooth(Δi * Δi, o.Δ[i], o.ρ)
+    end
 end
 
 #-----------------------------------------------------------------------# ADAM 
