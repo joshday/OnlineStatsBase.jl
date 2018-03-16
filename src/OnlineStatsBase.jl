@@ -36,7 +36,7 @@ Base.copy(o::OnlineStat) = deepcopy(o)
 
 #-----------------------------------------------------------------------# merge
 function Base.merge!(o::OnlineStat, o2::OnlineStat)
-    warn("Merging $(name(o2)) into $(name(o)) is not well-defined.  No merging occurred.")
+    @warn("Merging $(name(o2)) into $(name(o)) is not well-defined.  No merging occurred.")
 end
 Base.merge(o::OnlineStat, o2::OnlineStat, γ) = merge!(copy(o), o2, γ)
 
