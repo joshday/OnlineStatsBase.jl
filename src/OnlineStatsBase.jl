@@ -15,6 +15,8 @@ export
 # weights 
     EqualWeight, ExponentialWeight, LearningRate, LearningRate2, HarmonicWeight, 
     McclainWeight, Bounded, Scaled,
+# updaters 
+    SGD, ADAGRAD, ADAM, MSPI,
 # stats
     AutoCov,
     Bootstrap,
@@ -27,6 +29,7 @@ export
     FitBeta, FitCauchy, FitGamma, FitLogNormal, FitNormal, FitMultinomial, FitMVNormal,
     Group,
     HyperLogLog,
+    KMeans,
     Lag,
     Mean,
     Moments,
@@ -67,6 +70,8 @@ end
 
 unbias(o) = nobs(o) / (nobs(o) - 1)
 Base.std(o::OnlineStat; kw...) = sqrt.(var(o; kw...))
+
+const ϵ = 1e-7
 
 #-----------------------------------------------------------------------# fit!
 _fit!(o::OnlineStat, arg) = error("$o hasn't implemented `_fit!` yet.")
@@ -110,9 +115,10 @@ function Base.show(io::IO, o::OnlineStat)
 end
 
 #-----------------------------------------------------------------------# ==
-function Base.:(==)(o1::OnlineStat, o2::OnlineStat)
-    typeof(o1) == typeof(o2) || return false
-    nms = fieldnames(o1)
+Base.:(==)(o::OnlineStat, o2::OnlineStat) = false 
+
+function Base.:(==)(o1::T, o2::T) where {T<:OnlineStat}
+    nms = fieldnames(typeof(o1))
     all(getfield.(o1, nms) .== getfield.(o2, nms))
 end
 
@@ -147,5 +153,6 @@ end
 
 #-----------------------------------------------------------------------# includes 
 include("weight.jl")
+include("updaters.jl")
 include("stats.jl")
 end

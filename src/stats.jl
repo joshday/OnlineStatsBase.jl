@@ -263,9 +263,41 @@ function Base.merge!(o::T, o2::T) where {T<:FTSeries}
     merge!.(o.stats, o2.stats)
     o
 end
-
-
 always(x) = true
+
+#-----------------------------------------------------------------------# Group
+"""
+    Group(stats::OnlineStat{0}...)
+    Group(tuple)
+
+Create a vector-input stat (`OnlineStat{1}`) from several scalar-input stats.  For a new 
+observation `y`, `y[i]` is sent to `stats[i]`.
+
+# Examples
+
+    fit!(Group(Mean(), Mean()), randn(100, 2))
+    fit!(Group(Mean(), Variance()), randn(100, 2))
+"""
+struct Group{T} <: OnlineStat{1}
+    stats::T
+end
+Group(o::OnlineStat{0}...) = Group(o)
+nobs(o::Group) = nobs(first(o.stats))
+
+Base.getindex(o::Group, i) = o.stats[i]
+Base.first(o::Group) = first(o.stats)
+Base.last(o::Group) = last(o.stats)
+Base.length(o::Group) = length(o.stats)
+Base.values(o::Group) = value.(o.stats)
+
+@generated function _fit!(o::Group{T}, y) where {T}
+    N = length(fieldnames(T))
+    :(Base.Cartesian.@nexprs $N i -> @inbounds(_fit!(o.stats[i], y[i])))
+end
+
+Base.merge!(o::Group, o2::Group) = (merge!.(o.stats, o2.stats); o)
+
+Base.:*(n::Integer, o::OnlineStat{0}) = Group([copy(o) for i in 1:n]...)
 
 #-----------------------------------------------------------------------# HyperLogLog
 # Mostly copy/pasted from StreamStats.jl
@@ -476,6 +508,80 @@ function probs(o::ProbMap, levels = keys(o))
     end
     sum(out) == 0.0 ? out : out ./ sum(out)
 end
+
+#-----------------------------------------------------------------------# Quantile
+"""
+    Quantile(q = [.25, .5, .75]; alg)
+"""
+mutable struct Quantile{T <: Updater} <: OnlineStat{0}
+    value::Vector{Float64}
+    τ::Vector{Float64}
+    updater::T 
+end
+function Quantile(τ::AbstractVector = [.25, .5, .75]; alg = OMAS()) 
+    init!(alg, length(τ))
+    Quantile(zeros(length(τ)), sort!(collect(τ)), alg)
+end
+nobs(o::Quantile) = nobs(o.updater)
+function _fit!(o::Quantile, y)
+    n = (o.updater.n += 1) 
+    len = length(o.value)
+    if n > len 
+        qfit!(o, y)
+    else
+        o.value[n] = y 
+        n == len && sort!(o.value)
+    end
+end
+
+function qfit!(o::Quantile{SG}, y) where {SG<:SGUpdater}
+    for j in eachindex(o.value)
+        o.updater.δ[j] = Float64((o.value[j] > y) - o.τ[j])
+    end
+    direction!(o.updater)
+    for j in eachindex(o.value)
+        o.value[j] -= o.updater.δ[j]
+    end
+end
+function Base.merge!(o::Quantile, o2::Quantile)
+    o.τ == o2.τ || error("Merge failed. Quantile objects track different quantiles.")
+    merge!(o.updater, o2.updater)
+    smooth!(o.value, o2.value, nobs(o2) / nobs(o))
+end
+
+
+# # MSPI
+# q_init(u::MSPI, p) = u
+# function qfit!(o::Quantile{<:MSPI}, y, γ)
+#     @inbounds for i in eachindex(o.τ)
+#         w = inv(abs(y - o.value[i]) + ϵ)
+#         halfyw = .5 * y * w
+#         b = o.τ[i] - .5 + halfyw
+#         o.value[i] = (o.value[i] + γ * b) / (1 + .5 * γ * w)
+#     end
+# end
+
+# # OMAS
+# q_init(u::OMAS, p) = OMAS((zeros(p), zeros(p)))
+# function qfit!(o::Quantile{<:OMAS}, y, γ)
+#     s, t = o.updater.buffer
+#     @inbounds for j in eachindex(o.τ)
+#         w = inv(abs(y - o.value[j]) + ϵ)
+#         s[j] = smooth(s[j], w * y, γ)
+#         t[j] = smooth(t[j], w, γ)
+#         o.value[j] = (s[j] + (2.0 * o.τ[j] - 1.0)) / t[j]
+#     end
+# end
+
+# # OMAP...why is this so bad?
+# q_init(u::OMAP, p) = u
+# function qfit!(o::Quantile{<:OMAP}, y, γ)
+#     for j in eachindex(o.τ)
+#         w = abs(y - o.value[j]) + ϵ
+#         θ = y + w * (2o.τ[j] - 1) 
+#         o.value[j] = smooth(o.value[j], θ, γ)
+#     end
+# end
 
 #-----------------------------------------------------------------------# ReservoirSample
 """
