@@ -1,13 +1,34 @@
 module OnlineStatsBaseTests
-using Base.Test
-import OnlineStatsBase: OnlineStat, ExactStat, StochasticStat, Weight, EqualWeight, 
-    ExponentialWeight, LearningRate, LearningRate2, HarmonicWeight, McclainWeight, 
-    Bounded, Scaled, value, fit!, default_weight, name
+using Test, OnlineStatsBase
 
-#-----------------------------------------------------------------------# show
-struct Thing{T} a::T end
-println(name(Thing(1)))
-println(name(Thing(1), true, false))
+import OnlineStatsBase: Weight
+
+#-----------------------------------------------------------------------# test utils
+const y = randn(1000)
+const y2 = randn(1000)
+const x = randn(1000, 5)
+const x2 = randn(1000, 5)
+
+function test_merge(o, y1, y2, compare = ≈; kw...)
+    o2 = copy(o)
+    fit!(o, y1)
+    fit!(o2, y2)
+    merge!(o, o2)
+    fit!(o2, y1)
+    for (v1, v2) in zip(value(o), value(o2))
+        result = compare(v1, v2; kw...)
+        result || @warn("Test Failure: $v1 != $v2")
+        @test result
+    end
+    @test nobs(o) == nobs(o2)
+end
+
+function test_exact(o, y, fo, fy, compare = ≈; kw...)
+    fit!(o, y)
+    for (v1, v2) in zip(fo(o), fy(y))
+        @test compare(v1, v2; kw...)
+    end
+end
 
 #-----------------------------------------------------------------------# Weight
 @testset "Weight" begin
@@ -49,29 +70,10 @@ end
 end
 end  # Weight
 
-mutable struct FakeStat <: ExactStat{0}
-    μ::Float64
+#-----------------------------------------------------------------------# Mean 
+@testset "Mean" begin 
+    test_exact(Mean(), y, mean, mean)
+    test_merge(Mean(), y, y2)
 end
-FakeStat() = FakeStat(0.0)
-fit!(o::FakeStat, y, w) = (o.μ = y)
 
-struct FakeStat2 <: StochasticStat{0} end
-
-struct FakeStat3 <: OnlineStat{0} end
-
-@testset "OnlineStat" begin 
-    println(FakeStat())
-    @test value(FakeStat()) == 0.0
-    @test FakeStat() == FakeStat()
-    @test_warn "defined" merge(FakeStat(), FakeStat(), .5)
-    @test default_weight(FakeStat()) == EqualWeight()
-    @test default_weight(FakeStat2()) == LearningRate()
-    @test_throws Exception default_weight((FakeStat(), FakeStat2()))
-    @test default_weight((FakeStat(), FakeStat())) == EqualWeight()
-    @test_throws Exception default_weight(FakeStat3())
-
-    o = FakeStat()
-    fit!(o, .5, .5)
-    @test value(o) == .5
-end
 end #module

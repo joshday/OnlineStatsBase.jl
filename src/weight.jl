@@ -1,39 +1,34 @@
+abstract type Weight end
+
 Base.show(io::IO, w::Weight) = print(io, name(w))
+
 function Base.:(==)(o1::Weight, o2::Weight)
     typeof(o1) == typeof(o2) || return false
-    nms = fieldnames(o1)
+    nms = fieldnames(typeof(o1))
     all(getfield.(o1, nms) .== getfield.(o2, nms))
 end
 Base.copy(w::Weight) = deepcopy(w)
 
 #-----------------------------------------------------------------------# EqualWeight
-doc"""
+"""
     EqualWeight()
 
 Equally weighted observations.  
 
-``\gamma_t = \frac{1}{t}``
-
-# Example
-
-    series(randn(100), EqualWeight(), Variance())
+``γ(t) = 1 / t``
 """
 struct EqualWeight <: Weight end
-(::EqualWeight)(n) = 1 / n
+(::EqualWeight)(n) = inv(n)
 
 #-----------------------------------------------------------------------# ExponentialWeight
-doc"""
+"""
     ExponentialWeight(λ::Float64)
     ExponentialWeight(lookback::Int)
 
 Exponentially weighted observations.  The first weight is 1.0 and all else are 
 `λ = 2 / (lookback + 1)`.
 
-``\gamma_1 = 1, \gamma_t = \lambda``
-
-# Example
-
-    series(randn(100), ExponentialWeight(), Variance())
+``γ(t) = λ``
 """
 struct ExponentialWeight <: Weight 
     λ::Float64 
@@ -44,36 +39,28 @@ end
 Base.show(io::IO, w::ExponentialWeight) = print(io, name(w) * "(λ = $(w.λ))")
 
 #-----------------------------------------------------------------------# LearningRate
-doc"""
+"""
     LearningRate(r = .6)
 
 Slowly decreasing weight.  Satisfies the standard stochastic approximation assumption 
-``\sum \gamma_t = \infty, \sum \gamma_t^2 < \infty`` if ``r\in(.5, 1]``.
+``∑ γ(t) = ∞, ∑ γ(t)^2 < ∞`` if ``r ∈ (.5, 1]``.
 
-``\gamma_t = \frac{1}{t^r}``
-
-# Example
-
-    Series(randn(1000), LearningRate(.7), QuantileMM(), QuantileMSPI(), QuantileSGD())
+``γ(t) = inv(t ^ r)``
 """
 struct LearningRate <: Weight 
     r::Float64 
     LearningRate(r = .6) = new(r)
 end
-(w::LearningRate)(n) = 1 / n ^ w.r
+(w::LearningRate)(n) = inv(n ^ w.r)
 Base.show(io::IO, w::LearningRate) = print(io, name(w) * "(r = $(w.r))")
 
 #-----------------------------------------------------------------------# LearningRate2
-doc"""
+"""
     LearningRate2(c = .5)
 
 Slowly decreasing weight.  
 
-``\gamma_t = \frac{1}{1 + c(t-1)}``
-
-# Example
-
-    Series(randn(1000), LearningRate2(.3), QuantileMM(), QuantileMSPI(), QuantileSGD())
+``γ(t) = inv(1 + c * (t - 1))``
 """
 struct LearningRate2 <: Weight 
     c::Float64 
@@ -83,16 +70,12 @@ end
 Base.show(io::IO, w::LearningRate2) = print(io, name(w) * "(c = $(w.c))")
 
 #-----------------------------------------------------------------------# HarmonicWeight
-doc"""
+"""
     HarmonicWeight(a = 10.0)
 
 Weight determined by harmonic series.  
 
-``\gamma_t = \frac{a}{a + t - 1}``
-
-# Example
-
-    Series(randn(1000), HarmonicWeight(), QuantileMSPI())
+``γ(t) = a / (a + t - 1)``
 """
 struct HarmonicWeight <: Weight 
     a::Float64 
@@ -102,16 +85,12 @@ end
 Base.show(io::IO, w::HarmonicWeight) = print(io, name(w) * "(a = $(w.a))")
 
 #-----------------------------------------------------------------------# McclainWeight
-doc"""
+"""
     McclainWeight(α = .1)
 
 Weight which decreases into a constant.
 
-``\gamma_t = \frac{\gamma_{t-1}}{1 + \gamma_{t-1} - \alpha}``
-
-# Example
-
-    Series(randn(100), McclainWeight(), Mean())
+``γ(t) = γ(t-1) / (1 + γ(t-1) - α)``
 """
 mutable struct McclainWeight <: Weight
     α::Float64
@@ -122,16 +101,12 @@ end
 Base.show(io::IO, w::McclainWeight) = print(io, name(w) * "(α = $(w.α))")
 
 #-----------------------------------------------------------------------# Bounded
-doc"""
+"""
     Bounded(w::Weight, λ::Float64)
 
 Bound the weight by a constant.
 
-``\gamma_t^* = \text{max}(\gamma_t, \lambda)``
-
-# Example
-
-    Bounded(EqualWeight(), .1)
+``γ′(t) = max(γ(t), λ)``
 """
 struct Bounded{W <: Weight} <: Weight 
     weight::W 
@@ -143,18 +118,12 @@ Base.max(w::Weight, λ::Float64) = Bounded(w, λ)
 Base.max(λ::Float64, w::Weight) = Bounded(w, λ)
 
 #-----------------------------------------------------------------------# Scaled
-doc"""
+"""
     Scaled(w::Weight, λ::Float64)
 
 Scale a weight by a constant.
 
-``\gamma_t^* = \lambda * \gamma_t``
-
-# Example
-
-    Bounded(LearningRate(.5), .1)
-
-    Series(randn(1000), 2.0 * LearningRate(.9), QuantileMM())
+``γ′(t) = λ * γ(t)``
 """
 struct Scaled{W <: Weight} <: Weight
     weight::W 
