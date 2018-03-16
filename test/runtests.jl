@@ -1,5 +1,5 @@
 module OnlineStatsBaseTests
-using Compat.Test, OnlineStatsBase
+using Compat, Compat.Test, OnlineStatsBase
 O = OnlineStatsBase
 import StatsBase: countmap
 import DataStructures: OrderedDict, SortedDict
@@ -71,7 +71,7 @@ end  # Weight
 
 
 println("\n\n")
-@info("Testing Stats")
+Compat.@info("Testing Stats")
 #-----------------------------------------------------------------------# AutoCov
 @testset "AutoCov" begin 
     test_exact(AutoCov(10), y, autocov, x -> autocov(x, 0:10))

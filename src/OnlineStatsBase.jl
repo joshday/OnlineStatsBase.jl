@@ -85,27 +85,29 @@ function fit!(o::OnlineStat{0}, y::Union{VectorOb, AbstractArray})
 end
 
 fit!(o::OnlineStat{1}, y::VectorOb) = (_fit!(o, y); o)
-function fit!(o::OnlineStat{1}, y::AbstractMatrix, dim::Int = 1)
+function fit!(o::OnlineStat{1}, y::AbstractMatrix)
     n, p = size(y)
     buffer = Vector{eltype(y)}(undef, p)
-    if dim == 1
-        for i in 1:n
-            for j in 1:p
-                @inbounds buffer[j] = y[i, j]
-            end
-            fit!(o, buffer)
+    for i in 1:n
+        for j in 1:p
+            @inbounds buffer[j] = y[i, j]
         end
-    elseif dim == 2 
-        for i in 1:p
-            for j in 1:n
-                @inbounds buffer[j] = y[j, i]
-            end
-            fit!(o, buffer)
-        end
-    else 
-        error("dim must be 1 or 2.")
+        fit!(o, buffer)
     end
     o
+end
+
+fit!(o::OnlineStat{(1,0)}, xy::XyOb) = (_fit!(o, xy); o)
+function fit!(o::OnlineStat{(1, 0)}, xy::Tuple{AbstractMatrix, VectorOb})
+    x, y = xy 
+    n, p = size(x)
+    buffer = Vector{eltype(x)}(under, p)
+    for i in 1:n 
+        for j in 1:p 
+            @inbounds buffer[j] = x[i, j]
+        end
+        fit!(o, (buffer, y[i]))
+    end
 end
 
 #-----------------------------------------------------------------------# show
@@ -127,7 +129,7 @@ Base.copy(o::OnlineStat) = deepcopy(o)
 
 #-----------------------------------------------------------------------# merge
 function Base.merge!(o::OnlineStat, o2::OnlineStat)
-    @warn("Merging $(name(o2)) into $(name(o)) is not well-defined.  No merging occurred.")
+    Compat.@warn("Merging $(name(o2)) into $(name(o)) is not well-defined.  No merging occurred.")
 end
 
 Base.merge(o::OnlineStat, o2::OnlineStat, γ) = merge!(copy(o), o2, γ)
@@ -155,4 +157,5 @@ end
 include("weight.jl")
 include("updaters.jl")
 include("stats.jl")
+include("fasttree.jl")
 end
