@@ -2,7 +2,7 @@ __precompile__(true)
 module OnlineStatsBase
 
 import NamedTuples
-import LearnBase: fit!, value
+import LearnBase: value
 
 #-----------------------------------------------------------------------# Data
 const VectorOb = Union{AbstractVector, Tuple, NamedTuples.NamedTuple} # 1 
@@ -10,37 +10,18 @@ const XyOb     = Tuple{VectorOb, Any}              # (1, 0)
 
 #-----------------------------------------------------------------------# OnlineStat
 abstract type OnlineStat{N} end
-default_weight(o::OnlineStat) = error("$(typeof(o)) needs a `default_weight` method.")
-
-abstract type ExactStat{N} <: OnlineStat{N} end
-default_weight(o::ExactStat) = EqualWeight()
-
-abstract type StochasticStat{N} <: OnlineStat{N} end
-default_weight(o::StochasticStat) = LearningRate()
-
-function default_weight(t::Union{Tuple, NamedTuples.NamedTuple})
-    W = default_weight(first(t))
-    for item in t 
-        default_weight(item) != W && 
-        error("Weight must be specified when defaults differ. Found:")
-    end
-    return W
-end
 
 #-----------------------------------------------------------------------# fit! and value
-@deprecate _value(o::OnlineStat) value(o::OnlineStat)
-@deprecate _fit!(o::OnlineStat, y, w) fit!(o::OnlineStat, y, w)
-
 @generated function value(o::OnlineStat)
     r = first(fieldnames(o))
     return :(o.$r)
 end
+_fit!(o::OnlineStat, args...) = error("$o hasn't implemented `_fit!` yet.")
 
 #-----------------------------------------------------------------------# show
 function Base.show(io::IO, o::OnlineStat)
-    print(io, name(o), "(")
-    showcompact(io, value(o))
-    print(io, ")")
+    print(io, name(o, false, false), ": ")
+    show(IOContext(io, :compact => true), value(o))
 end
 
 #-----------------------------------------------------------------------# ==
@@ -54,15 +35,15 @@ end
 Base.copy(o::OnlineStat) = deepcopy(o)
 
 #-----------------------------------------------------------------------# merge
-function Base.merge!(o::OnlineStat, o2::OnlineStat, γ)
+function Base.merge!(o::OnlineStat, o2::OnlineStat)
     warn("Merging $(name(o2)) into $(name(o)) is not well-defined.  No merging occurred.")
 end
 Base.merge(o::OnlineStat, o2::OnlineStat, γ) = merge!(copy(o), o2, γ)
 
 
 #-----------------------------------------------------------------------# Weight
-abstract type Weight end 
-include("weight.jl")
+# abstract type Weight end 
+# include("weight.jl")
 
 #-----------------------------------------------------------------------# name
 # Example:
@@ -73,10 +54,10 @@ include("weight.jl")
 function name(o, withmodule = false, withparams = true)
     s = string(typeof(o))
     if !withmodule
-        s = replace(s, r"([a-zA-Z]*\.)", "")  # remove text that ends in period
+        s = replace(s, r"([a-zA-Z]*\.)" => "")  # remove text that ends in period
     end
     if !withparams
-        s = replace(s, r"\{(.*)", "")  # remove "{" to the end of the string
+        s = replace(s, r"\{(.*)" => "")  # remove "{" to the end of the string
     end
     s
 end
