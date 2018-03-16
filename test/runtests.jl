@@ -101,6 +101,16 @@ end
     @test probs(o) == fill(.25, 4)
     @test probs(o, 7:9) == zeros(3)
 end
+#-----------------------------------------------------------------------# CStat 
+@testset "CStat" begin 
+    data = y + y2 * im 
+    data2 = y2 + y * im
+    test_exact(CStat(Mean()), data, o->value(o)[1], x -> mean(y))
+    test_exact(CStat(Mean()), data, o->value(o)[2], x -> mean(y2))
+    test_exact(CStat(Mean()), data, nobs, length, ==)
+    test_merge(CStat(Mean()), y, y2)
+    test_merge(CStat(Mean()), data, data2)
+end
 #-----------------------------------------------------------------------# Mean 
 @testset "Mean" begin 
     test_exact(Mean(), y, mean, mean)

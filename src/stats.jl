@@ -89,6 +89,32 @@ function probs(o::CountMap, kys = keys(o.value))
 end
 pdf(o::CountMap, y) = y in keys(o.value) ? o.value[y] / nobs(o) : 0.0
 
+#-----------------------------------------------------------------------# CStat
+"""
+    CStat(stat)
+
+Track a univariate OnlineStat for complex numbers.  A copy of `stat` is made to
+separately track the real and imaginary parts.
+
+# Example
+    
+    y = randn(100) + randn(100)im
+    fit!(y, CStat(Mean()))
+"""
+struct CStat{O <: OnlineStat{0}} <: OnlineStat{0}
+    re_stat::O
+    im_stat::O
+end
+CStat(o::OnlineStat{0}) = CStat(o, copy(o))
+nobs(o::CStat) = nobs(o.re_stat)
+value(o::CStat) = value(o.re_stat), value(o.im_stat)
+_fit!(o::CStat, y::T) where {T<:Real} = (_fit!(o.re_stat, y); _fit!(o.im_stat, T(0)))
+_fit!(o::CStat, y::Complex) = (_fit!(o.re_stat, y.re); _fit!(o.im_stat, y.im))
+function Base.merge!(o::T, o2::T) where {T<:CStat}
+    merge!(o.re_stat, o2.re_stat)
+    merge!(o.im_stat, o2.im_stat)
+end
+
 #-----------------------------------------------------------------------# FTSeries 
 """
     FTSeries(stats...; filter=always, transform=identity)
