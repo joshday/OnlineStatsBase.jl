@@ -138,6 +138,13 @@ end
     test_exact(Extrema(Int), rand(Int, 100), minimum, minimum, ==)
     test_merge(Extrema(), y, y2, ==)
 end
+#-----------------------------------------------------------------------# Fit[Dist]
+@testset "Fit[Dist]" begin 
+@testset "FitNormal" begin 
+    test_merge(FitNormal(), y, y2)
+    test_exact(FitNormal(), y, value, y->(mean(y), std(y)))
+end
+end
 #-----------------------------------------------------------------------# Group 
 @testset "Group" begin 
     o = Group(Mean(), Mean(), Mean(), Variance(), Variance())

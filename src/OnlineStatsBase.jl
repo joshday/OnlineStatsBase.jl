@@ -157,5 +157,6 @@ end
 include("weight.jl")
 include("updaters.jl")
 include("stats.jl")
+include("distributions.jl")
 include("fasttree.jl")
 end
