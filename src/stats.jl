@@ -121,7 +121,7 @@ function _fit!(o::CovMatrix, x)
 end
 function value(o::CovMatrix; corrected::Bool = true)
     o.value[:] = Matrix(Symmetric((o.A - o.b * o.b')))
-    corrected && rmul!(o.value, unbias(o))
+    corrected && scale!(o.value, unbias(o))
     o.value
 end
 function Base.merge!(o::CovMatrix, o2::CovMatrix)
@@ -136,8 +136,8 @@ Base.var(o::CovMatrix; kw...) = diag(value(o; kw...))
 function Base.cor(o::CovMatrix; kw...)
     value(o; kw...)
     v = 1.0 ./ sqrt.(diag(o.value))
-    rmul!(o.value, Diagonal(v))
-    lmul!(Diagonal(v), o.value)
+    scale!(o.value, v)
+    scale!(v, o.value)
     o.value
 end
 

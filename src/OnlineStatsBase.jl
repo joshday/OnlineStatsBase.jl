@@ -101,13 +101,14 @@ fit!(o::OnlineStat{(1,0)}, xy::XyOb) = (_fit!(o, xy); o)
 function fit!(o::OnlineStat{(1, 0)}, xy::Tuple{AbstractMatrix, VectorOb})
     x, y = xy 
     n, p = size(x)
-    buffer = Vector{eltype(x)}(under, p)
+    buffer = Vector{eltype(x)}(undef, p)
     for i in 1:n 
         for j in 1:p 
             @inbounds buffer[j] = x[i, j]
         end
         fit!(o, (buffer, y[i]))
     end
+    o
 end
 
 #-----------------------------------------------------------------------# show

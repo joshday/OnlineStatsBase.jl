@@ -14,3 +14,34 @@ function FastNode(o::FastNode, id::Int)
 end
 nkeys(o::FastNode) = size(o.stats, 2)
 nvars(o::FastNode) = size(o.stats, 1)
+
+function fakedata(::Type{FastNode}, n, p) 
+    x = randn(n, p)
+    y = [(rand() > 1 /(1 + exp(xb))) + 1 for xb in x * (1:p)]
+    x, y
+end
+
+function _fit!(o::FastNode, xy)
+    x, y = xy 
+    j = Int(y)
+    if isempty(o.stats)
+        o.stats = [FitNormal() for i in 1:size(x,2), j in 1:size(o.stats,2)]
+    end
+    for i in 1:nvars(o)
+        _fit!(o.stats[i, j], x[i])
+    end
+end
+
+
+function classify(o::FastNode)
+    out = 1
+    n = nobs(o.stats[1])
+    for j in 2:nkeys(o)
+        n2 = nobs(o.stats[1, j])
+        if n2 > n 
+            out = j 
+            n = n2
+        end
+    end
+    out
+end
