@@ -1,5 +1,8 @@
 module OnlineStatsBaseTests
 using Test, OnlineStatsBase
+O = OnlineStatsBase
+import StatsBase: countmap
+import DataStructures: OrderedDict, SortedDict
 
 #-----------------------------------------------------------------------# test utils
 const y = randn(1000)
@@ -78,6 +81,25 @@ end
     o = fit!(Bootstrap(Mean(), 100, [1]), y)
     @test all(value.(o.replicates) .== value(o.stat))
     @test length(confint(o)) == 2
+end
+#-----------------------------------------------------------------------# Count 
+@testset "Count" begin 
+    test_exact(Count(), randn(100), value, length)
+    test_merge(Count(), rand(100), rand(100), ==)
+end
+#-----------------------------------------------------------------------# CountMap
+@testset "CountMap" begin
+    test_exact(CountMap(Int), rand(1:10, 100), nobs, length, ==)
+    test_exact(CountMap(Int), rand(1:10, 100), o->sort(value(o)), x->sort(countmap(x)), ==)
+    test_exact(CountMap(Int), [1,2,3,4], o->O.pdf(o,1), x->.25, ==)
+    test_merge(CountMap(SortedDict{Bool, Int}()), [rand(Bool, 100)], rand(Bool, 100), ==)
+    test_merge(CountMap(SortedDict{Bool, Int}()), trues(100), falses(100), ==)
+    test_merge(CountMap(SortedDict{Int, Int}()), rand(1:4, 100), rand(5:123, 50), ==)
+    test_merge(CountMap(SortedDict{Int, Int}()), rand(1:4, 100), rand(5:123, 50), ==)
+    o = fit!(CountMap(Int), [1,2,3,4])
+    @test all([1,2,3,4] .∈ keys(o.value))
+    @test probs(o) == fill(.25, 4)
+    @test probs(o, 7:9) == zeros(3)
 end
 #-----------------------------------------------------------------------# Mean 
 @testset "Mean" begin 

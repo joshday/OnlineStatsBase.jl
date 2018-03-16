@@ -3,10 +3,11 @@ module OnlineStatsBase
 
 import LearnBase: fit!, nobs, value, predict
 import StatsBase: autocov, autocor, confint
+import DataStructures: OrderedDict
 
 export 
 # functions 
-    fit!, nobs, value, autocov, autocor, predict, confint,
+    fit!, nobs, value, autocov, autocor, predict, confint, probs,
 # weights 
     EqualWeight, ExponentialWeight, LearningRate, LearningRate2, HarmonicWeight, 
     McclainWeight, Bounded, Scaled,

@@ -43,6 +43,52 @@ function _fit!(b::Bootstrap, y)
     b
 end
 
+#-----------------------------------------------------------------------# Count 
+"""
+    Count()
+
+The number of things observed.
+
+# Example 
+
+    fit!(Count(), 1:1000)
+"""
+mutable struct Count <: OnlineStat{0}
+    n::Int
+    Count() = new(0)
+end
+_fit!(o::Count, x) = (o.n += 1)
+Base.merge!(o::Count, o2::Count) = (o.n += o2.n; o)
+
+#-----------------------------------------------------------------------# CountMap 
+"""
+    CountMap(T::Type)
+    CountMap(dict::AbstractDict{T, Int})
+
+Track a dictionary that maps unique values to its number of occurrences.  Similar to 
+`StatsBase.countmap`.  
+
+# Example 
+    
+    fit!(CountMap(Int), rand(1:10, 1000))
+"""
+struct CountMap{A <: AbstractDict} <: OnlineStat{0}
+    value::A  # OrderedDict by default
+end
+CountMap(T::Type) = CountMap(OrderedDict{T, Int}())
+_fit!(o::CountMap, x) = haskey(o.value, x) ? o.value[x] += 1 : o.value[x] = 1
+Base.merge!(o::CountMap, o2::CountMap) = (merge!(+, o.value, o2.value); o)
+nobs(o::CountMap) = sum(values(o.value))
+function probs(o::CountMap, kys = keys(o.value))
+    out = zeros(Int, length(kys))
+    valkeys = keys(o.value)
+    for (i, k) in enumerate(kys)
+        out[i] = k in valkeys ? o.value[k] : 0
+    end
+    sum(out) == 0 ? Float64.(out) : out ./ sum(out)
+end
+pdf(o::CountMap, y) = y in keys(o.value) ? o.value[y] / nobs(o) : 0.0
+
 #-----------------------------------------------------------------------# FTSeries 
 """
     FTSeries(stats...; filter=always, transform=identity)
@@ -69,6 +115,11 @@ end
             yi = y[i]; o.filter(yi) ? _fit!(o.stats[i], o.transform(yi)) : o.nfiltered += 1
         end
     end
+end
+function Base.merge!(o::T, o2::T) where {T<:FTSeries}
+    o.nfiltered += o2.nfiltered 
+    merge!.(o.stats, o2.stats)
+    o
 end
 
 
