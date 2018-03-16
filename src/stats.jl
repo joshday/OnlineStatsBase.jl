@@ -282,6 +282,7 @@ struct Group{T} <: OnlineStat{1}
     stats::T
 end
 Group(o::OnlineStat{0}...) = Group(o)
+Base.hcat(o::OnlineStat{0}...) = Group(o)
 nobs(o::Group) = nobs(first(o.stats))
 
 Base.getindex(o::Group, i) = o.stats[i]

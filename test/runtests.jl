@@ -105,9 +105,9 @@ end
 end
 #-----------------------------------------------------------------------# CovMatrix
 @testset "CovMatrix" begin 
-    test_exact(CovMatrix(5), x, var, x -> var(x, dims=1))
-    test_exact(CovMatrix(), x, std, x -> std(x, dims=1))
-    test_exact(CovMatrix(5), x, mean, x -> mean(x, dims=1))
+    @compat test_exact(CovMatrix(5), x, var, x -> var(x, dims=1))
+    @compat test_exact(CovMatrix(), x, std, x -> std(x, dims=1))
+    @compat test_exact(CovMatrix(5), x, mean, x -> mean(x, dims=1))
     test_exact(CovMatrix(), x, cor, cor)
     test_exact(CovMatrix(5), x, cov, cov)
     test_exact(CovMatrix(), x, o->cov(o;corrected=false), x->cov(x,corrected=false))
@@ -139,7 +139,7 @@ end
     test_merge(Extrema(), y, y2, ==)
 end
 #-----------------------------------------------------------------------# Fit[Dist]
-@testset "Fit[Dist]" begin 
+@testset "Fit Dist" begin 
 @testset "FitNormal" begin 
     test_merge(FitNormal(), y, y2)
     test_exact(FitNormal(), y, value, y->(mean(y), std(y)))
@@ -150,13 +150,15 @@ end
     o = Group(Mean(), Mean(), Mean(), Variance(), Variance())
     @test o[1] == first(o) == Mean()
     @test o[5] == last(o) == Variance()
-    test_exact(o, x, values, x -> vcat(mean(x, dims=1)[1:3], var(x, dims=1)[4:5]))
-    # test_merge([Mean() Variance() Sum() Moments() Mean()], x, x2)
-    # test_exact(5Mean(), x, value, x->mean(x, dims=1))
-    # test_merge(5Mean(), x, x2)
-    # test_exact(5Variance(), x, value, x->var(x, dims=1))
-    # test_merge(5Variance(), x, x2)
-    # @test 5Mean() == 5Mean()
+
+    @compat test_exact(o, x, values, x -> vcat(mean(x, dims=1)[1:3], var(x, dims=1)[4:5]))
+    @compat test_exact(5Mean(), x, values, x->mean(x, dims=1))
+    @compat test_exact(5Variance(), x, values, x->var(x, dims=1))
+
+    test_merge([Mean() Variance() Sum() Moments() Mean()], x, x2, (a,b) -> all(value.(a) .≈ value.(b)))
+    test_merge(5Mean(), x, x2, (a,b) -> all(value.(a) .≈ value.(b)))
+    test_merge(5Variance(), x, x2, (a,b) -> all(value.(a) .≈ value.(b)))
+    @test 5Mean() == 5Mean()
 end
 #-----------------------------------------------------------------------# HyperLogLog 
 @testset "HyperLogLog" begin 

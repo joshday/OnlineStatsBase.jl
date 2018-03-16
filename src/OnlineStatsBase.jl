@@ -5,7 +5,7 @@ using Compat
 using Compat.LinearAlgebra
 
 import LearnBase: fit!, nobs, value, predict
-import StatsBase: autocov, autocor, confint, skewness, kurtosis
+import StatsBase: autocov, autocor, confint, skewness, kurtosis, entropy
 import DataStructures: OrderedDict
 import NamedTuples  # Remove in 0.7
 
