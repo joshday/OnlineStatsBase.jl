@@ -1,7 +1,7 @@
 module OnlineStatsBaseTests
 using Compat, Compat.Test, OnlineStatsBase
 O = OnlineStatsBase
-import StatsBase: countmap
+import StatsBase: countmap, fit, Histogram
 import DataStructures: OrderedDict, SortedDict
 
 #-----------------------------------------------------------------------# test utils
@@ -161,6 +161,39 @@ end
     test_merge(5Variance(), x, x2, (a,b) -> all(value.(a) .≈ value.(b)))
     @test 5Mean() == 5Mean()
 end
+#-----------------------------------------------------------------------# Hist 
+@testset "Hist" begin 
+@testset "FixedBins" begin
+    test_merge(Hist(-5:.1:5), y, y2)
+    for edges in (-5:5, collect(-5:5), [-5, -3.5, 0, 1, 4, 5.5])
+        for data in (y, -6:0.75:6)
+            h1 = fit(Histogram, data, edges, closed = :left).weights
+            test_exact(Hist(edges), data, o -> O.counts(o), y -> h1)
+
+            h2 = fit(Histogram, data, edges, closed = :right).weights
+            test_exact(Hist(edges; closed = :right), data, o -> O.counts(o), y -> h2)
+        end
+    end
+    test_exact(Hist(-5:.1:5), y, extrema, extrema, atol=.2)
+    test_exact(Hist(-5:.1:5), y, mean, mean, atol=.2)
+    test_exact(Hist(-5:.1:5), y, nobs, length)
+    test_exact(Hist(-5:.1:5), y, var, var, atol=.2)
+    test_merge(Hist(-5:.1:5), y, y2)
+end 
+@testset "AdaptiveBins" begin 
+    test_exact(Hist(1000), y, mean, mean)
+    test_exact(Hist(1000), y, nobs, length)
+    test_exact(Hist(1000), y, var, var)
+    test_exact(Hist(1000), y, median, median)
+    test_exact(Hist(1000), y, quantile, quantile)
+    test_exact(Hist(1000), y, std, std)
+    test_exact(Hist(1000), y, extrema, extrema, ==)
+    test_merge(Hist(2000), y, y2)
+    test_merge(Hist(1), y, y2)
+    test_merge(Hist(2000, Float32), Float32.(y), Float32.(y2))
+    test_merge(Hist(Float32, 2000), Float32.(y), Float32.(y2))
+end
+end
 #-----------------------------------------------------------------------# HyperLogLog 
 @testset "HyperLogLog" begin 
     test_exact(HyperLogLog(12), y, value, y->length(unique(y)), atol=30)
@@ -190,7 +223,7 @@ end
             Quantile(τ; alg = SGD()), 
             # Quantile(τ, MSPI()), 
             # Quantile(τ, OMAS()),
-            # Quantile(τ; alg = ADAGRAD())
+            Quantile(τ; alg = ADAGRAD())
             ]
         test_exact(copy(o), data, value, x -> quantile(x,τ), atol = .5)
         test_merge(copy(o), data, data2, atol = .5)

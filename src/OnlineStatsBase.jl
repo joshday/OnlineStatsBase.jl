@@ -5,7 +5,8 @@ using Compat
 using Compat.LinearAlgebra
 
 import LearnBase: fit!, nobs, value, predict
-import StatsBase: autocov, autocor, confint, skewness, kurtosis, entropy
+import StatsBase: autocov, autocor, confint, skewness, kurtosis, entropy, midpoints, 
+    fweights
 import DataStructures: OrderedDict
 import NamedTuples  # Remove in 0.7
 
@@ -28,6 +29,7 @@ export
     Extrema,
     FitBeta, FitCauchy, FitGamma, FitLogNormal, FitNormal, FitMultinomial, FitMVNormal,
     Group,
+    Hist,
     HyperLogLog,
     KMeans,
     Lag,
@@ -158,7 +160,7 @@ end
 
 #-----------------------------------------------------------------------# includes 
 include("weight.jl")
-include("updaters.jl")
+include("algorithms.jl")
 include("stats.jl")
 include("hist.jl")
 include("distributions.jl")

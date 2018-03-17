@@ -1,9 +1,9 @@
-abstract type Updater end 
-nobs(o::Updater) = o.n
-abstract type SGUpdater <: Updater end
+abstract type Algorithm end 
+nobs(o::Algorithm) = o.n
+abstract type SGAlgorithm <: Algorithm end
 
 #-----------------------------------------------------------------------# SGD
-mutable struct SGD{W} <: SGUpdater
+mutable struct SGD{W} <: SGAlgorithm
     δ::Vector{Float64}
     weight::W 
     n::Int
@@ -16,10 +16,10 @@ function direction!(o::SGD)
         o.δ[i] = γ * o.δ[i]
     end
 end
-Base.merge!(o::SGD, o2::SGD) = (o.n += o2.n; info(o.n); o)
+Base.merge!(o::SGD, o2::SGD) = (o.n += o2.n; o)
 
 #-----------------------------------------------------------------------# ADAGRAD 
-mutable struct ADAGRAD{W} <: SGUpdater 
+mutable struct ADAGRAD{W} <: SGAlgorithm 
     δ::Vector{Float64}
     weight::W 
     n::Int
@@ -41,7 +41,7 @@ function Base.merge!(o::ADAGRAD, o2::ADAGRAD)
 end
 
 #-----------------------------------------------------------------------# ADADELTA 
-mutable struct ADADELTA{W} <: SGUpdater 
+mutable struct ADADELTA{W} <: SGAlgorithm 
     δ::Vector{Float64}
     weight::W 
     n::Int 
@@ -62,7 +62,7 @@ function direction!(o::ADADELTA)
 end
 
 #-----------------------------------------------------------------------# ADAM 
-mutable struct ADAM{W} <: SGUpdater 
+mutable struct ADAM{W} <: SGAlgorithm 
     δ::Vector{Float64}
     weight::W 
     n::Int

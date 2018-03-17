@@ -398,6 +398,33 @@ function Base.merge!(o::HyperLogLog, o2::HyperLogLog)
     o
 end
 
+# #-----------------------------------------------------------------------# KMeans
+# """
+#     KMeans(p, k)
+
+# Approximate K-Means clustering of `k` clusters and `p` variables.
+# """
+# mutable struct KMeans{U <: Updater} <: OnlineStat{1}
+#     value::Matrix{Float64}  # p × k
+#     v::Vector{Float64}
+#     updater::U
+# end
+# KMeans(p::Integer, k::Integer; alg=SGD()) = KMeans(zeros(p, k), zeros(k), 0, u)
+# function fit!(o::KMeans{<:SGD}, x::VectorOb, γ::Float64)
+#     o.n += 1
+#     p, k = size(o.value)
+#     if o.n <= k 
+#         o.value[:, o.n] = x
+#     else
+#         for j in 1:k
+#             o.v[j] = sum(abs2, x - view(o.value, :, j))
+#         end
+#         kstar = indmin(o.v)
+#         for i in eachindex(x)
+#             o.value[i, kstar] = smooth(o.value[i, kstar], x[i], γ)
+#         end
+#     end
+# end
 
 #-----------------------------------------------------------------------# Mean
 """
@@ -597,18 +624,18 @@ end
 """
     Quantile(q = [.25, .5, .75]; alg)
 """
-mutable struct Quantile{T <: Updater} <: OnlineStat{0}
+mutable struct Quantile{T <: Algorithm} <: OnlineStat{0}
     value::Vector{Float64}
     τ::Vector{Float64}
-    updater::T 
+    alg::T 
 end
 function Quantile(τ::AbstractVector = [.25, .5, .75]; alg = OMAS()) 
     init!(alg, length(τ))
     Quantile(zeros(length(τ)), sort!(collect(τ)), alg)
 end
-nobs(o::Quantile) = nobs(o.updater)
+nobs(o::Quantile) = nobs(o.alg)
 function _fit!(o::Quantile, y)
-    n = (o.updater.n += 1) 
+    n = (o.alg.n += 1) 
     len = length(o.value)
     if n > len 
         qfit!(o, y)
@@ -618,18 +645,18 @@ function _fit!(o::Quantile, y)
     end
 end
 
-function qfit!(o::Quantile{SG}, y) where {SG<:SGUpdater}
+function qfit!(o::Quantile{SG}, y) where {SG<:SGAlgorithm}
     for j in eachindex(o.value)
-        o.updater.δ[j] = Float64((o.value[j] > y) - o.τ[j])
+        o.alg.δ[j] = Float64((o.value[j] > y) - o.τ[j])
     end
-    direction!(o.updater)
+    direction!(o.alg)
     for j in eachindex(o.value)
-        o.value[j] -= o.updater.δ[j]
+        o.value[j] -= o.alg.δ[j]
     end
 end
 function Base.merge!(o::Quantile, o2::Quantile)
     o.τ == o2.τ || error("Merge failed. Quantile objects track different quantiles.")
-    merge!(o.updater, o2.updater)
+    merge!(o.alg, o2.alg)
     smooth!(o.value, o2.value, nobs(o2) / nobs(o))
 end
 
