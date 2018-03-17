@@ -17,31 +17,24 @@ export
     EqualWeight, ExponentialWeight, LearningRate, LearningRate2, HarmonicWeight, 
     McclainWeight, Bounded, Scaled,
 # updaters 
-    SGD, ADAGRAD, ADAM, MSPI,
+    ADAGRAD, ADAM, MSPI, SGD,
 # stats
     AutoCov,
     Bootstrap,
-    CallFun,
-    Count,
-    CountMap,
-    CovMatrix,
-    CStat,
+    CallFun, Count, CountMap, CovMatrix, CStat,
     Diff,
     Extrema,
-    FitBeta, FitCauchy, FitGamma, FitLogNormal, FitNormal, FitMultinomial, FitMVNormal,
+    FitBeta, FitCauchy, FitGamma, FitLogNormal, FitNormal, FitMultinomial, FitMvNormal,
+    FTSeries,
     Group,
-    Hist,
-    HyperLogLog,
+    Hist, HyperLogLog,
     KMeans,
     Lag,
-    Mean,
-    Moments,
-    ProbMap,
-    P2Quantile,
+    Mean, Moments,
+    ProbMap, P2Quantile,
     Quantile,
     ReservoirSample,
-    Series, FTSeries,
-    Sum,
+    Series, Sum,
     Variance
 
 
@@ -91,13 +84,8 @@ end
 
 fit!(o::OnlineStat{1}, y::VectorOb) = (_fit!(o, y); o)
 function fit!(o::OnlineStat{1}, y::AbstractMatrix)
-    n, p = size(y)
-    buffer = Vector{eltype(y)}(undef, p)
-    for i in 1:n
-        for j in 1:p
-            @inbounds buffer[j] = y[i, j]
-        end
-        fit!(o, buffer)
+    for yi in eachrow(y)
+        fit!(o, yi)
     end
     o
 end
@@ -161,6 +149,7 @@ end
 
 #-----------------------------------------------------------------------# includes 
 include("weight.jl")
+include("utils.jl")
 include("algorithms.jl")
 include("stats.jl")
 include("hist.jl")

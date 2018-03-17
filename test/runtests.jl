@@ -145,10 +145,27 @@ end
     test_merge(Extrema(), y, y2, ==)
 end
 #-----------------------------------------------------------------------# Fit[Dist]
-@testset "Fit Dist" begin 
+@testset "Fit[Dist]" begin 
+@testset "FitBeta" begin 
+    test_merge(FitBeta(), rand(10), rand(10))
+end
+@testset "FitCauchy" begin 
+    test_exact(FitCauchy(), y, value, y->(0,1), atol = .5)
+end 
+@testset "FitGamma" begin 
+    test_merge(FitGamma(), y, y2)
+end
+@testset "FitLogNormal" begin 
+    test_merge(FitLogNormal(), exp.(y), exp.(y2))
+end
 @testset "FitNormal" begin 
     test_merge(FitNormal(), y, y2)
     test_exact(FitNormal(), y, value, y->(mean(y), std(y)))
+end
+@testset "FitMultinomial" begin 
+end
+@testset "FitMvNormal" begin 
+    test_merge(FitMvNormal(2), [y y2], [y2 y])
 end
 end
 #-----------------------------------------------------------------------# Group 
