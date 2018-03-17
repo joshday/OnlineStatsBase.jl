@@ -43,6 +43,28 @@ function _fit!(b::Bootstrap, y)
     b
 end
 
+#-----------------------------------------------------------------------# CallFun
+"""
+    CallFun(o::OnlineStat, f::Function)
+
+Call `f(o)` every time the OnlineStat `o` gets updated.
+
+# Example
+
+    o = CallFun(Mean(), info)
+    fit!(o, [0,0,1,1])
+"""
+struct CallFun{N, O <: OnlineStat{N}, F <: Function} <: OnlineStat{N}
+    stat::O
+    f::F
+end 
+CallFun(o::O, f::F) where {N, O<:OnlineStat{N}, F} = CallFun{N, O, F}(o, f)
+nobs(o::CallFun) = nobs(o.stat)
+value(o::CallFun) = value(o.stat)
+Base.show(io::IO, o::CallFun) = print(io, "CallFun: $(o.stat) |> $(o.f)")
+_fit!(o::CallFun, arg)  = (_fit!(o.stat, arg); o.f(o.stat))
+Base.merge!(o::CallFun, o2::CallFun) = merge!(o.stat, o2.stat)
+
 #-----------------------------------------------------------------------# Count 
 """
     Count()

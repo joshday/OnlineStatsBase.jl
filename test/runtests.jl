@@ -85,10 +85,15 @@ end
     @test all(value.(o.replicates) .== value(o.stat))
     @test length(confint(o)) == 2
 end
+#-----------------------------------------------------------------------# CallFun
+@testset "CallFun" begin
+    test_merge(CallFun(Mean(), x->nothing), y, y2)
+    test_exact(CallFun(Mean(), x->nothing), y, value, mean)
+end
 #-----------------------------------------------------------------------# Count 
 @testset "Count" begin 
-    test_exact(Count(), randn(100), value, length)
-    test_merge(Count(), rand(100), rand(100), ==)
+    test_exact(Count(), y, value, length)
+    test_merge(Count(), y, y2, ==)
 end
 #-----------------------------------------------------------------------# CountMap
 @testset "CountMap" begin

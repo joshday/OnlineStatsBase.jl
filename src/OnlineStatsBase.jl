@@ -21,6 +21,7 @@ export
 # stats
     AutoCov,
     Bootstrap,
+    CallFun,
     Count,
     CountMap,
     CovMatrix,
