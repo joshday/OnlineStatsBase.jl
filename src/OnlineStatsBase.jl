@@ -2,50 +2,10 @@ __precompile__(true)
 module OnlineStatsBase
 
 using Compat
-using Compat.LinearAlgebra
+import LearnBase: nobs, value
 
-import LearnBase: fit!, nobs, value, predict
-import StatsBase: autocov, autocor, confint, skewness, kurtosis, entropy, midpoints, 
-    fweights
-import DataStructures: OrderedDict
-import NamedTuples  # Remove in 0.7
-
-export 
-# functions 
-    fit!, nobs, value, autocov, autocor, predict, confint, probs, skewness, kurtosis,
-    eachcol, eachrow,
-# weights 
-    EqualWeight, ExponentialWeight, LearningRate, LearningRate2, HarmonicWeight, 
-    McclainWeight, Bounded, Scaled,
-# updaters 
-    ADAGRAD, ADAM, MSPI, SGD,
-# stats
-    AutoCov,
-    Bootstrap,
-    CallFun, Count, CountMap, CovMatrix, CStat,
-    Diff,
-    Extrema,
-    FitBeta, FitCauchy, FitGamma, FitLogNormal, FitNormal, FitMultinomial, FitMvNormal,
-    FTSeries,
-    Group,
-    Hist, HyperLogLog,
-    KMeans,
-    Lag,
-    Mean, Moments,
-    OrderStats,
-    ProbMap, P2Quantile,
-    Quantile,
-    ReservoirSample,
-    Series, Sum,
-    Variance,
-# other 
-    BiasVec
-
-
-
-const Tup      = Union{Tuple, NamedTuples.NamedTuple}
-const VectorOb = Union{AbstractVector, Tup} # 1 
-const XyOb     = Tuple{VectorOb, Any}              # (1, 0)
+export EqualWeight, ExponentialWeight, LearningRate, LearningRate2, McclainWeight, 
+    HarmonicWeight
 
 #-----------------------------------------------------------------------# OnlineStat
 abstract type OnlineStat{N} end
@@ -57,89 +17,23 @@ nobs(o::OnlineStat) = o.n
     return :(o.$r)
 end
 
-#-----------------------------------------------------------------------# utils 
-smooth(a, b, γ) = a + γ * (b - a)
-function smooth!(a, b, γ)
-    for i in eachindex(a)
-        a[i] = smooth(a[i], b[i], γ)
-    end
-end
-function smooth_syr!(A::AbstractMatrix, x, γ::Number)
-    for j in 1:size(A, 2), i in 1:j
-        A[i, j] = smooth(A[i,j], x[i] * x[j], γ)
-    end
-end
+_fit!(o::OnlineStat, arg) = error("$o hasn't implemented `_fit!(stat, observation)` yet.")
 
-unbias(o) = nobs(o) / (nobs(o) - 1)
-Base.std(o::OnlineStat; kw...) = sqrt.(var(o; kw...))
-
-const ϵ = 1e-7
-
-#-----------------------------------------------------------------------# fit!
-_fit!(o::OnlineStat, arg) = error("$o hasn't implemented `_fit!` yet.")
-
-fit!(o::OnlineStat{0}, y) = (_fit!(o, y); o)
-function fit!(o::OnlineStat{0}, y::Union{VectorOb, AbstractArray})
-    for yi in y 
-        fit!(o, yi)
-    end 
-    o
-end
-
-fit!(o::OnlineStat{1}, y::VectorOb) = (_fit!(o, y); o)
-function fit!(o::OnlineStat{1}, y::AbstractMatrix)
-    for yi in eachrow(y)
-        fit!(o, yi)
-    end
-    o
-end
-
-fit!(o::OnlineStat{(1,0)}, xy::XyOb) = (_fit!(o, xy); o)
-function fit!(o::OnlineStat{(1, 0)}, xy::Tuple{AbstractMatrix, VectorOb})
-    x, y = xy 
-    n, p = size(x)
-    buffer = Vector{eltype(x)}(undef, p)
-    for i in 1:n 
-        for j in 1:p 
-            @inbounds buffer[j] = x[i, j]
-        end
-        fit!(o, (buffer, y[i]))
-    end
-    o
-end
-
-#-----------------------------------------------------------------------# show
-function Base.show(io::IO, o::OnlineStat)
-    print(io, name(o, false, false), ": ")
-    show(IOContext(io, :compact => true), value(o))
-end
-
-#-----------------------------------------------------------------------# ==
+#-----------------------------------------------------------------------# Base
 Base.:(==)(o::OnlineStat, o2::OnlineStat) = false 
-
 function Base.:(==)(o1::T, o2::T) where {T<:OnlineStat}
     nms = fieldnames(typeof(o1))
     all(getfield.(o1, nms) .== getfield.(o2, nms))
 end
-
-#-----------------------------------------------------------------------# copy
 Base.copy(o::OnlineStat) = deepcopy(o)
-
-#-----------------------------------------------------------------------# merge
 function Base.merge!(o::OnlineStat, o2::OnlineStat)
     Compat.@warn("Merging $(name(o2)) into $(name(o)) is not well-defined.  No merging occurred.")
 end
-
-Base.merge(o::OnlineStat, o2::OnlineStat, γ) = merge!(copy(o), o2, γ)
-
-
-
-#-----------------------------------------------------------------------# name
-# Example:
-# name(o::OnlineStats.CountMap{Int}, false, true)   --> CountMap{Int}
-# name(o::OnlineStats.CountMap{Int}, false, false)  --> CountMap
-# name(o::OnlineStats.CountMap{Int}, true, true)    --> OnlineStats.CountMap{Int}
-# name(o::OnlineStats.CountMap{Int}, true, false)   --> OnlineStats.CountMap
+Base.merge(o::OnlineStat, o2::OnlineStat) = merge!(copy(o), o2)
+function Base.show(io::IO, o::OnlineStat)
+    print(io, name(o, false, false), ": ")
+    show(IOContext(io, :compact => true), value(o))
+end
 function name(o, withmodule = false, withparams = true)
     s = string(typeof(o))
     if !withmodule
@@ -151,13 +45,6 @@ function name(o, withmodule = false, withparams = true)
     s
 end
 
-#-----------------------------------------------------------------------# includes 
+#-----------------------------------------------------------------------# Weight
 include("weight.jl")
-include("utils.jl")
-include("algorithms.jl")
-include("stats.jl")
-include("hist.jl")
-include("distributions.jl")
-include("fasttree.jl")
-include("nbclassifier.jl")
 end
