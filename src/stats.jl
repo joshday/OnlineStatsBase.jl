@@ -520,6 +520,55 @@ function Base.merge!(o::Moments, o2::Moments)
     o
 end
 
+#-----------------------------------------------------------------------# OrderStats
+"""
+    OrderStats(b::Int, T::Type = Float64)
+
+Average order statistics with batches of size `b`.
+"""
+mutable struct OrderStats{T, W} <: OnlineStat{0}
+    value::Vector{T}
+    buffer::Vector{T}
+    weight::W
+    n::Int
+end
+function OrderStats(p::Integer, T::Type = Float64; weight=EqualWeight()) 
+    OrderStats(zeros(T, p), zeros(T, p), weight, 0)
+end
+function _fit!(o::OrderStats, y)
+    p = length(o.value)
+    buffer = o.buffer
+    i = (o.n % p) + 1
+    o.n += 1 
+    buffer[i] = y 
+    if i == p
+        sort!(buffer)
+        smooth!(o.value, buffer, o.weight(o.n / p))
+    end
+end
+function Base.merge!(o::OrderStats, o2::OrderStats)
+    length(o.value) == length(o2.value) || 
+        error("Merge failed.  OrderStats track different batch sizes")
+    o.n += o2.n
+    smooth!(o.value, o2.value, o2.n / o.n)
+end
+Base.quantile(o::OrderStats, arg...) = quantile(value(o), arg...)
+
+# # tree/nbc help:
+# function pdf(o::OrderStats, x)
+#     if x ≤ first(o.value) 
+#         return 0.0
+#     elseif x > last(o.value) 
+#         return 0.0 
+#     else
+#         i = searchsortedfirst(o.value, x)
+#         b = nobs(o) / (length(o.value) + 1)
+#         return b / (o.value[i] - o.value[i-1])
+#     end
+# end
+# split_candidates(o::OrderStats) = midpoints(value(o))
+
+
 #-----------------------------------------------------------------------# ProbMap
 """
     ProbMap(T::Type; weight)

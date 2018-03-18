@@ -236,6 +236,10 @@ end
     test_exact(Moments(), y, std, std)
     test_merge(Moments(), y, y2)
 end
+@testset "OrderStats" begin 
+    test_merge(OrderStats(100), y, y2)
+    test_exact(OrderStats(1000), y, value, sort, ==)
+end
 #-----------------------------------------------------------------------# Quantile
 @testset "Quantile/PQuantile" begin 
     data = randn(10_000)

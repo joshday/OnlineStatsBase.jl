@@ -13,6 +13,7 @@ import NamedTuples  # Remove in 0.7
 export 
 # functions 
     fit!, nobs, value, autocov, autocor, predict, confint, probs, skewness, kurtosis,
+    eachcol, eachrow,
 # weights 
     EqualWeight, ExponentialWeight, LearningRate, LearningRate2, HarmonicWeight, 
     McclainWeight, Bounded, Scaled,
@@ -31,11 +32,14 @@ export
     KMeans,
     Lag,
     Mean, Moments,
+    OrderStats,
     ProbMap, P2Quantile,
     Quantile,
     ReservoirSample,
     Series, Sum,
-    Variance
+    Variance,
+# other 
+    BiasVec
 
 
 
