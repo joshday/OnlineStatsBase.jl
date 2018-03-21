@@ -5,17 +5,19 @@
 | [![](https://img.shields.io/badge/docs-stable-blue.svg)](https://joshday.github.io/OnlineStats.jl/stable) [![](https://img.shields.io/badge/docs-latest-blue.svg)](https://joshday.github.io/OnlineStats.jl/latest) | [![Build Status](https://travis-ci.org/joshday/OnlineStatsBase.jl.svg?branch=master)](https://travis-ci.org/joshday/OnlineStatsBase.jl) [![Build status](https://ci.appveyor.com/api/projects/status/99i0vq2crpwgqonp/branch/master?svg=true)](https://ci.appveyor.com/project/joshday/onlinestatsbase-jl/branch/master) | [![codecov](https://codecov.io/gh/joshday/OnlineStatsBase.jl/branch/master/graph/badge.svg)](https://codecov.io/gh/joshday/OnlineStatsBase.jl) |
 
 
-
 This package defines the basic types and interface for [OnlineStats](https://github.com/joshday/OnlineStats.jl).  
 
 ## Interface
 
-- **`fit!(stat, y, w)`**: Update the "sufficient statistics" of the estimator from a single observation `y` and arbitrary weight (in (0, 1]) `w`.
-- **`value(stat, args...)`** (optional):  Calculate the value of the estimator from the "sufficient statistics".  By default, this returns the first field of the OnlineStat.
-- **`merge!(stat1, stat2, w)`** (optional, no default): Merge OnlineStat `stat2` into `o1` where `w` (in (0, 1]) is the amount of influence `stat2` has over `stat1`.
-- **`default_weight(stat)`** (optional): The default weighting mechanism of the OnlineStat.
-  - For `<: ExactStat{N}`, something that can reproduce the same estimate as its offline counterpart, this is `EqualWeight()`.
-  - For `<: StochasticStat{N}`, something that uses stochastic approximation, this is `LearningRate(.6)`
+Note (3/21/18): OnlineStats and OnlineStatsBase are going through some changes on the master branches.  Give it a week for so before relying heavily on the following interface.
+
+### Required Methods
+- **`_fit!(stat, y)`**: Update the "sufficient statistics" of the estimator from a single observation `y`.
+- **`merge!(stat1, stat2)`** (optional, no default): Merge OnlineStat `stat2` into `stat1`.
+
+### Default Methods
+- **`value(stat, args...)`**:  Calculate the value of the estimator from the "sufficient statistics".  By default, this returns the first field of the OnlineStat.
+- **`nobs(stat)`**: Return the number of observations.  By default, this returns `stat.n`.
 
 
 
@@ -23,14 +25,20 @@ This package defines the basic types and interface for [OnlineStats](https://git
 
 ### Make a subtype of OnlineStat and give it a `fit!` method.
 
-```julia
-import OnlineStatsBase: ExactStat, fit!
+- An `OnlineStat` is parameterized by the type of a single observation.
 
-mutable struct MyMean <: ExactStat{0}
+```julia
+import OnlineStatsBase: OnlineStat, _fit!
+
+mutable struct MyMean <: OnlineStat{Number}
     value::Float64
-    MyMean() = new(0.0)
+    n::Int
+    MyMean() = new(0.0, 0)
 end
-fit!(o::MyMean, y, w) = (o.value += w * (y - o.value))
+function _fit!(o::MyMean, y) 
+    o.n += 1
+    o.value += (1 / o.n) * (y - o.value)
+end
 ```
 
 ### That's all there is to it
@@ -40,19 +48,5 @@ using OnlineStats
 
 y = randn(1000)
 
-s = Series(MyMean(), Variance())
-
-for yi in y
-    fit!(s, yi)
-end
-
-value(s)
-mean(y), var(y)
+o = fit!(MyMean(), y)
 ```
-
-## Other Notes
-
-- An OnlineStat is parameterized by the "size" of a single observation (e.g. `Mean <: ExactStat{0}`).
-  - 0 (scalar): Anything that's not a `VectorOb`
-  - 1 (vector): an `VectorOb = Union{AbstractVector, Tuple, NamedTuple}`
-  - (1, 0) (vector/scalar pair): `Tuple{VectorOb, Any}`
