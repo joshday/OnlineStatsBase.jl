@@ -20,24 +20,10 @@ end
 _fit!(o::OnlineStat, arg) = error("$o hasn't implemented `_fit!(stat, observation)` yet.")
 
 #-----------------------------------------------------------------------# Base
-Base.:(==)(a::OnlineStat, b::OnlineStat) = stat_equal(a, b)
-
-# Causes stackoverflow if type has no fields.  <:OnlineStat is safe but not <:Weight
-stat_equal(a, b) = false
-
-function stat_equal(a::T, b::T) where {T}
-    nms = fieldnames(T)
-    out = true
-    if isempty(nms)
-        if a != b 
-            out = false
-        end
-    else
-        for nm in nms 
-            out = stat_equal(getfield(a, nm), getfield(b, nm))
-        end
-    end
-    return out
+Base.:(==)(o::OnlineStat, o2::OnlineStat) = false 
+function Base.:(==)(o1::T, o2::T) where {T<:OnlineStat}
+    nms = fieldnames(typeof(o1))
+    all(getfield.(o1, nms) .== getfield.(o2, nms))
 end
 
 Base.copy(o::OnlineStat) = deepcopy(o)
