@@ -8,7 +8,7 @@ export EqualWeight, ExponentialWeight, LearningRate, LearningRate2, McclainWeigh
     HarmonicWeight, Weight
 
 #-----------------------------------------------------------------------# OnlineStat
-abstract type OnlineStat{N} end
+abstract type OnlineStat{T} end
 
 nobs(o::OnlineStat) = o.n
 
