@@ -5,7 +5,7 @@ using Compat
 import LearnBase: nobs, value
 
 export EqualWeight, ExponentialWeight, LearningRate, LearningRate2, McclainWeight, 
-    HarmonicWeight
+    HarmonicWeight, Weight
 
 #-----------------------------------------------------------------------# OnlineStat
 abstract type OnlineStat{N} end
