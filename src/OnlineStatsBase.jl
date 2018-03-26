@@ -33,6 +33,8 @@ end
 Base.merge(o::OnlineStat, o2::OnlineStat) = merge!(copy(o), o2)
 function Base.show(io::IO, o::OnlineStat)
     print(io, name(o, false, false), ": ")
+    print(io, "n=", nobs(o))
+    print(io, " | value=")
     show(IOContext(io, :compact => true), value(o))
 end
 function name(o, withmodule = false, withparams = true)
