@@ -48,14 +48,6 @@ function name(o, withmodule = false, withparams = true)
     s
 end
 
-function mergestats!(itr)
-    o = copy(first(itr))
-    for (i, item) in enumerate(itr)
-        i > 1 && merge!(o, item)
-    end 
-    o
-end
-
 #-----------------------------------------------------------------------# Weight
 include("weight.jl")
 end
