@@ -9,8 +9,6 @@ This package defines the basic types and interface for [OnlineStats](https://git
 
 ## Interface
 
-Note (3/21/18): OnlineStats and OnlineStatsBase are going through some changes on the master branches.  Give it a week for so before relying heavily on the following interface.
-
 ### Required Methods
 - **`_fit!(stat, y)`**: Update the "sufficient statistics" of the estimator from a single observation `y`.
 - **`merge!(stat1, stat2)`** (optional, no default): Merge OnlineStat `stat2` into `stat1`.
