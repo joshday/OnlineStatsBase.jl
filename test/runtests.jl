@@ -1,4 +1,27 @@
-using Compat, Compat.Test, OnlineStatsBase
+using Compat, Compat.Test, OnlineStatsBase, LearnBase
+
+import OnlineStatsBase: OnlineStat, _fit!, fit!,
+    EqualWeight, ExponentialWeight, LearningRate, LearningRate2, HarmonicWeight,
+    McclainWeight
+#-----------------------------------------------------------------------#
+mutable struct FakeStat <: OnlineStat{Number}
+    n::Int 
+end 
+_fit!(o::FakeStat, y) = (o.n += 1)
+
+struct FakeStat2 <: OnlineStat{Number} end 
+println(FakeStat(0))
+
+@testset "FakeStat" begin 
+    o = FakeStat(0)
+    @test value(o) == 0 
+    @test nobs(o) == 0 
+    _fit!(o, randn())
+    @test value(o) == nobs(o) == 1
+    @test FakeStat(10) == FakeStat(10)
+    @test FakeStat(0) != FakeStat2()
+    @test value(fit!(FakeStat(0), rand(100))) == 100
+end
 
 #-----------------------------------------------------------------------# Weight
 @testset "Weight" begin

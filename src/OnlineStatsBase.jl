@@ -2,24 +2,27 @@ __precompile__(true)
 module OnlineStatsBase
 
 using Compat
-import LearnBase: nobs, value
+import LearnBase: nobs, value, fit!
+export nobs, value, fit!, _fit!, eachrow, eachcol, Weight, OnlineStat, EqualWeight, 
+    ExponentialWeight, LearningRate, LearningRate2, HarmonicWeight, McclainWeight
 
-export EqualWeight, ExponentialWeight, LearningRate, LearningRate2, McclainWeight, 
-    HarmonicWeight, Weight
-
-#-----------------------------------------------------------------------# OnlineStat
 abstract type OnlineStat{T} end
 
 nobs(o::OnlineStat) = o.n
 
+"""
+    value(o::OnlineStat)
+
+Calculate the value of the stat from its "sufficient statistics".
+"""
 @generated function value(o::OnlineStat)
     r = first(fieldnames(o))
     return :(o.$r)
 end
 
-_fit!(o::OnlineStat, arg) = error("$o hasn't implemented `_fit!(stat, observation)` yet.")
+_fit!(o::OnlineStat, arg) = error("$(name(o, false,false)) hasn't implemented `_fit!(::OnlineStat{T}, ::T)` yet.")
 
-#-----------------------------------------------------------------------# Base
+#-----------------------------------------------------------------------# Base 
 Base.:(==)(o::OnlineStat, o2::OnlineStat) = false 
 function Base.:(==)(o1::T, o2::T) where {T<:OnlineStat}
     nms = fieldnames(typeof(o1))
@@ -31,6 +34,8 @@ function Base.merge!(o::OnlineStat, o2::OnlineStat)
     Compat.@warn("Merging $(name(o2)) into $(name(o)) is not well-defined.  No merging occurred.")
 end
 Base.merge(o::OnlineStat, o2::OnlineStat) = merge!(copy(o), o2)
+
+#-----------------------------------------------------------------------# Show
 function Base.show(io::IO, o::OnlineStat)
     print(io, name(o, false, false), ": ")
     print(io, "n=", nobs(o))
@@ -46,6 +51,24 @@ function name(o, withmodule = false, withparams = true)
         s = replace(s, r"\{(.*)" => "")  # remove "{" to the end of the string
     end
     s
+end
+
+#-----------------------------------------------------------------------# fit!
+"""
+    fit!(o::OnlineStat, data)
+
+Update the "sufficient statistics" of a stat with more data.
+"""
+function fit!(o::OnlineStat{T}, yi::T) where {T}
+    _fit!(o, yi)
+    o
+end
+
+function fit!(o::OnlineStat, y)
+    for yi in y 
+        fit!(o, yi)
+    end
+    o
 end
 
 #-----------------------------------------------------------------------# Weight

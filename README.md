@@ -21,19 +21,18 @@ This package defines the basic types and interface for [OnlineStats](https://git
 
 ## Basic Example
 
-### Make a subtype of OnlineStat and give it a `fit!` method.
-
-- An `OnlineStat` is parameterized by the type of a single observation.
+- Make a subtype of OnlineStat and give it a `_fit!(::OnlineStat{T}, y::T)` method.
+- `T` is the type of a single observation.  Make sure it's adequately wide.
 
 ```julia
-import OnlineStatsBase: OnlineStat, _fit!
+using OnlineStatsBase
 
 mutable struct MyMean <: OnlineStat{Number}
     value::Float64
     n::Int
     MyMean() = new(0.0, 0)
 end
-function _fit!(o::MyMean, y) 
+function OnlineStatsBase._fit!(o::MyMean, y) 
     o.n += 1
     o.value += (1 / o.n) * (y - o.value)
 end
@@ -42,8 +41,6 @@ end
 ### That's all there is to it
 
 ```julia
-using OnlineStats
-
 y = randn(1000)
 
 o = fit!(MyMean(), y)
