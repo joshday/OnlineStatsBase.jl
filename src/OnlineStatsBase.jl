@@ -20,7 +20,8 @@ Calculate the value of the stat from its "sufficient statistics".
     return :(o.$r)
 end
 
-_fit!(o::OnlineStat, arg) = error("$(name(o, false,false)) hasn't implemented `_fit!(::OnlineStat{T}, ::T)` yet.")
+_fit!(o::OnlineStat{T}, arg) where {T} = 
+    error("$(name(o, false, true)) doesn't know how to fit an item of type $(typeof(arg)) ")
 
 #-----------------------------------------------------------------------# Base 
 Base.:(==)(o::OnlineStat, o2::OnlineStat) = false 
