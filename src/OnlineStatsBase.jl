@@ -8,7 +8,6 @@ export nobs, value, fit!, _fit!, eachrow, eachcol, Weight, OnlineStat, EqualWeig
 
 abstract type OnlineStat{T} end
 
-input(o::OnlineStat{T}) where {T} = T
 nobs(o::OnlineStat) = o.n
 
 """
