@@ -1,9 +1,18 @@
 # OnlineStatsBase
 
+
+|    |     |
+|----|-----|
+| Docs | [![](https://img.shields.io/badge/docs-stable-blue.svg)](https://joshday.github.io/OnlineStats.jl/stable) [![](https://img.shields.io/badge/docs-latest-blue.svg)](https://joshday.github.io/OnlineStats.jl/latest)
+| Release | [![OnlineStatsBase](https://pkg.julialang.org/badges/OnlineStatsBase_0.6.svg)](https://pkg.julialang.org/detail/OnlineStatsBase) [![OnlineStatsBase](https://pkg.julialang.org/badges/OnlineStatsBase_0.7.svg)](https://pkg.julialang.org/detail/OnlineStatsBase)
+| Master Build | [![Build Status](https://travis-ci.org/joshday/OnlineStatsBase.jl.svg?branch=master)](https://travis-ci.org/joshday/OnlineStatsBase.jl) [![Build status](https://ci.appveyor.com/api/projects/status/99i0vq2crpwgqonp/branch/master?svg=true)](https://ci.appveyor.com/project/joshday/onlinestatsbase-jl/branch/master)
+| Test Coverage | [![codecov](https://codecov.io/gh/joshday/OnlineStatsBase.jl/branch/master/graph/badge.svg)](https://codecov.io/gh/joshday/OnlineStatsBase.jl)
+
 | OnlineStats Docs | Release | Master Build | Test Coverage |
 |------------------|---------|--------------|---------------|
-| [![](https://img.shields.io/badge/docs-stable-blue.svg)](https://joshday.github.io/OnlineStats.jl/stable) [![](https://img.shields.io/badge/docs-latest-blue.svg)](https://joshday.github.io/OnlineStats.jl/latest) | [![OnlineStatsBase](https://pkg.julialang.org/badges/OnlineStatsBase_0.6.svg)](https://pkg.julialang.org/detail/OnlineStatsBase) 
-[![OnlineStatsBase](https://pkg.julialang.org/badges/OnlineStatsBase_0.7.svg)](https://pkg.julialang.org/detail/OnlineStatsBase)| [![Build Status](https://travis-ci.org/joshday/OnlineStatsBase.jl.svg?branch=master)](https://travis-ci.org/joshday/OnlineStatsBase.jl) [![Build status](https://ci.appveyor.com/api/projects/status/99i0vq2crpwgqonp/branch/master?svg=true)](https://ci.appveyor.com/project/joshday/onlinestatsbase-jl/branch/master) | [![codecov](https://codecov.io/gh/joshday/OnlineStatsBase.jl/branch/master/graph/badge.svg)](https://codecov.io/gh/joshday/OnlineStatsBase.jl) |
+| [![](https://img.shields.io/badge/docs-stable-blue.svg)](https://joshday.github.io/OnlineStats.jl/stable) [![](https://img.shields.io/badge/docs-latest-blue.svg)](https://joshday.github.io/OnlineStats.jl/latest) 
+| [![OnlineStatsBase](https://pkg.julialang.org/badges/OnlineStatsBase_0.6.svg)](https://pkg.julialang.org/detail/OnlineStatsBase) 
+[![OnlineStatsBase](https://pkg.julialang.org/badges/OnlineStatsBase_0.7.svg)](https://pkg.julialang.org/detail/OnlineStatsBase) | [![Build Status](https://travis-ci.org/joshday/OnlineStatsBase.jl.svg?branch=master)](https://travis-ci.org/joshday/OnlineStatsBase.jl) [![Build status](https://ci.appveyor.com/api/projects/status/99i0vq2crpwgqonp/branch/master?svg=true)](https://ci.appveyor.com/project/joshday/onlinestatsbase-jl/branch/master) | [![codecov](https://codecov.io/gh/joshday/OnlineStatsBase.jl/branch/master/graph/badge.svg)](https://codecov.io/gh/joshday/OnlineStatsBase.jl) |
 
 
 This package defines the basic types and interface for [OnlineStats](https://github.com/joshday/OnlineStats.jl).  
