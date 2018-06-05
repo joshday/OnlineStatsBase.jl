@@ -73,6 +73,8 @@ function fit!(o::OnlineStat{I}, y::T) where {I, T}
     o
 end
 
+fit!(o::OnlineStat, y::Compat.Nothing) = nothing
+
 #-----------------------------------------------------------------------# Weight
 include("weight.jl")
 end
