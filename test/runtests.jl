@@ -1,6 +1,6 @@
 using Compat, Compat.Test, OnlineStatsBase, LearnBase
 
-import OnlineStatsBase: OnlineStat, _fit!, fit!,
+import OnlineStatsBase: OnlineStat, _fit!, fit!, _merge!
     EqualWeight, ExponentialWeight, LearningRate, LearningRate2, HarmonicWeight,
     McclainWeight
 #-----------------------------------------------------------------------#
@@ -8,6 +8,7 @@ mutable struct FakeStat <: OnlineStat{Number}
     n::Int 
 end 
 _fit!(o::FakeStat, y) = (o.n += 1)
+_merge!(o::FakeStat, o2::FakeStat) = (o.n += o2.n)
 
 struct FakeStat2 <: OnlineStat{Number} end 
 println(FakeStat(0))
@@ -21,6 +22,7 @@ println(FakeStat(0))
     @test FakeStat(10) == FakeStat(10)
     @test FakeStat(0) != FakeStat2()
     @test value(fit!(FakeStat(0), rand(100))) == 100
+    @test merge(FakeStat(10), FakeStat(11)).n == 21
 end
 
 #-----------------------------------------------------------------------# Weight
