@@ -21,7 +21,7 @@ Calculate the value of the stat from its "sufficient statistics".
 end
 
 _fit!(o::OnlineStat{T}, arg) where {T} = 
-    error("$(name(o, false, true)) doesn't know how to fit an item of type $(typeof(arg)) ")
+    error("$(name(o, false, true)) doesn't know how to fit an item of type $(typeof(arg))")
 
 #-----------------------------------------------------------------------# Base 
 Base.:(==)(o::OnlineStat, o2::OnlineStat) = false 
@@ -32,8 +32,10 @@ end
 
 Base.copy(o::OnlineStat) = deepcopy(o)
 function Base.merge!(o::OnlineStat, o2::OnlineStat)
-    Compat.@warn("Merging $(name(o2)) into $(name(o)) is not well-defined.  No merging occurred.")
+    (nobs(o) > 0 || nobs(o2) > 0) && _merge!(o, o2)
+    o
 end
+_merge!(o, o2) = Compat.@warn("Merging $(name(o2)) into $(name(o)) is not well-defined.  No merging occurred.")
 Base.merge(o::OnlineStat, o2::OnlineStat) = merge!(copy(o), o2)
 
 #-----------------------------------------------------------------------# Show
@@ -72,6 +74,8 @@ function fit!(o::OnlineStat{I}, y::T) where {I, T}
     end
     o
 end
+
+fit!(o::OnlineStat, y::Compat.Nothing) = nothing
 
 #-----------------------------------------------------------------------# Weight
 include("weight.jl")

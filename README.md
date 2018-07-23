@@ -11,7 +11,7 @@ This package defines the basic types and interface for [OnlineStats](https://git
 
 ### Required Methods
 - **`_fit!(stat, y)`**: Update the "sufficient statistics" of the estimator from a single observation `y`.
-- **`merge!(stat1, stat2)`** (optional, no default): Merge OnlineStat `stat2` into `stat1`.
+- **`_merge!(stat1, stat2)`** (optional, no default): Merge OnlineStat `stat2` into `stat1`.
 
 ### Default Methods
 - **`value(stat, args...)`**:  Calculate the value of the estimator from the "sufficient statistics".  By default, this returns the first field of the OnlineStat.
