@@ -1,7 +1,6 @@
 __precompile__(true)
 module OnlineStatsBase
 
-using Compat
 import LearnBase: nobs, value, fit!
 export nobs, value, fit!, _fit!, eachrow, eachcol, Weight, OnlineStat, EqualWeight, 
     ExponentialWeight, LearningRate, LearningRate2, HarmonicWeight, McclainWeight
@@ -35,7 +34,7 @@ function Base.merge!(o::OnlineStat, o2::OnlineStat)
     (nobs(o) > 0 || nobs(o2) > 0) && _merge!(o, o2)
     o
 end
-_merge!(o, o2) = Compat.@warn("Merging $(name(o2)) into $(name(o)) is not well-defined.  No merging occurred.")
+_merge!(o, o2) = @warn("Merging $(name(o2)) into $(name(o)) is not well-defined.  No merging occurred.")
 Base.merge(o::OnlineStat, o2::OnlineStat) = merge!(copy(o), o2)
 
 #-----------------------------------------------------------------------# Show
@@ -75,7 +74,7 @@ function fit!(o::OnlineStat{I}, y::T) where {I, T}
     o
 end
 
-fit!(o::OnlineStat, y::Compat.Nothing) = nothing
+fit!(o::OnlineStat, y::Nothing) = nothing
 
 #-----------------------------------------------------------------------# Weight
 include("weight.jl")
