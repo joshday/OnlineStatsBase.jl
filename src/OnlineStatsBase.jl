@@ -26,7 +26,7 @@ _fit!(o::OnlineStat{T}, arg) where {T} =
 Base.:(==)(o::OnlineStat, o2::OnlineStat) = false 
 function Base.:(==)(o1::T, o2::T) where {T<:OnlineStat}
     nms = fieldnames(typeof(o1))
-    all(getfield.(o1, nms) .== getfield.(o2, nms))
+    all(getfield.(Ref(o1), nms) .== getfield.(Ref(o2), nms))
 end
 
 Base.copy(o::OnlineStat) = deepcopy(o)

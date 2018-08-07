@@ -1,4 +1,4 @@
-using Compat, Compat.Test, OnlineStatsBase, LearnBase
+using OnlineStatsBase, LearnBase, Test
 
 import OnlineStatsBase: OnlineStat, _fit!, fit!, _merge!
     EqualWeight, ExponentialWeight, LearningRate, LearningRate2, HarmonicWeight,
