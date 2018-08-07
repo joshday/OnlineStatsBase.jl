@@ -2,12 +2,10 @@
 language: julia
 os:
   - linux
+  - mac
 julia:
-  - 0.6
+  - 0.7
   - nightly
-matrix:
-  allow_failures:
-    - julia: nightly
 notifications:
   email: false
 git:
@@ -29,7 +27,7 @@ git:
 
 ## uncomment the following lines to override the default test script
 script:
- - julia -e 'Pkg.clone(pwd()); Pkg.test("OnlineStatsBase"; coverage=true)'
+ - julia -e 'import Pkg; Pkg.clone(pwd()); Pkg.test("OnlineStatsBase"; coverage=true)'
 after_success:
   # push coverage results to Codecov
-  - julia -e 'cd(Pkg.dir("OnlineStatsBase")); Pkg.add("Coverage"); using Coverage; Codecov.submit(Codecov.process_folder())'
+  - julia -e 'import Pkg; cd(Pkg.dir("OnlineStatsBase")); Pkg.add("Coverage"); using Coverage; Codecov.submit(Codecov.process_folder())'
