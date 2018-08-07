@@ -1,4 +1,3 @@
-__precompile__(true)
 module OnlineStatsBase
 
 import LearnBase: nobs, value, fit!
