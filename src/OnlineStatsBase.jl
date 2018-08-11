@@ -1,8 +1,15 @@
 module OnlineStatsBase
 
 import LearnBase: nobs, value, fit!
-export nobs, value, fit!, _fit!, eachrow, eachcol, Weight, OnlineStat, EqualWeight, 
-    ExponentialWeight, LearningRate, LearningRate2, HarmonicWeight, McclainWeight
+export 
+    # abstract types
+    OnlineStat, Weight,
+    # functions
+    nobs, value, fit!, _fit!, eachrow, eachcol,
+    # Weights
+    EqualWeight, ExponentialWeight, LearningRate, LearningRate2, HarmonicWeight, McclainWeight,
+    # OnlineIterator
+    OnlineIterator
 
 abstract type OnlineStat{T} end
 
@@ -74,6 +81,54 @@ function fit!(o::OnlineStat{I}, y::T) where {I, T}
 end
 
 fit!(o::OnlineStat, y::Nothing) = nothing
+
+#-----------------------------------------------------------------------# OnlineIterator
+struct OnlineIterator{R,T,S}
+    thing::T 
+    buffer::S
+    OnlineIterator{R}(thing::T, buffer::S) where {T,S,R} = new{R,T,S}(thing, buffer)
+end
+
+Base.iterate(o::OnlineIterator, i=1) = i > length(o) ? nothing : (o[i], i+1)
+Base.keys(o::OnlineIterator) = Base.OneTo(length(o))
+eachrow(args...) = eachrow(args)
+eachcol(args...) = eachcol(args)
+
+# helpers 
+function copyrow!(buffer::Vector, x::AbstractMatrix, i::Int)
+    for j in eachindex(buffer)
+        buffer[j] = x[i, j]
+    end
+    buffer
+end
+function copycol!(buffer::Vector, x::AbstractMatrix, j::Int)
+    for i in eachindex(buffer)
+        buffer[i] = x[i, j]
+    end
+    buffer
+end
+
+# Matrix rows
+Base.length(o::OnlineIterator{:row, <:AbstractMatrix}) = size(o.thing, 1)
+Base.getindex(o::OnlineIterator{:row, <:AbstractMatrix}, i::Int) = copyrow!(o.buffer, o.thing, i)
+eachrow(m::AbstractMatrix{T}) where {T} = OnlineIterator{:row}(m, Vector{T}(undef, size(m, 2)))
+
+# Matrix cols 
+Base.length(o::OnlineIterator{:col, <:AbstractMatrix}) = size(o.thing, 2)
+Base.getindex(o::OnlineIterator{:col, <:AbstractMatrix}, i::Int) = copycol!(o.buffer, o.thing, i)
+eachcol(m::AbstractMatrix{T}) where {T} = OnlineIterator{:col}(m, Vector{T}(undef, size(m, 1)))
+
+# XY rows 
+const XY = Tuple{T, S} where {T<:AbstractMatrix, S<:AbstractVector}
+
+Base.length(o::OnlineIterator{:row, <:XY}) = size(o.thing[1], 1)
+Base.getindex(o::OnlineIterator{:row, <:XY}, i::Int) = (copyrow!(o.buffer, o.thing[1], i), o.thing[2][i])
+eachrow(t::XY) = OnlineIterator{:row}(t, Vector{eltype(t[1])}(undef, size(t[1], 2)))
+
+# XY cols 
+Base.length(o::OnlineIterator{:col, <:XY}) = size(o.thing[1], 2)
+Base.getindex(o::OnlineIterator{:col, <:XY}, i::Int) = (copycol!(o.buffer, o.thing[1], i), o.thing[2][i])
+eachcol(t::XY) = OnlineIterator{:col}(t, Vector{eltype(t[1])}(undef, size(t[1], 1)))
 
 #-----------------------------------------------------------------------# Weight
 include("weight.jl")

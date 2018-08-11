@@ -1,28 +1,26 @@
 using OnlineStatsBase, LearnBase, Test
 
-import OnlineStatsBase: OnlineStat, _fit!, fit!, _merge!
-    EqualWeight, ExponentialWeight, LearningRate, LearningRate2, HarmonicWeight,
-    McclainWeight
-#-----------------------------------------------------------------------#
-mutable struct FakeStat <: OnlineStat{Number}
+import OnlineStatsBase: _fit!, _merge!
+
+#-----------------------------------------------------------------------# Stat for testing
+mutable struct Counter{T} <: OnlineStat{T}
     n::Int 
-end 
-_fit!(o::FakeStat, y) = (o.n += 1)
-_merge!(o::FakeStat, o2::FakeStat) = (o.n += o2.n)
+    Counter{T}() where {T} = new{T}(0)
+end
+Counter(T = Number) = Counter{T}()
+_fit!(o::Counter{T}, y) where {T} = (o.n += 1)
+_merge!(a::Counter{T}, b::Counter{T}) where {T} = (a.n += b.n)
 
-struct FakeStat2 <: OnlineStat{Number} end 
-println(FakeStat(0))
-
-@testset "FakeStat" begin 
-    o = FakeStat(0)
-    @test value(o) == 0 
-    @test nobs(o) == 0 
-    _fit!(o, randn())
-    @test value(o) == nobs(o) == 1
-    @test FakeStat(10) == FakeStat(10)
-    @test FakeStat(0) != FakeStat2()
-    @test value(fit!(FakeStat(0), rand(100))) == 100
-    @test merge(FakeStat(10), FakeStat(11)).n == 21
+@testset "abstract methods" begin 
+    o = Counter()
+    println(o)
+    @test value(o) == 0
+    @test nobs(o) == 0
+    fit!(o, rand())
+    @test value(o) == nobs(o) == 1 
+    @test o == fit!(Counter(), rand())
+    @test value(fit!(Counter(), rand(10))) == 10
+    @test merge(fit!(Counter(), 1:5), fit!(Counter(), 1:5)) == fit!(Counter(), 1:10)
 end
 
 #-----------------------------------------------------------------------# Weight
@@ -60,4 +58,13 @@ end
         @test w(1) == 1 
     end
 end
-end  # Weight
+end #Weight
+
+#-----------------------------------------------------------------------# Iteration
+@testset "Iteration" begin 
+    x, y = randn(100,10), randn(100)
+    @test fit!(Counter(Vector), eachrow(x)).n == 100
+    @test fit!(Counter(Vector), eachcol(x)).n == 10
+    @test fit!(Counter(Tuple),  eachrow(x,y)).n == 100 
+    @test fit!(Counter(Tuple),  eachcol(x,y)).n == 10
+end
