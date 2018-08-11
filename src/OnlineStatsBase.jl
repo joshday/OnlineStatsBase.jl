@@ -25,8 +25,7 @@ Calculate the value of the stat from its "sufficient statistics".
     return :(o.$r)
 end
 
-_fit!(o::OnlineStat{T}, arg) where {T} = 
-    error("$(name(o, false, true)) doesn't know how to fit an item of type $(typeof(arg))")
+_fit!(o::OnlineStat{T}, arg) where {T} = error("A $(typeof(arg)) is not a single observation for $(name(o, false, true))")
 
 #-----------------------------------------------------------------------# Base 
 Base.:(==)(o::OnlineStat, o2::OnlineStat) = false 
@@ -91,6 +90,7 @@ end
 
 Base.iterate(o::OnlineIterator, i=1) = i > length(o) ? nothing : (o[i], i+1)
 Base.keys(o::OnlineIterator) = Base.OneTo(length(o))
+
 eachrow(args...) = eachrow(args)
 eachcol(args...) = eachcol(args)
 
@@ -118,9 +118,10 @@ Base.length(o::OnlineIterator{:col, <:AbstractMatrix}) = size(o.thing, 2)
 Base.getindex(o::OnlineIterator{:col, <:AbstractMatrix}, i::Int) = copycol!(o.buffer, o.thing, i)
 eachcol(m::AbstractMatrix{T}) where {T} = OnlineIterator{:col}(m, Vector{T}(undef, size(m, 1)))
 
-# XY rows 
+
 const XY = Tuple{T, S} where {T<:AbstractMatrix, S<:AbstractVector}
 
+# XY rows 
 Base.length(o::OnlineIterator{:row, <:XY}) = size(o.thing[1], 1)
 Base.getindex(o::OnlineIterator{:row, <:XY}, i::Int) = (copyrow!(o.buffer, o.thing[1], i), o.thing[2][i])
 eachrow(t::XY) = OnlineIterator{:row}(t, Vector{eltype(t[1])}(undef, size(t[1], 2)))

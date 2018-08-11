@@ -67,4 +67,19 @@ end #Weight
     @test fit!(Counter(Vector), eachcol(x)).n == 10
     @test fit!(Counter(Tuple),  eachrow(x,y)).n == 100 
     @test fit!(Counter(Tuple),  eachcol(x,y)).n == 10
+
+    for (j, xj) in enumerate(eachcol(x))
+        @test xj == x[:, j]
+    end
+    for (i, xi) in enumerate(eachrow(x))
+        @test xi == x[i, :]
+    end
+    @inferred eachrow(x)
+    @inferred eachcol(x)
+    @inferred eachrow(x, y)
+    @inferred eachcol(x, y)
+    
+    @test length(eachcol(x)) == 10
+    @test length(eachrow(x)) == 100
+    @test length(eachrow(x, y)) == 100
 end
