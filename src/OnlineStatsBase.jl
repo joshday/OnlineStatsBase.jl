@@ -91,7 +91,20 @@ end
 Base.iterate(o::OnlineIterator, i=1) = i > length(o) ? nothing : (o[i], i+1)
 Base.keys(o::OnlineIterator) = Base.OneTo(length(o))
 
+"""
+    eachrow(x::AbstractMatrix)
+    eachrow(x::AbstractMatrix, y::AbstractVector)
+
+Iterator over the rows of `x`
+"""
 eachrow(args...) = eachrow(args)
+
+"""
+    eachcol(x::AbstractMatrix)
+    eachcol(x::AbstractMatrix, y::AbstractVector)
+
+Iterator over the columns of `x`, 
+"""
 eachcol(args...) = eachcol(args)
 
 # helpers 
