@@ -95,7 +95,12 @@ Base.keys(o::OnlineIterator) = Base.OneTo(length(o))
     eachrow(x::AbstractMatrix)
     eachrow(x::AbstractMatrix, y::AbstractVector)
 
-Iterator over the rows of `x`
+Iterator over the rows of `x` (paired in a tuple with the values of `y`).
+
+# Example
+    for xi in eachrow(rand(3,2))
+        println(xi)
+    end
 """
 eachrow(args...) = eachrow(args)
 
@@ -103,7 +108,12 @@ eachrow(args...) = eachrow(args)
     eachcol(x::AbstractMatrix)
     eachcol(x::AbstractMatrix, y::AbstractVector)
 
-Iterator over the columns of `x`, 
+Iterator over the columns of `x` (paired in a tuple with the values of `y`).
+
+# Example
+    for xi in eachcol(rand(3,2))
+        println(xi)
+    end
 """
 eachcol(args...) = eachcol(args)
 
