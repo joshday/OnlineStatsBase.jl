@@ -1,14 +1,11 @@
 module OnlineStatsBase
 
 import LearnBase: nobs, value, fit!
+
 export 
-    # abstract types
     OnlineStat, Weight,
-    # functions
     nobs, value, fit!, _fit!, eachrow, eachcol,
-    # Weights
     EqualWeight, ExponentialWeight, LearningRate, LearningRate2, HarmonicWeight, McclainWeight,
-    # OnlineIterator
     OnlineIterator
 
 abstract type OnlineStat{T} end
@@ -24,8 +21,6 @@ Calculate the value of the stat from its "sufficient statistics".
     r = first(fieldnames(o))
     return :(o.$r)
 end
-
-_fit!(o::OnlineStat{T}, arg) where {T} = error("A $(typeof(arg)) is not a single observation for $(name(o, false, true))")
 
 #-----------------------------------------------------------------------# Base 
 Base.:(==)(o::OnlineStat, o2::OnlineStat) = false 
@@ -62,14 +57,21 @@ end
 
 #-----------------------------------------------------------------------# fit!
 """
-    fit!(o::OnlineStat, data)
+    fit!(stat::OnlineStat, data)
 
-Update the "sufficient statistics" of a stat with more data.
-"""
-function fit!(o::OnlineStat{T}, yi::T) where {T}
-    _fit!(o, yi)
-    o
+Update the "sufficient statistics" of a `stat` with more data.   If `typeof(data)` is not 
+the type of a single observation for the provided `stat`, `fit!` will attempt to iterate 
+through and `fit!` each item in `data`.  Therefore, `fit!(Mean(), 1:10)` translates 
+roughly to:
+
+```
+o = Mean()
+for x in 1:10
+    fit!(o, x)
 end
+```
+"""
+fit!(o::OnlineStat{T}, yi::T) where {T} = (_fit!(o, yi); return o)
 
 function fit!(o::OnlineStat{I}, y::T) where {I, T}
     T == eltype(y) && error("The input for $(name(o,false,false)) is a $I.  Found $T.")
@@ -79,7 +81,45 @@ function fit!(o::OnlineStat{I}, y::T) where {I, T}
     o
 end
 
-fit!(o::OnlineStat, y::Nothing) = nothing
+# fit!(o::OnlineStat, y::Nothing) = nothing
+
+#-----------------------------------------------------------------------# utils
+function _fit!(o::OnlineStat{T}, arg) where {T} 
+    error("A $(typeof(arg)) is not a single observation for $((name(o, false, true)))")
+end
+
+"""
+    smooth(a, b, γ)
+
+Weighted average of `a` and `b` with weight `γ`.
+"""
+smooth(a, b, γ) = a + γ * (b - a)
+
+"""
+    smooth!(a, b, γ)
+
+Update `a` in place by applying the [`smooth`](@ref) function elementwise with `b`.
+"""
+function smooth!(a, b, γ)
+    for (i, bi) in zip(eachindex(a), b)
+        a[i] = smooth(a[i], bi, γ)
+    end
+end
+
+"""
+    smooth_syr!(A::AbstractMatrix, x, γ::Number)
+
+Weighted average of symmetric rank-1 update.  Updates the upper triangle of:
+
+`A = (1 - γ) * A + γ * x * x'`
+"""
+function smooth_syr!(A::AbstractMatrix, x, γ::Number)
+    for j in 1:size(A, 2), i in 1:j
+        A[i, j] = smooth(A[i,j], x[i] * conj(x[j]), γ)
+    end
+end
+
+change_denom(num, from = nobs(o), to = nobs(o) - 1) = (from / to) * num
 
 #-----------------------------------------------------------------------# OnlineIterator
 struct OnlineIterator{R,T,S}
@@ -154,6 +194,5 @@ Base.length(o::OnlineIterator{:col, <:XY}) = size(o.thing[1], 2)
 Base.getindex(o::OnlineIterator{:col, <:XY}, i::Int) = (copycol!(o.buffer, o.thing[1], i), o.thing[2][i])
 eachcol(t::XY) = OnlineIterator{:col}(t, Vector{eltype(t[1])}(undef, size(t[1], 1)))
 
-#-----------------------------------------------------------------------# Weight
 include("weight.jl")
 end
