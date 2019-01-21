@@ -135,7 +135,7 @@ Base.keys(o::OnlineIterator) = Base.OneTo(length(o))
     eachrow(x::AbstractMatrix)
     eachrow(x::AbstractMatrix, y::AbstractVector)
 
-Iterator over the rows of `x` (paired in a tuple with the values of `y`).
+Iterator over the rows of `x` (paired in a tuple with the values of `y`).  
 
 # Example
     for xi in eachrow(rand(3,2))
