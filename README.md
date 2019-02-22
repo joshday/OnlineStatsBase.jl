@@ -45,8 +45,3 @@ y = randn(1000)
 
 o = fit!(MyMean(), y)
 ```
-
-
-# Give OnlineStats a Star!
-
-<iframe src="https://ghbtns.com/github-btn.html?user=joshday&repo=OnlineStats.jl&type=star&count=true&size=large" frameborder="0" scrolling="0" width="160px" height="30px"></iframe>
