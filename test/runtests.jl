@@ -1,6 +1,8 @@
-using OnlineStatsBase, LearnBase, Test
+using OnlineStatsBase, LearnBase, Statistics, Test
 
-import OnlineStatsBase: _fit!, _merge!
+import OnlineStatsBase: _fit!, _merge!, Mean, Variance
+
+include("test_stats.jl")
 
 #-----------------------------------------------------------------------# Stat for testing
 mutable struct Counter{T} <: OnlineStat{T}
@@ -63,23 +65,28 @@ end #Weight
 #-----------------------------------------------------------------------# Iteration
 @testset "Iteration" begin 
     x, y = randn(100,10), randn(100)
-    @test fit!(Counter(Vector), eachrow(x)).n == 100
-    @test fit!(Counter(Vector), eachcol(x)).n == 10
-    @test fit!(Counter(Tuple),  eachrow(x,y)).n == 100 
-    @test fit!(Counter(Tuple),  eachcol(x,y)).n == 10
+    @test fit!(Counter(Vector), OnlineStatsBase.eachrow(x)).n == 100
+    @test fit!(Counter(Vector), OnlineStatsBase.eachcol(x)).n == 10
+    @test fit!(Counter(Tuple),  OnlineStatsBase.eachrow(x,y)).n == 100 
+    @test fit!(Counter(Tuple),  OnlineStatsBase.eachcol(x,y)).n == 10
 
-    for (j, xj) in enumerate(eachcol(x))
+    for (j, xj) in enumerate(OnlineStatsBase.eachcol(x))
         @test xj == x[:, j]
     end
-    for (i, xi) in enumerate(eachrow(x))
+    for (i, xi) in enumerate(OnlineStatsBase.eachrow(x))
         @test xi == x[i, :]
     end
-    @inferred eachrow(x)
-    @inferred eachcol(x)
-    @inferred eachrow(x, y)
-    @inferred eachcol(x, y)
+    @inferred OnlineStatsBase.eachrow(x)
+    @inferred OnlineStatsBase.eachcol(x)
+    @inferred OnlineStatsBase.eachrow(x, y)
+    @inferred OnlineStatsBase.eachcol(x, y)
     
-    @test length(eachcol(x)) == 10
-    @test length(eachrow(x)) == 100
-    @test length(eachrow(x, y)) == 100
+    @test length(OnlineStatsBase.eachcol(x)) == 10
+    @test length(OnlineStatsBase.eachrow(x)) == 100
+    @test length(OnlineStatsBase.eachrow(x, y)) == 100
 end
+
+
+
+
+

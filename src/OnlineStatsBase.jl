@@ -1,5 +1,7 @@
 module OnlineStatsBase
 
+using Statistics
+
 import LearnBase: nobs, value, fit!
 
 export 
@@ -8,6 +10,7 @@ export
     EqualWeight, ExponentialWeight, LearningRate, LearningRate2, HarmonicWeight, McclainWeight,
     OnlineIterator
 
+#-----------------------------------------------------------------------# OnlineStat
 abstract type OnlineStat{T} end
 
 nobs(o::OnlineStat) = o.n
@@ -119,7 +122,10 @@ function smooth_syr!(A::AbstractMatrix, x, γ::Number)
     end
 end
 
-change_denom(num, from = nobs(o), to = nobs(o) - 1) = (from / to) * num
+# bessel correction
+bessel(o) = nobs(o) / (nobs(o) - 1)
+
+Statistics.std(o::OnlineStat; kw...) = sqrt.(var(o; kw...))
 
 #-----------------------------------------------------------------------# OnlineIterator
 struct OnlineIterator{R,T,S}
@@ -195,4 +201,5 @@ Base.getindex(o::OnlineIterator{:col, <:XY}, i::Int) = (copycol!(o.buffer, o.thi
 eachcol(t::XY) = OnlineIterator{:col}(t, Vector{eltype(t[1])}(undef, size(t[1], 1)))
 
 include("weight.jl")
+include("stats.jl")
 end
