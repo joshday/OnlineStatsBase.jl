@@ -7,19 +7,19 @@
 
 This package defines the basic types and interface for [OnlineStats](https://github.com/joshday/OnlineStats.jl).  
 
-## Interface
+# Interface
 
-### Required Methods
+## Required Methods
 - **`_fit!(stat, y)`**: Update the "sufficient statistics" of the estimator from a single observation `y`.
 - **`_merge!(stat1, stat2)`** (optional, no default): Merge OnlineStat `stat2` into `stat1`.
 
-### Default Methods
+## Default Methods
 - **`value(stat, args...)`**:  Calculate the value of the estimator from the "sufficient statistics".  By default, this returns the first field of the OnlineStat.
 - **`nobs(stat)`**: Return the number of observations.  By default, this returns `stat.n`.
 
 
 
-## Basic Example
+# Basic Example
 
 - Make a subtype of OnlineStat and give it a `_fit!(::OnlineStat{T}, y::T)` method.
 - `T` is the type of a single observation.  Make sure it's adequately wide.
@@ -38,10 +38,15 @@ function OnlineStatsBase._fit!(o::MyMean, y)
 end
 ```
 
-### That's all there is to it
+## That's all there is to it!
 
 ```julia
 y = randn(1000)
 
 o = fit!(MyMean(), y)
 ```
+
+
+# Give OnlineStats a Star!
+
+<iframe src="https://ghbtns.com/github-btn.html?user=joshday&repo=OnlineStats.jl&type=star&count=true&size=large" frameborder="0" scrolling="0" width="160px" height="30px"></iframe>
