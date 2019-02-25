@@ -6,9 +6,8 @@ import LearnBase: nobs, value, fit!
 
 export 
     OnlineStat, Weight,
-    nobs, value, fit!, _fit!, eachrow, eachcol,
-    EqualWeight, ExponentialWeight, LearningRate, LearningRate2, HarmonicWeight, McclainWeight,
-    OnlineIterator
+    nobs, value, fit!, eachrow, eachcol,
+    EqualWeight, ExponentialWeight, LearningRate, LearningRate2, HarmonicWeight, McclainWeight
 
 #-----------------------------------------------------------------------# OnlineStat
 abstract type OnlineStat{T} end
@@ -16,9 +15,9 @@ abstract type OnlineStat{T} end
 nobs(o::OnlineStat) = o.n
 
 """
-    value(o::OnlineStat)
+    value(stat::OnlineStat)
 
-Calculate the value of the stat from its "sufficient statistics".
+Calculate the value of `stat` from its "sufficient statistics".
 """
 @generated function value(o::OnlineStat)
     r = first(fieldnames(o))
