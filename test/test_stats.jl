@@ -28,6 +28,26 @@ mergevals(o1::OnlineStat, y1, y2) = map(value, mergestats(o1, y1, y2))
     @test mean(o) ≈ mean(y)
     @test ≈(mergevals(Mean(), y, y2)...)
 end
+#-----------------------------------------------------------------------# Series
+@testset "Series" begin
+    a, b = mergevals(Series(Mean(), Variance()), y, y2)
+    @test a[1] ≈ b[1]
+    @test a[2] ≈ b[2]
+
+    a, b = mergevals(Series(m=Mean(), v=Variance()), y, y2)
+    @test a.m ≈ b.m
+    @test a.v ≈ b.v
+end
+#-----------------------------------------------------------------------# FTSeries
+@testset "FTSeries" begin
+    o = fit!(FTSeries(Mean(); transform=abs), y)
+    @test value(o)[1] ≈ mean(abs, y)
+
+    data = vcat(y, fill(missing, 20))
+    o = fit!(FTSeries(Mean(); transform=abs, filter=!ismissing), data)
+    @test value(o)[1] ≈ mean(abs, y)
+    @test o.nfiltered == 20
+end
 #-----------------------------------------------------------------------# Variance
 @testset "Variance" begin
     o = fit!(Variance(), y)

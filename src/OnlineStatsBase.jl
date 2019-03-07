@@ -4,10 +4,12 @@ using Statistics
 
 import LearnBase: nobs, value, fit!
 
-export 
+export
     OnlineStat, Weight,
     nobs, value, fit!, eachrow, eachcol,
-    EqualWeight, ExponentialWeight, LearningRate, LearningRate2, HarmonicWeight, McclainWeight
+    EqualWeight, ExponentialWeight, LearningRate, LearningRate2, HarmonicWeight, McclainWeight,
+    # Stats
+    Mean, Series, FTSeries, Variance
 
 #-----------------------------------------------------------------------# OnlineStat
 abstract type OnlineStat{T} end
@@ -24,8 +26,8 @@ Calculate the value of `stat` from its "sufficient statistics".
     return :(o.$r)
 end
 
-#-----------------------------------------------------------------------# Base 
-Base.:(==)(o::OnlineStat, o2::OnlineStat) = false 
+#-----------------------------------------------------------------------# Base
+Base.:(==)(o::OnlineStat, o2::OnlineStat) = false
 function Base.:(==)(o1::T, o2::T) where {T<:OnlineStat}
     nms = fieldnames(typeof(o1))
     all(getfield.(Ref(o1), nms) .== getfield.(Ref(o2), nms))
@@ -61,9 +63,9 @@ end
 """
     fit!(stat::OnlineStat, data)
 
-Update the "sufficient statistics" of a `stat` with more data.   If `typeof(data)` is not 
-the type of a single observation for the provided `stat`, `fit!` will attempt to iterate 
-through and `fit!` each item in `data`.  Therefore, `fit!(Mean(), 1:10)` translates 
+Update the "sufficient statistics" of a `stat` with more data.   If `typeof(data)` is not
+the type of a single observation for the provided `stat`, `fit!` will attempt to iterate
+through and `fit!` each item in `data`.  Therefore, `fit!(Mean(), 1:10)` translates
 roughly to:
 
 ```
@@ -77,7 +79,7 @@ fit!(o::OnlineStat{T}, yi::T) where {T} = (_fit!(o, yi); return o)
 
 function fit!(o::OnlineStat{I}, y::T) where {I, T}
     T == eltype(y) && error("The input for $(name(o,false,false)) is a $I.  Found $T.")
-    for yi in y 
+    for yi in y
         fit!(o, yi)
     end
     o
@@ -86,7 +88,7 @@ end
 # fit!(o::OnlineStat, y::Nothing) = nothing
 
 #-----------------------------------------------------------------------# utils
-function _fit!(o::OnlineStat{T}, arg) where {T} 
+function _fit!(o::OnlineStat{T}, arg) where {T}
     error("A $(typeof(arg)) is not a single observation for $((name(o, false, true)))")
 end
 
@@ -126,9 +128,11 @@ bessel(o) = nobs(o) / (nobs(o) - 1)
 
 Statistics.std(o::OnlineStat; kw...) = sqrt.(var(o; kw...))
 
+input(o::OnlineStat{T}) where {T} = T
+
 #-----------------------------------------------------------------------# OnlineIterator
 struct OnlineIterator{R,T,S}
-    thing::T 
+    thing::T
     buffer::S
     OnlineIterator{R}(thing::T, buffer::S) where {T,S,R} = new{R,T,S}(thing, buffer)
 end
@@ -140,7 +144,7 @@ Base.keys(o::OnlineIterator) = Base.OneTo(length(o))
     eachrow(x::AbstractMatrix)
     eachrow(x::AbstractMatrix, y::AbstractVector)
 
-Iterator over the rows of `x` (paired in a tuple with the values of `y`).  
+Iterator over the rows of `x` (paired in a tuple with the values of `y`).
 
 # Example
     for xi in eachrow(rand(3,2))
@@ -162,7 +166,7 @@ Iterator over the columns of `x` (paired in a tuple with the values of `y`).
 """
 eachcol(args...) = eachcol(args)
 
-# helpers 
+# helpers
 function copyrow!(buffer::Vector, x::AbstractMatrix, i::Int)
     for j in eachindex(buffer)
         buffer[j] = x[i, j]
@@ -181,7 +185,7 @@ Base.length(o::OnlineIterator{:row, <:AbstractMatrix}) = size(o.thing, 1)
 Base.getindex(o::OnlineIterator{:row, <:AbstractMatrix}, i::Int) = copyrow!(o.buffer, o.thing, i)
 eachrow(m::AbstractMatrix{T}) where {T} = OnlineIterator{:row}(m, Vector{T}(undef, size(m, 2)))
 
-# Matrix cols 
+# Matrix cols
 Base.length(o::OnlineIterator{:col, <:AbstractMatrix}) = size(o.thing, 2)
 Base.getindex(o::OnlineIterator{:col, <:AbstractMatrix}, i::Int) = copycol!(o.buffer, o.thing, i)
 eachcol(m::AbstractMatrix{T}) where {T} = OnlineIterator{:col}(m, Vector{T}(undef, size(m, 1)))
@@ -189,12 +193,12 @@ eachcol(m::AbstractMatrix{T}) where {T} = OnlineIterator{:col}(m, Vector{T}(unde
 
 const XY = Tuple{T, S} where {T<:AbstractMatrix, S<:AbstractVector}
 
-# XY rows 
+# XY rows
 Base.length(o::OnlineIterator{:row, <:XY}) = size(o.thing[1], 1)
 Base.getindex(o::OnlineIterator{:row, <:XY}, i::Int) = (copyrow!(o.buffer, o.thing[1], i), o.thing[2][i])
 eachrow(t::XY) = OnlineIterator{:row}(t, Vector{eltype(t[1])}(undef, size(t[1], 2)))
 
-# XY cols 
+# XY cols
 Base.length(o::OnlineIterator{:col, <:XY}) = size(o.thing[1], 2)
 Base.getindex(o::OnlineIterator{:col, <:XY}, i::Int) = (copycol!(o.buffer, o.thing[1], i), o.thing[2][i])
 eachcol(t::XY) = OnlineIterator{:col}(t, Vector{eltype(t[1])}(undef, size(t[1], 1)))
