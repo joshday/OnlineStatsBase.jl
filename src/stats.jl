@@ -1,3 +1,65 @@
+#-----------------------------------------------------------------------# Counter
+"""
+    Counter(T=Number)
+
+Count the number of items in a data stream with elements of type `T`.
+
+# Example
+
+    fit!(Counter(Int), 1:100)
+"""
+mutable struct Counter{T} <: OnlineStat{T}
+    n::Int
+    Counter{T}() where {T} = new{T}(0)
+end
+Counter(T = Number) = Counter{T}()
+_fit!(o::Counter{T}, y) where {T} = (o.n += 1)
+_merge!(a::Counter, b::Counter) = (a.n += b.n)
+
+#-----------------------------------------------------------------------# Extrema
+"""
+    Extrema(T::Type = Float64)
+
+Maximum and minimum.
+
+# Example
+
+    o = fit!(Extrema(), rand(10^5))
+    extrema(o)
+    maximum(o)
+    minimum(o)
+"""
+# T is type to store data, S is type of single observation.
+# E.g. you may want to accept any Number even if you are storing values as Float64
+mutable struct Extrema{T,S} <: OnlineStat{S}
+    min::T
+    max::T
+    n::Int
+    function Extrema(T::Type = Float64)
+        a, b, S = extrema_init(T)
+        new{T,S}(a, b, 0)
+    end
+end
+extrema_init(T::Type{<:Number}) = typemax(T), typemin(T), Number
+extrema_init(T::Type{String}) = "", "", String
+extrema_init(T::Type{Date}) = typemax(Date), typemin(Date), Date
+extrema_init(T::Type) = rand(T), rand(T), T
+function _fit!(o::Extrema, y)
+    (o.n += 1) == 1 && (o.min = o.max = y)
+    o.min = min(o.min, y)
+    o.max = max(o.max, y)
+end
+function _merge!(o::Extrema, o2::Extrema)
+    o.min = min(o.min, o2.min)
+    o.max = max(o.max, o2.max)
+    o.n += o2.n
+    o
+end
+value(o::Extrema) = (o.min, o.max)
+Base.extrema(o::Extrema) = value(o)
+Base.maximum(o::Extrema) = o.max
+Base.minimum(o::Extrema) = o.min
+
 #-----------------------------------------------------------------------# Mean
 """
     Mean(T = Float64; weight=EqualWeight())
@@ -21,6 +83,26 @@ function _merge!(o::Mean, o2::Mean)
 end
 Statistics.mean(o::Mean) = o.μ
 Base.copy(o::Mean) = Mean(o.μ, o.weight, o.n)
+
+#-----------------------------------------------------------------------# Sum
+"""
+    Sum(T::Type = Float64)
+
+Track the overall sum.
+
+# Example
+
+    fit!(Sum(Int), fill(1, 100))
+"""
+mutable struct Sum{T} <: OnlineStat{Number}
+    sum::T
+    n::Int
+end
+Sum(T::Type = Float64) = Sum(T(0), 0)
+Base.sum(o::Sum) = o.sum
+_fit!(o::Sum{T}, x::Real) where {T<:AbstractFloat} = (o.sum += convert(T, x); o.n += 1)
+_fit!(o::Sum{T}, x::Real) where {T<:Integer} =       (o.sum += round(T, x); o.n += 1)
+_merge!(o::T, o2::T) where {T <: Sum} = (o.sum += o2.sum; o.n += o2.n; o)
 
 #-----------------------------------------------------------------------# Variance
 """
@@ -161,3 +243,4 @@ function _merge!(o::FTSeries, o2::FTSeries)
     _merge!.(o.stats, o2.stats)
     o
 end
+

@@ -1,6 +1,6 @@
 module OnlineStatsBase
 
-using Statistics
+using Statistics, Dates
 
 import LearnBase: nobs, value, fit!
 
@@ -9,7 +9,7 @@ export
     nobs, value, fit!, eachrow, eachcol,
     EqualWeight, ExponentialWeight, LearningRate, LearningRate2, HarmonicWeight, McclainWeight,
     # Stats
-    Mean, Series, FTSeries, Variance
+    Counter, Extrema, FTSeries, Mean, Series, Sum, Variance
 
 #-----------------------------------------------------------------------# OnlineStat
 abstract type OnlineStat{T} end

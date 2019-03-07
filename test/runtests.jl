@@ -1,29 +1,8 @@
-using OnlineStatsBase, LearnBase, Statistics, Test
+using OnlineStatsBase, LearnBase, Statistics, Dates, Test
 
 import OnlineStatsBase: _fit!, _merge!, Mean, Variance
 
 include("test_stats.jl")
-
-#-----------------------------------------------------------------------# Stat for testing
-mutable struct Counter{T} <: OnlineStat{T}
-    n::Int 
-    Counter{T}() where {T} = new{T}(0)
-end
-Counter(T = Number) = Counter{T}()
-_fit!(o::Counter{T}, y) where {T} = (o.n += 1)
-_merge!(a::Counter{T}, b::Counter{T}) where {T} = (a.n += b.n)
-
-@testset "abstract methods" begin 
-    o = Counter()
-    println(o)
-    @test value(o) == 0
-    @test nobs(o) == 0
-    fit!(o, rand())
-    @test value(o) == nobs(o) == 1 
-    @test o == fit!(Counter(), rand())
-    @test value(fit!(Counter(), rand(10))) == 10
-    @test merge(fit!(Counter(), 1:5), fit!(Counter(), 1:5)) == fit!(Counter(), 1:10)
-end
 
 #-----------------------------------------------------------------------# Weight
 @testset "Weight" begin
@@ -48,26 +27,26 @@ test_weight(max(.5 * EqualWeight(), .1),            i -> max(.1, .5 / i))
 @test ExponentialWeight(20) == ExponentialWeight(2 / 21)
 @test max(.1, EqualWeight()) == max(EqualWeight(), .1)
 @test .1 * EqualWeight() == EqualWeight() * .1
-@testset "McclainWeight" begin 
+@testset "McclainWeight" begin
     w = McclainWeight(.1)
     for i in 2:100
         @test .1 < w(i) < 1
     end
 end
 @testset "first weight is one" begin
-    for w in [EqualWeight(), ExponentialWeight(), LearningRate(), LearningRate2(), 
+    for w in [EqualWeight(), ExponentialWeight(), LearningRate(), LearningRate2(),
               HarmonicWeight(), McclainWeight()]
-        @test w(1) == 1 
+        @test w(1) == 1
     end
 end
 end #Weight
 
 #-----------------------------------------------------------------------# Iteration
-@testset "Iteration" begin 
+@testset "Iteration" begin
     x, y = randn(100,10), randn(100)
     @test fit!(Counter(Vector), OnlineStatsBase.eachrow(x)).n == 100
     @test fit!(Counter(Vector), OnlineStatsBase.eachcol(x)).n == 10
-    @test fit!(Counter(Tuple),  OnlineStatsBase.eachrow(x,y)).n == 100 
+    @test fit!(Counter(Tuple),  OnlineStatsBase.eachrow(x,y)).n == 100
     @test fit!(Counter(Tuple),  OnlineStatsBase.eachcol(x,y)).n == 10
 
     for (j, xj) in enumerate(OnlineStatsBase.eachcol(x))
@@ -80,7 +59,7 @@ end #Weight
     @inferred OnlineStatsBase.eachcol(x)
     @inferred OnlineStatsBase.eachrow(x, y)
     @inferred OnlineStatsBase.eachcol(x, y)
-    
+
     @test length(OnlineStatsBase.eachcol(x)) == 10
     @test length(OnlineStatsBase.eachrow(x)) == 100
     @test length(OnlineStatsBase.eachrow(x, y)) == 100
