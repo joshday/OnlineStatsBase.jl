@@ -5,13 +5,15 @@
 
 # OnlineStatsBase
 
-This package defines the basic types and interface for [OnlineStats](https://github.com/joshday/OnlineStats.jl).  
+This package defines the basic types and interface for [OnlineStats](https://github.com/joshday/OnlineStats.jl).
 
 # Interface
 
-## Required Methods
+## Required Method
 - **`_fit!(stat, y)`**: Update the "sufficient statistics" of the estimator from a single observation `y`.
-- **`_merge!(stat1, stat2)`** (optional, no default): Merge OnlineStat `stat2` into `stat1`.
+
+## Optional Method
+- **`_merge!(stat1, stat2)`** Merge `stat2` into `stat1`.  By default, a warning will occur.
 
 ## Default Methods
 - **`value(stat, args...)`**:  Calculate the value of the estimator from the "sufficient statistics".  By default, this returns the first field of the OnlineStat.
@@ -32,7 +34,7 @@ mutable struct MyMean <: OnlineStat{Number}
     n::Int
     MyMean() = new(0.0, 0)
 end
-function OnlineStatsBase._fit!(o::MyMean, y) 
+function OnlineStatsBase._fit!(o::MyMean, y)
     o.n += 1
     o.value += (1 / o.n) * (y - o.value)
 end
