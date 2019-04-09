@@ -197,7 +197,7 @@ fitted.
 
     FTSeries(T, stats...; filter, transform)
 
-Create an FTSeries and specify the type `T` of the transformed values.
+Create an FTSeries and specify the type `T` of the pre-transformed values.
 
 # Example
 
@@ -209,6 +209,14 @@ Create an FTSeries and specify the type `T` of the transformed values.
     y = DataValueArray(randn(100), rand(Bool, 100))
     o = FTSeries(DataValue, Mean(); transform=get, filter=!isna)
     fit!(o, y)
+
+    # Remove missing values represented as Missing
+    y = [rand(Bool) ? rand() : missing for i in 1:100]
+    o = FTSeries(Mean(); filter=!ismissing)
+    fit!(o, y)
+
+    # Alternatively for Missing:
+    fit!(Mean(), skipmissing(y))
 """
 mutable struct FTSeries{IN, OS, F, T} <: StatCollection{Union{IN,Missing}}
     stats::OS
