@@ -9,19 +9,19 @@ This package defines the basic types and interface for [OnlineStats](https://git
 
 # Interface
 
-## Required Method
+### Required
 - **`_fit!(stat, y)`**: Update the "sufficient statistics" of the estimator from a single observation `y`.
 
-## Optional Method
+### Optional
 - **`_merge!(stat1, stat2)`** Merge `stat2` into `stat1`.  By default, a warning will occur.
 
-## Default Methods
+### Defaults
 - **`value(stat, args...)`**:  Calculate the value of the estimator from the "sufficient statistics".  By default, this returns the first field of the OnlineStat.
 - **`nobs(stat)`**: Return the number of observations.  By default, this returns `stat.n`.
 
 
 
-# Basic Example
+# Example
 
 - Make a subtype of OnlineStat and give it a `_fit!(::OnlineStat{T}, y::T)` method.
 - `T` is the type of a single observation.  Make sure it's adequately wide.
