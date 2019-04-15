@@ -35,10 +35,10 @@ mutable struct Extrema{T,S} <: OnlineStat{S}
     min::T
     max::T
     n::Int
-    function Extrema(T::Type = Float64)
-        a, b, S = extrema_init(T)
-        new{T,S}(a, b, 0)
-    end
+end
+function Extrema(T::Type = Float64)
+    a, b, S = extrema_init(T)
+    Extrema{T,S}(a, b, 0)
 end
 extrema_init(T::Type{<:Number}) = typemax(T), typemin(T), Number
 extrema_init(T::Type{String}) = "", "", String
