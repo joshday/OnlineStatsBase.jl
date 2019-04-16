@@ -16,6 +16,48 @@ Counter(T = Number) = Counter{T}()
 _fit!(o::Counter{T}, y) where {T} = (o.n += 1)
 _merge!(a::Counter, b::Counter) = (a.n += b.n)
 
+#-----------------------------------------------------------------------# CountMap
+"""
+    CountMap(T::Type)
+    CountMap(dict::AbstractDict{T, Int})
+
+Track a dictionary that maps unique values to its number of occurrences.  Similar to
+`StatsBase.countmap`.
+
+# Example
+
+    o = fit!(CountMap(Int), rand(1:10, 1000))
+    value(o)
+    probs(o)
+    OnlineStats.pdf(o, 1)
+    collect(keys(o))
+"""
+mutable struct CountMap{T, A <: AbstractDict{T, Int}} <: OnlineStat{T}
+    value::A  # OrderedDict by default
+    n::Int
+end
+CountMap{T}() where {T} = CountMap{T, OrderedDict{T,Int}}(OrderedDict{T,Int}(), 0)
+CountMap(T::Type = Any) = CountMap{T, OrderedDict{T,Int}}(OrderedDict{T, Int}(), 0)
+CountMap(d::D) where {T,D<:AbstractDict{T, Int}} = CountMap{T, D}(d, 0)
+function _fit!(o::CountMap, x)
+    o.n += 1
+    o.value[x] = get!(o.value, x, 0) + 1
+end
+_merge!(o::CountMap, o2::CountMap) = (merge!(+, o.value, o2.value); o.n += o2.n)
+function probs(o::CountMap, kys = keys(o.value))
+    out = zeros(Int, length(kys))
+    valkeys = keys(o.value)
+    for (i, k) in enumerate(kys)
+        out[i] = k in valkeys ? o.value[k] : 0
+    end
+    sum(out) == 0 ? Float64.(out) : out ./ sum(out)
+end
+pdf(o::CountMap, y) = y in keys(o.value) ? o.value[y] / nobs(o) : 0.0
+Base.keys(o::CountMap) = keys(o.value)
+nkeys(o::CountMap) = length(o.value)
+Base.values(o::CountMap) = values(o.value)
+Base.getindex(o::CountMap, i) = o.value[i]
+
 #-----------------------------------------------------------------------# Extrema
 """
     Extrema(T::Type = Float64)

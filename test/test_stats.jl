@@ -31,6 +31,27 @@ println("  > Counter")
     ==(mergevals(Counter(), y, y2)...)
 end
 
+#-----------------------------------------------------------------------# CountMap
+println("  > CountMap")
+@testset "CountMap" begin
+    a = fit!(CountMap(Bool), x)
+    @test sort(value(a)) == sort(countmap(x))
+    @test OnlineStatsBase.pdf(a, true) == mean(x)
+    @test OnlineStatsBase.pdf(a, false) == mean(!, x)
+    @test OnlineStatsBase.pdf(a, 2) == 0.0
+
+    b = fit!(CountMap(Int), z)
+    @test sort(value(b)) == sort(countmap(z))
+    for i in 1:11
+        @test OnlineStatsBase.pdf(b, i) ≈ sum(==(i), z) / n
+    end
+    @test all(x -> 0 < x < 1, OnlineStatsBase.probs(b))
+    @test OnlineStatsBase.probs(b, 11:13) == zeros(3)
+
+    @test ==(mergevals(CountMap(Bool), x, x2)...)
+    @test ==(mergevals(CountMap(Int), z, z2)...)
+end
+
 #-----------------------------------------------------------------------# Extrema
 println("  > Extrema")
 @testset "Extrema" begin
