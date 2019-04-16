@@ -102,6 +102,48 @@ Base.extrema(o::Extrema) = value(o)
 Base.maximum(o::Extrema) = o.max
 Base.minimum(o::Extrema) = o.min
 
+#-----------------------------------------------------------------------# GroupBy
+"""
+    GroupBy{T}(stat)
+    GroupBy(T, stat)
+
+Update `stat` for each group (of type `T`).  A single observation is either a (named)
+tuple with two elements or a Pair.
+
+# Example
+
+    x = rand(1:10, 10^5)
+    y = x .+ randn(10^5)
+    fit!(GroupBy{Int}(Extrema()), zip(x,y))
+"""
+mutable struct GroupBy{T, S, O <: OnlineStat{S}} <: OnlineStat{TwoThings{T,S}}
+    value::OrderedDict{T, O}
+    init::O
+    n::Int
+    function GroupBy(value::OrderedDict{T,O}, init::O, n::Int) where {T,S,O<:OnlineStat{S}}
+        new{T,S,O}(value, init, n)
+    end
+end
+GroupBy(T::Type, stat::O) where {O<:OnlineStat} = GroupBy(OrderedDict{T, O}(), stat, 0)
+function _fit!(o::GroupBy, xy)
+    o.n += 1
+    x, y = xy
+    x in keys(o.value) ? fit!(o.value[x], y) : (o.value[x] = fit!(copy(o.init), y))
+end
+Base.getindex(o::GroupBy{T}, i::T) where {T} = o.value[i]
+function Base.show(io::IO, o::GroupBy{T,S,O}) where {T,S,O}
+    print(io, name(o, false, false) * ": $T => $O")
+    for (i, (k,v)) in enumerate(o.value)
+        char = i == length(o.value) ?  '└' : '├'
+        print(io, "\n  $(char)── $k: $v")
+    end
+end
+function _merge!(a::GroupBy{T,O}, b::GroupBy{T,O}) where {T,O}
+    a.init == b.init || error("Cannot merge GroupBy objects with different inits")
+    a.n += b.n
+    merge!((o1, o2) -> merge!(o1, o2), a.value, b.value)
+end
+
 #-----------------------------------------------------------------------# Mean
 """
     Mean(T = Float64; weight=EqualWeight())

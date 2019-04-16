@@ -9,7 +9,7 @@ export
     nobs, value, fit!, eachrow, eachcol,
     EqualWeight, ExponentialWeight, LearningRate, LearningRate2, HarmonicWeight, McclainWeight,
     # Stats
-    Counter, CountMap, Extrema, FTSeries, Mean, Series, Sum, Variance
+    Counter, CountMap, Extrema, FTSeries, GroupBy, Mean, Series, Sum, Variance
 
 #-----------------------------------------------------------------------# OnlineStat
 abstract type OnlineStat{T} end
@@ -85,8 +85,6 @@ function fit!(o::OnlineStat{I}, y::T) where {I, T}
     o
 end
 
-# fit!(o::OnlineStat, y::Nothing) = nothing
-
 #-----------------------------------------------------------------------# utils
 function _fit!(o::OnlineStat{T}, arg) where {T}
     error("A $(typeof(arg)) is not a single observation for $((name(o, false, true)))")
@@ -129,6 +127,8 @@ bessel(o) = nobs(o) / (nobs(o) - 1)
 Statistics.std(o::OnlineStat; kw...) = sqrt.(var(o; kw...))
 
 input(o::OnlineStat{T}) where {T} = T
+
+const TwoThings{T,S} = Union{Tuple{T,S}, Pair{T,S}, NamedTuple{names, Tuple{T,S}}} where names
 
 #-----------------------------------------------------------------------# OnlineIterator
 struct OnlineIterator{R,T,S}

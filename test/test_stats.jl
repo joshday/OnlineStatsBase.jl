@@ -51,7 +51,6 @@ println("  > CountMap")
     @test ==(mergevals(CountMap(Bool), x, x2)...)
     @test ==(mergevals(CountMap(Int), z, z2)...)
 end
-
 #-----------------------------------------------------------------------# Extrema
 println("  > Extrema")
 @testset "Extrema" begin
@@ -72,6 +71,18 @@ println("  > Extrema")
     @test value(fit!(Extrema(Char), 'a':'z')) == ('a', 'z')
     @test value(fit!(Extrema(Char), "abc")) == ('a', 'c')
     @test value(fit!(Extrema(String), ["a", "b"])) == ("a", "b")
+end
+#-----------------------------------------------------------------------# GroupBy
+@testset "GroupBy" begin
+    @test GroupBy(Bool, Mean()) == GroupBy(Bool, Mean())
+    d = value(fit!(GroupBy(Bool, Mean()), zip(x,y)))
+    @test value(d[true]) ≈ mean(y[x])
+    @test value(d[false]) ≈ mean(y[map(!,x)])
+
+    a, b = mergevals(GroupBy(Int, Mean()), zip(z,y), zip(z2, y2))
+    for (ai,bi) in zip(values(sort(a)), values(sort(b)))
+        @test value(ai) ≈ value(bi)
+    end
 end
 #-----------------------------------------------------------------------# Mean
 println("  > Mean")
