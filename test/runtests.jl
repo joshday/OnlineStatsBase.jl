@@ -44,10 +44,10 @@ end #Weight
 #-----------------------------------------------------------------------# Iteration
 @testset "Iteration" begin
     x, y = randn(100,10), randn(100)
-    @test fit!(Counter(Vector), OnlineStatsBase.eachrow(x)).n == 100
-    @test fit!(Counter(Vector), OnlineStatsBase.eachcol(x)).n == 10
-    @test fit!(Counter(Tuple),  OnlineStatsBase.eachrow(x,y)).n == 100
-    @test fit!(Counter(Tuple),  OnlineStatsBase.eachcol(x,y)).n == 10
+    @test fit!(Counter(AbstractVector), OnlineStatsBase.eachrow(x)).n == 100
+    @test fit!(Counter(AbstractVector), OnlineStatsBase.eachcol(x)).n == 10
+    @test fit!(Counter(Tuple),  zip(OnlineStatsBase.eachrow(x), y)).n == 100
+    @test fit!(Counter(Tuple),  zip(OnlineStatsBase.eachcol(x), y)).n == 10
 
     for (j, xj) in enumerate(OnlineStatsBase.eachcol(x))
         @test xj == x[:, j]
@@ -57,12 +57,12 @@ end #Weight
     end
     @inferred OnlineStatsBase.eachrow(x)
     @inferred OnlineStatsBase.eachcol(x)
-    @inferred OnlineStatsBase.eachrow(x, y)
-    @inferred OnlineStatsBase.eachcol(x, y)
+    @inferred zip(OnlineStatsBase.eachrow(x), y)
+    @inferred zip(OnlineStatsBase.eachcol(x), y)
 
     @test length(OnlineStatsBase.eachcol(x)) == 10
     @test length(OnlineStatsBase.eachrow(x)) == 100
-    @test length(OnlineStatsBase.eachrow(x, y)) == 100
+    @test length(zip(OnlineStatsBase.eachrow(x), y)) == 100
 end
 
 

@@ -3,16 +3,30 @@ module OnlineStatsBase
 using Statistics, Dates, OrderedCollections
 
 import LearnBase: nobs, value, fit!
+import StatsBase: StatsBase
 
 export
     OnlineStat, Weight,
     nobs, value, fit!, eachrow, eachcol,
     EqualWeight, ExponentialWeight, LearningRate, LearningRate2, HarmonicWeight, McclainWeight,
     # Stats
-    Counter, CountMap, Extrema, FTSeries, GroupBy, Mean, Series, Sum, Variance
+    Counter, CountMap, Extrema, FTSeries, Group, GroupBy, Mean, Moments, Series, Sum, Variance
 
 #-----------------------------------------------------------------------# OnlineStat
 abstract type OnlineStat{T} end
+
+# Stats that hold a collection of other stats
+abstract type StatCollection{T} <: OnlineStat{T} end
+function Base.show(io::IO, o::StatCollection)
+    print(io, name(o, false, false))
+    print_stat_tree(io, o.stats)
+end
+function print_stat_tree(io::IO, stats)
+    for (i, stat) in enumerate(stats)
+        char = i == length(stats) ? '└' : '├'
+        print(io, "\n  $(char)── $stat")
+    end
+end
 
 nobs(o::OnlineStat) = o.n
 
@@ -130,78 +144,89 @@ input(o::OnlineStat{T}) where {T} = T
 
 const TwoThings{T,S} = Union{Tuple{T,S}, Pair{T,S}, NamedTuple{names, Tuple{T,S}}} where names
 
-#-----------------------------------------------------------------------# OnlineIterator
-struct OnlineIterator{R,T,S}
-    thing::T
-    buffer::S
-    OnlineIterator{R}(thing::T, buffer::S) where {T,S,R} = new{R,T,S}(thing, buffer)
+#-----------------------------------------------------------------------# Compat
+@static if VERSION < v"1.1.0"
+    export eachrow
+
+    """
+        eachrow(x::AbstractVecOrMat)
+
+    Iterator over the rows of `x` as views.
+
+    # Example
+        for xi in eachrow(rand(3,2))
+            println(xi)
+        end
+    """
+    eachrow(A::Union{AbstractVector, AbstractMatrix}) = (view(A, i, :) for i in axes(A, 1))
+else
+    import Base: eachrow
 end
 
-Base.iterate(o::OnlineIterator, i=1) = i > length(o) ? nothing : (o[i], i+1)
-Base.keys(o::OnlineIterator) = Base.OneTo(length(o))
+@deprecate eachrow(x::AbstractMatrix, y::AbstractVector) zip(eachrow(x), y)
 
-"""
-    eachrow(x::AbstractMatrix)
-    eachrow(x::AbstractMatrix, y::AbstractVector)
+# #-----------------------------------------------------------------------# OnlineIterator
+# struct OnlineIterator{R,T,S}
+#     thing::T
+#     buffer::S
+#     OnlineIterator{R}(thing::T, buffer::S) where {T,S,R} = new{R,T,S}(thing, buffer)
+# end
 
-Iterator over the rows of `x` (paired in a tuple with the values of `y`).
-
-# Example
-    for xi in eachrow(rand(3,2))
-        println(xi)
-    end
-"""
-eachrow(args...) = eachrow(args)
-
-"""
-    eachcol(x::AbstractMatrix)
-    eachcol(x::AbstractMatrix, y::AbstractVector)
-
-Iterator over the columns of `x` (paired in a tuple with the values of `y`).
-
-# Example
-    for xi in eachcol(rand(3,2))
-        println(xi)
-    end
-"""
-eachcol(args...) = eachcol(args)
-
-# helpers
-function copyrow!(buffer::Vector, x::AbstractMatrix, i::Int)
-    for j in eachindex(buffer)
-        buffer[j] = x[i, j]
-    end
-    buffer
-end
-function copycol!(buffer::Vector, x::AbstractMatrix, j::Int)
-    for i in eachindex(buffer)
-        buffer[i] = x[i, j]
-    end
-    buffer
-end
-
-# Matrix rows
-Base.length(o::OnlineIterator{:row, <:AbstractMatrix}) = size(o.thing, 1)
-Base.getindex(o::OnlineIterator{:row, <:AbstractMatrix}, i::Int) = copyrow!(o.buffer, o.thing, i)
-eachrow(m::AbstractMatrix{T}) where {T} = OnlineIterator{:row}(m, Vector{T}(undef, size(m, 2)))
-
-# Matrix cols
-Base.length(o::OnlineIterator{:col, <:AbstractMatrix}) = size(o.thing, 2)
-Base.getindex(o::OnlineIterator{:col, <:AbstractMatrix}, i::Int) = copycol!(o.buffer, o.thing, i)
-eachcol(m::AbstractMatrix{T}) where {T} = OnlineIterator{:col}(m, Vector{T}(undef, size(m, 1)))
+# Base.iterate(o::OnlineIterator, i=1) = i > length(o) ? nothing : (o[i], i+1)
+# Base.keys(o::OnlineIterator) = Base.OneTo(length(o))
 
 
-const XY = Tuple{T, S} where {T<:AbstractMatrix, S<:AbstractVector}
+# eachrow(args...) = eachrow(args)
 
-# XY rows
-Base.length(o::OnlineIterator{:row, <:XY}) = size(o.thing[1], 1)
-Base.getindex(o::OnlineIterator{:row, <:XY}, i::Int) = (copyrow!(o.buffer, o.thing[1], i), o.thing[2][i])
-eachrow(t::XY) = OnlineIterator{:row}(t, Vector{eltype(t[1])}(undef, size(t[1], 2)))
+# """
+#     eachcol(x::AbstractMatrix)
+#     eachcol(x::AbstractMatrix, y::AbstractVector)
 
-# XY cols
-Base.length(o::OnlineIterator{:col, <:XY}) = size(o.thing[1], 2)
-Base.getindex(o::OnlineIterator{:col, <:XY}, i::Int) = (copycol!(o.buffer, o.thing[1], i), o.thing[2][i])
-eachcol(t::XY) = OnlineIterator{:col}(t, Vector{eltype(t[1])}(undef, size(t[1], 1)))
+# Iterator over the columns of `x` (paired in a tuple with the values of `y`).
+
+# # Example
+#     for xi in eachcol(rand(3,2))
+#         println(xi)
+#     end
+# """
+# eachcol(args...) = eachcol(args)
+
+# # helpers
+# function copyrow!(buffer::Vector, x::AbstractMatrix, i::Int)
+#     for j in eachindex(buffer)
+#         buffer[j] = x[i, j]
+#     end
+#     buffer
+# end
+# function copycol!(buffer::Vector, x::AbstractMatrix, j::Int)
+#     for i in eachindex(buffer)
+#         buffer[i] = x[i, j]
+#     end
+#     buffer
+# end
+
+# # Matrix rows
+# Base.length(o::OnlineIterator{:row, <:AbstractMatrix}) = size(o.thing, 1)
+# Base.getindex(o::OnlineIterator{:row, <:AbstractMatrix}, i::Int) = copyrow!(o.buffer, o.thing, i)
+# eachrow(m::AbstractMatrix{T}) where {T} = OnlineIterator{:row}(m, Vector{T}(undef, size(m, 2)))
+
+# # Matrix cols
+# Base.length(o::OnlineIterator{:col, <:AbstractMatrix}) = size(o.thing, 2)
+# Base.getindex(o::OnlineIterator{:col, <:AbstractMatrix}, i::Int) = copycol!(o.buffer, o.thing, i)
+# eachcol(m::AbstractMatrix{T}) where {T} = OnlineIterator{:col}(m, Vector{T}(undef, size(m, 1)))
+
+
+# const XY = Tuple{T, S} where {T<:AbstractMatrix, S<:AbstractVector}
+
+# # XY rows
+# Base.length(o::OnlineIterator{:row, <:XY}) = size(o.thing[1], 1)
+# Base.getindex(o::OnlineIterator{:row, <:XY}, i::Int) = (copyrow!(o.buffer, o.thing[1], i), o.thing[2][i])
+# eachrow(t::XY) = OnlineIterator{:row}(t, Vector{eltype(t[1])}(undef, size(t[1], 2)))
+
+# # XY cols
+# Base.length(o::OnlineIterator{:col, <:XY}) = size(o.thing[1], 2)
+# Base.getindex(o::OnlineIterator{:col, <:XY}, i::Int) = (copycol!(o.buffer, o.thing[1], i), o.thing[2][i])
+# eachcol(t::XY) = OnlineIterator{:col}(t, Vector{eltype(t[1])}(undef, size(t[1], 1)))
 
 include("weight.jl")
 include("stats.jl")
