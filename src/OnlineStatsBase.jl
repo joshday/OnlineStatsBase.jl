@@ -146,24 +146,15 @@ const TwoThings{T,S} = Union{Tuple{T,S}, Pair{T,S}, NamedTuple{names, Tuple{T,S}
 
 #-----------------------------------------------------------------------# Compat
 @static if VERSION < v"1.1.0"
-    export eachrow
-
-    """
-        eachrow(x::AbstractVecOrMat)
-
-    Iterator over the rows of `x` as views.
-
-    # Example
-        for xi in eachrow(rand(3,2))
-            println(xi)
-        end
-    """
+    export eachrow, eachcol
     eachrow(A::Union{AbstractVector, AbstractMatrix}) = (view(A, i, :) for i in axes(A, 1))
+    eachcol(A::Union{AbstractVector, AbstractMatrix}) = (view(A, :, i) for i in axes(A, 2))
 else
-    import Base: eachrow
+    import Base: eachrow, eachcol
 end
 
 @deprecate eachrow(x::AbstractMatrix, y::AbstractVector) zip(eachrow(x), y)
+@deprecate eachcol(x::AbstractMatrix, y::AbstractVector) zip(eachcol(x), y)
 
 # #-----------------------------------------------------------------------# OnlineIterator
 # struct OnlineIterator{R,T,S}
