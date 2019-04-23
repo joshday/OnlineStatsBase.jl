@@ -62,8 +62,8 @@ function Base.show(io::IO, o::OnlineStat)
     print(io, " | value=")
     show(IOContext(io, :compact => true), value(o))
 end
-function name(o, withmodule = false, withparams = true)
-    s = string(typeof(o))
+function name(T::Type, withmodule = false, withparams = true)
+    s = string(T)
     if !withmodule
         s = replace(s, r"([a-zA-Z]*\.)" => "")  # remove text that ends in period
     end
@@ -72,6 +72,7 @@ function name(o, withmodule = false, withparams = true)
     end
     s
 end
+name(o, args...) = name(typeof(o), args...)
 
 #-----------------------------------------------------------------------# fit!
 """
