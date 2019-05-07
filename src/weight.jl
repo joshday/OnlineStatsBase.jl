@@ -12,7 +12,7 @@ Base.copy(w::Weight) = deepcopy(w)
 """
     EqualWeight()
 
-Equally weighted observations.  
+Equally weighted observations.
 
 ``γ(t) = 1 / t``
 """
@@ -24,13 +24,13 @@ struct EqualWeight <: Weight end
     ExponentialWeight(λ::Float64)
     ExponentialWeight(lookback::Int)
 
-Exponentially weighted observations.  The first weight is 1.0 and all else are 
+Exponentially weighted observations.  The first weight is 1.0 and all else are
 `λ = 2 / (lookback + 1)`.
 
 ``γ(t) = λ``
 """
-struct ExponentialWeight <: Weight 
-    λ::Float64 
+struct ExponentialWeight <: Weight
+    λ::Float64
     ExponentialWeight(λ::Real = .1) = new(λ)
     ExponentialWeight(lookback::Integer) = new(2 / (lookback + 1))
 end
@@ -41,13 +41,13 @@ Base.show(io::IO, w::ExponentialWeight) = print(io, name(w) * "(λ = $(w.λ))")
 """
     LearningRate(r = .6)
 
-Slowly decreasing weight.  Satisfies the standard stochastic approximation assumption 
+Slowly decreasing weight.  Satisfies the standard stochastic approximation assumption
 ``∑ γ(t) = ∞, ∑ γ(t)^2 < ∞`` if ``r ∈ (.5, 1]``.
 
 ``γ(t) = inv(t ^ r)``
 """
-struct LearningRate <: Weight 
-    r::Float64 
+struct LearningRate <: Weight
+    r::Float64
     LearningRate(r = .6) = new(r)
 end
 (w::LearningRate)(n) = inv(n ^ w.r)
@@ -57,12 +57,12 @@ Base.show(io::IO, w::LearningRate) = print(io, name(w) * "(r = $(w.r))")
 """
     LearningRate2(c = .5)
 
-Slowly decreasing weight.  
+Slowly decreasing weight.
 
 ``γ(t) = inv(1 + c * (t - 1))``
 """
-struct LearningRate2 <: Weight 
-    c::Float64 
+struct LearningRate2 <: Weight
+    c::Float64
     LearningRate2(c = .5) = new(c)
 end
 (w::LearningRate2)(n) = 1 / (1 + w.c * (n - 1))
@@ -72,12 +72,12 @@ Base.show(io::IO, w::LearningRate2) = print(io, name(w) * "(c = $(w.c))")
 """
     HarmonicWeight(a = 10.0)
 
-Weight determined by harmonic series.  
+Weight determined by harmonic series.
 
 ``γ(t) = a / (a + t - 1)``
 """
-struct HarmonicWeight <: Weight 
-    a::Float64 
+struct HarmonicWeight <: Weight
+    a::Float64
     HarmonicWeight(a = 10.0) = new(a)
 end
 (w::HarmonicWeight)(n) = w.a / (w.a + n - 1)
@@ -99,36 +99,6 @@ end
 (w::McclainWeight)(n) = n == 1 ? 1.0 : (w.last = w.last / (1 + w.last - w.α))
 Base.show(io::IO, w::McclainWeight) = print(io, name(w) * "(α = $(w.α))")
 
-#-----------------------------------------------------------------------# Bounded
-"""
-    Bounded(w::Weight, λ::Float64)
-
-Bound the weight by a constant.
-
-``γ′(t) = max(γ(t), λ)``
-"""
-struct Bounded{W} <: Weight 
-    weight::W 
-    λ::Float64 
-end
-(w::Bounded)(n) = max(w.λ, w.weight(n))
-Base.show(io::IO, w::Bounded) = print(io, "max($(w.λ), $(w.weight))")
-Base.max(w::Weight, λ::Float64) = Bounded(w, λ)
-Base.max(λ::Float64, w::Weight) = Bounded(w, λ)
-
-#-----------------------------------------------------------------------# Scaled
-"""
-    Scaled(w::Weight, λ::Float64)
-
-Scale a weight by a constant.
-
-``γ′(t) = λ * γ(t)``
-"""
-struct Scaled{W} <: Weight
-    weight::W 
-    λ::Float64
-end
-Base.:*(λ::Real, w::Weight) = Scaled(w, Float64(λ))
-Base.:*(w::Weight, λ::Real) = Scaled(w, Float64(λ))
-(w::Scaled)(n) = w.λ * w.weight(n)
-Base.show(io::IO, w::Scaled) = print(io, "$(w.λ) * $(w.weight)")
+#-----------------------------------------------------------------------# Bounded/Scaled
+@deprecate Bounded(weight, λ) n -> max(weight(n), λ)
+@deprecate Scaled(weight, λ) n -> λ * weight(n)
