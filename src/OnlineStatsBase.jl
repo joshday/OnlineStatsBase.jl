@@ -48,6 +48,18 @@ function Base.:(==)(o1::T, o2::T) where {T<:OnlineStat}
 end
 
 Base.copy(o::OnlineStat) = deepcopy(o)
+
+"""
+    merge!(stat1, stat2)
+
+Merge `stat1` into `stat2` (supported by most `OnlineStat` types).
+
+# Example
+
+    a = fit!(Mean(), 1:10)
+    b = fit!(Mean(), 11:20)
+    merge!(a, b)
+"""
 function Base.merge!(o::OnlineStat, o2::OnlineStat)
     (nobs(o) > 0 || nobs(o2) > 0) && _merge!(o, o2)
     o
