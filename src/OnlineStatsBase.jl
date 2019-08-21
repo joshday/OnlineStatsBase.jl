@@ -1,6 +1,6 @@
 module OnlineStatsBase
 
-using Statistics, Dates, OrderedCollections
+using Statistics, Dates, OrderedCollections, LinearAlgebra
 
 import LearnBase: nobs, value, fit!
 import StatsBase: StatsBase
@@ -10,7 +10,7 @@ export
     nobs, value, fit!, eachrow, eachcol,
     EqualWeight, ExponentialWeight, LearningRate, LearningRate2, HarmonicWeight, McclainWeight,
     # Stats
-    Counter, CountMap, Extrema, FTSeries, Group, GroupBy, Mean, Moments, Series, Sum, Variance
+    Counter, CountMap, CovMatrix, Extrema, FTSeries, Group, GroupBy, Mean, Moments, Series, Sum, Variance
 
 #-----------------------------------------------------------------------# OnlineStat
 abstract type OnlineStat{T} end

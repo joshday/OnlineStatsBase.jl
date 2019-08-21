@@ -51,6 +51,22 @@ println("  > CountMap")
     @test ==(mergevals(CountMap(Bool), x, x2)...)
     @test ==(mergevals(CountMap(Int), z, z2)...)
 end
+#-----------------------------------------------------------------------# CovMatrix
+println("  > CovMatrix")
+@testset "CovMatrix" begin
+    o = fit!(CovMatrix(), eachrow(ymat))
+    @test value(o) ≈ cov(ymat)
+    @test cov(o) ≈ cov(ymat)
+    @test cor(o) ≈ cor(ymat)
+    @test all(x -> ≈(x...), zip(var(o), var(ymat; dims=1)))
+    @test all(x -> ≈(x...), zip(std(o), std(ymat; dims=1)))
+    @test all(x -> ≈(x...), zip(mean(o), mean(ymat; dims=1)))
+
+    @test ≈(mergevals(CovMatrix(), OnlineStatsBase.eachrow(ymat), OnlineStatsBase.eachrow(ymat2))...)
+    @test ≈(mergevals(CovMatrix(), OnlineStatsBase.eachcol(ymat'), OnlineStatsBase.eachcol(ymat2'))...)
+    @test ≈(mergevals(CovMatrix(Complex{Float64}), OnlineStatsBase.eachrow(ymat * im), OnlineStatsBase.eachrow(ymat2))...)
+    @test ≈(mergevals(CovMatrix(Complex{Float64}), OnlineStatsBase.eachrow(ymat * im), OnlineStatsBase.eachrow(ymat2 * im))...)
+end
 #-----------------------------------------------------------------------# Extrema
 println("  > Extrema")
 @testset "Extrema" begin
