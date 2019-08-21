@@ -4,6 +4,17 @@ import OnlineStatsBase: _fit!, _merge!, Mean, Variance
 
 include("test_stats.jl")
 
+#-----------------------------------------------------------------------# Random
+@testset "Random Stuff" begin
+string(Series(Mean(), Variance()))
+string(Mean())
+@test Mean() != Variance()
+@test Mean() == merge(Mean(), Mean())
+@test Mean() == merge(Mean(), fit!(Variance(), 1:5))
+@test_throws Exception fit!(Mean(), "abc")
+@test OnlineStatsBase.input(Mean()) == Number
+end
+
 #-----------------------------------------------------------------------# Weight
 @testset "Weight" begin
 function test_weight(w::OnlineStatsBase.Weight, f::Function)
