@@ -98,7 +98,3 @@ mutable struct McclainWeight <: Weight
 end
 (w::McclainWeight)(n) = n == 1 ? 1.0 : (w.last = w.last / (1 + w.last - w.α))
 Base.show(io::IO, w::McclainWeight) = print(io, name(w) * "(α = $(w.α))")
-
-#-----------------------------------------------------------------------# Bounded/Scaled
-@deprecate Bounded(weight, λ) n -> max(weight(n), λ)
-@deprecate Scaled(weight, λ) n -> λ * weight(n)

@@ -8,6 +8,7 @@ include("test_stats.jl")
 @testset "Random Stuff" begin
 string(Series(Mean(), Variance()))
 string(Mean())
+string(McclainWeight())
 @test Mean() != Variance()
 @test !(Mean() == Variance())
 @test Mean() == merge(Mean(), Mean())

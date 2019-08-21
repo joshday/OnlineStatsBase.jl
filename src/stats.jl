@@ -106,7 +106,6 @@ function _merge!(o::CovMatrix, o2::CovMatrix)
     γ = o2.n / (o.n += o2.n)
     smooth!(o.A, o2.A, γ)
     smooth!(o.b, o2.b, γ)
-    o
 end
 Statistics.cov(o::CovMatrix; corrected::Bool = true) = value(o; corrected=corrected)
 Statistics.mean(o::CovMatrix) = o.b
@@ -156,7 +155,6 @@ function _merge!(o::Extrema, o2::Extrema)
     o.min = min(o.min, o2.min)
     o.max = max(o.max, o2.max)
     o.n += o2.n
-    o
 end
 value(o::Extrema) = (o.min, o.max)
 Base.extrema(o::Extrema) = value(o)
@@ -335,7 +333,6 @@ end
 function _merge!(o::Moments, o2::Moments)
     γ = o2.n / (o.n += o2.n)
     smooth!(o.m, o2.m, γ)
-    o
 end
 
 #-----------------------------------------------------------------------# Sum
@@ -488,6 +485,5 @@ end
 function _merge!(o::FTSeries, o2::FTSeries)
     o.nfiltered += o2.nfiltered
     _merge!.(o.stats, o2.stats)
-    o
 end
 
