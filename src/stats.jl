@@ -198,6 +198,7 @@ Base.:(==)(a::Group, b::Group) = all(a.stats .== b.stats)
 Base.getindex(o::Group, i) = o.stats[i]
 Base.first(o::Group) = first(o.stats)
 Base.last(o::Group) = last(o.stats)
+Base.lastindex(o::Group) = length(o)
 Base.length(o::Group) = length(o.stats)
 Base.values(o::Group) = map(value, o.stats)
 
