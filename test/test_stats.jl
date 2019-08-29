@@ -92,6 +92,11 @@ end
     for (ai, bi) in zip(a, b)
         @test value(ai) ≈ value(bi)
     end
+
+    c = fit!(Group([Mean(), Mean()]), zip(1:10, 1:10))
+    for m in c
+        @test value(m) ≈ mean(1:10)
+    end
 end
 #-----------------------------------------------------------------------# GroupBy
 @testset "GroupBy" begin
@@ -104,6 +109,8 @@ end
     for (ai,bi) in zip(values(sort(a)), values(sort(b)))
         @test value(ai) ≈ value(bi)
     end
+    @test value(a[1]) ≈ value(b[1])
+    string(a)
 end
 #-----------------------------------------------------------------------# Mean
 println("  > Mean")
@@ -153,7 +160,7 @@ end
 #-----------------------------------------------------------------------# Sum
 println("  > Sum")
 @testset "Sum" begin
-    @test value(fit!(Sum(Int), x)) == sum(x)
+    @test sum(fit!(Sum(Int), x)) == sum(x)
     @test value(fit!(Sum(), y)) ≈ sum(y)
     @test value(fit!(Sum(Int), z)) == sum(z)
 

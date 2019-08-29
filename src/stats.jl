@@ -331,7 +331,6 @@ function _merge!(o::Variance, o2::Variance)
     δ = o2.μ - o.μ
     o.σ2 = smooth(o.σ2, o2.σ2, γ) + δ ^ 2 * γ * (1.0 - γ)
     o.μ = smooth(o.μ, o2.μ, γ)
-    o
 end
 value(o::Variance) = o.n > 1 ? o.σ2 * bessel(o) : 1.0
 Statistics.var(o::Variance) = value(o)
