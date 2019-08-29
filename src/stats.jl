@@ -58,6 +58,66 @@ nkeys(o::CountMap) = length(o.value)
 Base.values(o::CountMap) = values(o.value)
 Base.getindex(o::CountMap, i) = o.value[i]
 
+#-----------------------------------------------------------------------# CovMatrix
+"""
+    CovMatrix(p=0; weight=EqualWeight())
+    CovMatrix(::Type{T}, p=0; weight=EqualWeight())
+
+Calculate a covariance/correlation matrix of `p` variables.  If the number of variables is
+unknown, leave the default `p=0`.
+
+# Example
+
+    o = fit!(CovMatrix(), randn(100, 4))
+    cor(o)
+    cov(o)
+    mean(o)
+    var(o)
+"""
+mutable struct CovMatrix{T,W} <: OnlineStat{Union{Tuple, NamedTuple, AbstractVector}} where T<:Number
+    value::Matrix{T}
+    A::Matrix{T}  # x'x/n
+    b::Vector{T}  # 1'x/n
+    weight::W
+    n::Int
+end
+function CovMatrix(::Type{T}, p::Int=0; weight = EqualWeight()) where T<:Number
+    CovMatrix(zeros(T,p,p), zeros(T,p,p), zeros(T,p), weight, 0)
+end
+CovMatrix(p::Int=0; weight = EqualWeight()) = CovMatrix(zeros(p,p), zeros(p,p), zeros(p), weight, 0)
+function _fit!(o::CovMatrix{T}, x) where {T}
+    γ = o.weight(o.n += 1)
+    if isempty(o.A)
+        p = length(x)
+        o.b = zeros(T, p)
+        o.A = zeros(T, p, p)
+        o.value = zeros(T, p, p)
+    end
+    smooth!(o.b, x, γ)
+    smooth_syr!(o.A, x, γ)
+end
+nvars(o::CovMatrix) = size(o.A, 1)
+function value(o::CovMatrix; corrected::Bool = true)
+    o.value[:] = Matrix(Hermitian((o.A - o.b * o.b')))
+    corrected && rmul!(o.value, bessel(o))
+    o.value
+end
+function _merge!(o::CovMatrix, o2::CovMatrix)
+    γ = o2.n / (o.n += o2.n)
+    smooth!(o.A, o2.A, γ)
+    smooth!(o.b, o2.b, γ)
+end
+Statistics.cov(o::CovMatrix; corrected::Bool = true) = value(o; corrected=corrected)
+Statistics.mean(o::CovMatrix) = o.b
+Statistics.var(o::CovMatrix; kw...) = diag(value(o; kw...))
+function Statistics.cor(o::CovMatrix; kw...)
+    value(o; kw...)
+    v = 1.0 ./ sqrt.(diag(o.value))
+    rmul!(o.value, Diagonal(v))
+    lmul!(Diagonal(v), o.value)
+    o.value
+end
+
 #-----------------------------------------------------------------------# Extrema
 """
     Extrema(T::Type = Float64)
@@ -95,7 +155,6 @@ function _merge!(o::Extrema, o2::Extrema)
     o.min = min(o.min, o2.min)
     o.max = max(o.max, o2.max)
     o.n += o2.n
-    o
 end
 value(o::Extrema) = (o.min, o.max)
 Base.extrema(o::Extrema) = value(o)
@@ -139,6 +198,7 @@ Base.:(==)(a::Group, b::Group) = all(a.stats .== b.stats)
 Base.getindex(o::Group, i) = o.stats[i]
 Base.first(o::Group) = first(o.stats)
 Base.last(o::Group) = last(o.stats)
+Base.lastindex(o::Group) = length(o)
 Base.length(o::Group) = length(o.stats)
 Base.values(o::Group) = map(value, o.stats)
 
@@ -274,7 +334,6 @@ end
 function _merge!(o::Moments, o2::Moments)
     γ = o2.n / (o.n += o2.n)
     smooth!(o.m, o2.m, γ)
-    o
 end
 
 #-----------------------------------------------------------------------# Sum
@@ -426,6 +485,5 @@ end
 function _merge!(o::FTSeries, o2::FTSeries)
     o.nfiltered += o2.nfiltered
     _merge!.(o.stats, o2.stats)
-    o
 end
 

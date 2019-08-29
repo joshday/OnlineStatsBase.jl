@@ -39,6 +39,10 @@ println("  > CountMap")
     @test OnlineStatsBase.pdf(a, true) == mean(x)
     @test OnlineStatsBase.pdf(a, false) == mean(!, x)
     @test OnlineStatsBase.pdf(a, 2) == 0.0
+    @test keys(a) == keys(a.value)
+    @test values(a) == values(a.value)
+    @test a[true] == a.value[true]
+    @test OnlineStatsBase.nkeys(a) == 2
 
     b = fit!(CountMap(Int), z)
     @test sort(value(b)) == sort(countmap(z))
@@ -50,6 +54,27 @@ println("  > CountMap")
 
     @test ==(mergevals(CountMap(Bool), x, x2)...)
     @test ==(mergevals(CountMap(Int), z, z2)...)
+    @test ==(mergevals(CountMap{Bool}(), x, x2)...)
+    @test ==(mergevals(CountMap{Int}(), z, z2)...)
+    @test ==(mergevals(CountMap(Dict{Bool,Int}()), x, x2)...)
+    @test ==(mergevals(CountMap(Dict{Int,Int}()), z, z2)...)
+end
+#-----------------------------------------------------------------------# CovMatrix
+println("  > CovMatrix")
+@testset "CovMatrix" begin
+    o = fit!(CovMatrix(), eachrow(ymat))
+    @test OnlineStatsBase.nvars(o) == size(ymat, 2)
+    @test value(o) ≈ cov(ymat)
+    @test cov(o) ≈ cov(ymat)
+    @test cor(o) ≈ cor(ymat)
+    @test all(x -> ≈(x...), zip(var(o), var(ymat; dims=1)))
+    @test all(x -> ≈(x...), zip(std(o), std(ymat; dims=1)))
+    @test all(x -> ≈(x...), zip(mean(o), mean(ymat; dims=1)))
+
+    @test ≈(mergevals(CovMatrix(), OnlineStatsBase.eachrow(ymat), OnlineStatsBase.eachrow(ymat2))...)
+    @test ≈(mergevals(CovMatrix(), OnlineStatsBase.eachcol(ymat'), OnlineStatsBase.eachcol(ymat2'))...)
+    @test ≈(mergevals(CovMatrix(Complex{Float64}), OnlineStatsBase.eachrow(ymat * im), OnlineStatsBase.eachrow(ymat2))...)
+    @test ≈(mergevals(CovMatrix(Complex{Float64}), OnlineStatsBase.eachrow(ymat * im), OnlineStatsBase.eachrow(ymat2 * im))...)
 end
 #-----------------------------------------------------------------------# Extrema
 println("  > Extrema")
@@ -76,6 +101,7 @@ end
 @testset "Group" begin
     o = fit!(5Mean(), OnlineStatsBase.eachrow(ymat))
     @test o[1] == first(o)
+    @test o[end] == last(o)
     @test 5Mean() == 5Mean()
     @test collect(map(value, value(o))) ≈ vec(mean(ymat, dims=1))
 
@@ -104,6 +130,7 @@ end
     d = value(fit!(GroupBy(Bool, Mean()), zip(x,y)))
     @test value(d[true]) ≈ mean(y[x])
     @test value(d[false]) ≈ mean(y[map(!,x)])
+    string(GroupBy(Bool, Mean()))
 
     a, b = mergevals(GroupBy(Int, Mean()), zip(z,y), zip(z2, y2))
     for (ai,bi) in zip(values(sort(a)), values(sort(b)))
