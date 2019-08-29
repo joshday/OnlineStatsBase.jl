@@ -119,6 +119,8 @@ end
         @test value(ai) ≈ value(bi)
     end
 
+    @test length(values(a)) == 5
+
     c = fit!(Group([Mean(), Mean()]), zip(1:10, 1:10))
     for m in c
         @test value(m) ≈ mean(1:10)
@@ -181,6 +183,13 @@ println("  > Series/FTSeries")
         o = fit!(FTSeries(Mean(); transform=abs, filter=!ismissing), data)
         @test value(o)[1] ≈ mean(abs, y)
         @test o.nfiltered == 20
+
+        o2 = fit!(FTSeries(Float64, Mean(); transform=abs, filter=!ismissing), data)
+        @test value(o2)[1] ≈ mean(abs, y)
+        @test o2.nfiltered == 20
+
+        a, b = mergestats(FTSeries(Mean(), Variance(); transform=abs, filter=!ismissing), y, y2)
+        @test a.nfiltered == b.nfiltered
     end
 end
 
