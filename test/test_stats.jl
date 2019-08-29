@@ -98,6 +98,7 @@ println("  > Extrema")
     @test value(fit!(Extrema(String), ["a", "b"])) == ("a", "b")
 end
 #-----------------------------------------------------------------------# Group
+println("  > Group")
 @testset "Group" begin
     o = fit!(5Mean(), OnlineStatsBase.eachrow(ymat))
     @test o[1] == first(o)
@@ -127,6 +128,7 @@ end
     end
 end
 #-----------------------------------------------------------------------# GroupBy
+println("  > GroupBy")
 @testset "GroupBy" begin
     @test GroupBy(Bool, Mean()) == GroupBy(Bool, Mean())
     d = value(fit!(GroupBy(Bool, Mean()), zip(x,y)))
@@ -139,7 +141,7 @@ end
         @test value(ai) ≈ value(bi)
     end
     @test value(a[1]) ≈ value(b[1])
-    string(a)
+    string(GroupBy(Int, Mean()))
 end
 #-----------------------------------------------------------------------# Mean
 println("  > Mean")
@@ -150,6 +152,7 @@ println("  > Mean")
     @test ≈(mergevals(Mean(), y, y2)...)
 end
 #-----------------------------------------------------------------------# Moments
+println("  > Moments")
 @testset "Moments" begin
     o = fit!(Moments(), y)
     @test value(o) ≈ [mean(y), mean(y .^ 2), mean(y .^ 3), mean(y .^ 4)]
