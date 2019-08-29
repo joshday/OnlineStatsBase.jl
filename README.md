@@ -16,7 +16,7 @@ This package defines the basic types and interface for [OnlineStats](https://git
 - **`_merge!(stat1, stat2)`** Merge `stat2` into `stat1`.  By default, a warning will occur.
 
 ### Defaults
-- **`value(stat, args...)`**:  Calculate the value of the estimator from the "sufficient statistics".  By default, this returns the first field of the OnlineStat.
+- **`value(stat, args...; kw...)`**:  Calculate the value of the estimator from the "sufficient statistics".  By default, this returns the first field of the OnlineStat.
 - **`nobs(stat)`**: Return the number of observations.  By default, this returns `stat.n`.
 
 
