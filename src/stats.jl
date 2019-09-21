@@ -186,7 +186,7 @@ struct Group{T, S} <: StatCollection{S}
     function Group(stats::T) where {T}
         inputs = map(input, stats)
         tup = Tuple{inputs...}
-        S = Union{tup, NamedTuple{names, tup}, AbstractVector{<: promote_type(inputs...)}} where names
+        S = Union{tup, NamedTuple{names, R} where R<:tup, AbstractVector{<: promote_type(inputs...)}} where names
         new{T,S}(stats)
     end
 end
