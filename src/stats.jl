@@ -68,7 +68,7 @@ unknown, leave the default `p=0`.
 
 # Example
 
-    o = fit!(CovMatrix(), randn(100, 4))
+    o = fit!(CovMatrix(), randn(100, 4) |> eachrow)
     cor(o)
     cov(o)
     mean(o)
@@ -174,10 +174,10 @@ observation `y`, `y[i]` is sent to `stats[i]`.
 
     x = randn(100, 2)
 
-    fit!(Group(Mean(), Mean()), x)
-    fit!(Group(Mean(), Variance()), x)
+    fit!(Group(Mean(), Mean()), eachrow(x))
+    fit!(Group(Mean(), Variance()), eachrow(x))
 
-    o = fit!(Group(m1 = Mean(), m2 = Mean()), x)
+    o = fit!(Group(m1 = Mean(), m2 = Mean()), eachrow(x))
     o.stats.m1
     o.stats.m2
 """
