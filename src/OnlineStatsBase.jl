@@ -2,8 +2,7 @@ module OnlineStatsBase
 
 using Statistics, Dates, OrderedCollections, LinearAlgebra
 
-import LearnBase: nobs, value, fit!
-import StatsBase: StatsBase
+import StatsBase: StatsBase, nobs, fit!
 
 export
     OnlineStat, Weight,

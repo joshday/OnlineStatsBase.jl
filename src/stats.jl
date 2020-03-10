@@ -136,11 +136,13 @@ Maximum and minimum.
 mutable struct Extrema{T,S} <: OnlineStat{S}
     min::T
     max::T
+    nmin::Int 
+    nmax::Int
     n::Int
 end
 function Extrema(T::Type = Float64)
     a, b, S = extrema_init(T)
-    Extrema{T,S}(a, b, 0)
+    Extrema{T,S}(a, b, 0, 0, 0)
 end
 extrema_init(T::Type{<:Number}) = typemax(T), typemin(T), Number
 extrema_init(T::Type{String}) = "", "", String
@@ -148,8 +150,15 @@ extrema_init(T::Type{Date}) = typemax(Date), typemin(Date), Date
 extrema_init(T::Type) = rand(T), rand(T), T
 function _fit!(o::Extrema, y)
     (o.n += 1) == 1 && (o.min = o.max = y)
-    o.min = min(o.min, y)
-    o.max = max(o.max, y)
+    if y < o.min 
+        o.min = y 
+        o.nmin = 0
+    elseif y > o.max 
+        o.max = y 
+        o.nmax = 0
+    end
+    y == o.min && (o.nmin += 1)
+    y == o.max && (o.nmax += 1)
 end
 function _merge!(o::Extrema, o2::Extrema)
     o.min = min(o.min, o2.min)

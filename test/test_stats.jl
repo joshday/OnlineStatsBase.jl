@@ -96,6 +96,10 @@ println("  > Extrema")
     @test value(fit!(Extrema(Char), 'a':'z')) == ('a', 'z')
     @test value(fit!(Extrema(Char), "abc")) == ('a', 'c')
     @test value(fit!(Extrema(String), ["a", "b"])) == ("a", "b")
+
+    o = fit!(Extrema(), x)
+    @test o.nmin == length(x) - sum(x)
+    @test o.nmax == sum(x)
 end
 #-----------------------------------------------------------------------# Group
 println("  > Group")

@@ -1,4 +1,4 @@
-using OnlineStatsBase, LearnBase, OrderedCollections, StatsBase, Statistics, Dates, Test
+using OnlineStatsBase, OrderedCollections, StatsBase, Statistics, Dates, Test
 
 import OnlineStatsBase: _fit!, _merge!, Mean, Variance
 
