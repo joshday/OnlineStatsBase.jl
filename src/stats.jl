@@ -122,7 +122,8 @@ end
 """
     Extrema(T::Type = Float64)
 
-Maximum and minimum.
+Maximum and minimum for a data stream of type `T`.  Also keeps track of the number of times the 
+maximum and minimum value occur.
 
 # Example
 
@@ -165,8 +166,8 @@ function _merge!(o::Extrema, o2::Extrema)
     o.max = max(o.max, o2.max)
     o.n += o2.n
 end
-value(o::Extrema) = (o.min, o.max)
-Base.extrema(o::Extrema) = value(o)
+value(o::Extrema) = (min=o.min, max=o.max, nmin=o.nmin, nmax=o.nmax)
+Base.extrema(o::Extrema) = (o.min, o.max)
 Base.maximum(o::Extrema) = o.max
 Base.minimum(o::Extrema) = o.min
 
