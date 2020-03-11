@@ -6,7 +6,12 @@ A `stat` calculated over a cross section (`domain`) of another variable.
 
 # Example 
 
+    o = Part(Mean(), OnlineStatsBase.Interval(0, 1))
 
+    fit!(o, .5 => rand())
+
+    # errors 
+    fit!(o, 1.5 => rand())
 """
 mutable struct Part{D, O<:OnlineStat} <: OnlineStat{TwoThings}
     stat::O 
@@ -15,11 +20,15 @@ end
 value(o::Part) = (domain=o.domain, stat=o.stat)
 _merge!(a::Part, b::Part) = (merge!(a.stat, b.stat); merge!(a.domain, b.domain))
 Base.in(x, o::Part) = x ∈ o.domain
+nobs(o::Part) = nobs(o.stat)
 function _fit!(o::Part, xy)
     x, y = xy 
     x in o.domain || error("$x ∉ $(o.domain)")
+    adjust_domain!(o, x)
     _fit!(o.stat, y)
 end
+
+adjust_domain!(o, x) = nothing
 
 #-----------------------------------------------------------------------------# Interval (Part)
 const interval_types = [:left_closed, :right_closed, :closed, :open]
@@ -41,21 +50,38 @@ function Base.show(io::IO, d::Interval{type}) where {type}
     r = type in [:open, :left_closed] ? ')' : ']'
     print(io, "Interval: $l$(d.a), $(d.b)$r")
 end
-merge!(i::Interval, j::Interval) = (i.a = min(i.a, j.a); i.b = min(i.b, j.b))
+Base.merge!(i::Interval, j::Interval) = (i.a = min(i.a, j.a); i.b = min(i.b, j.b); a)
 
 #-----------------------------------------------------------------------------# Centroid
 mutable struct Centroid{T}
     center::T 
     n::Int
 end
+Centroid(center) = Centroid(center, 0)
 Base.in(x::T, c::Centroid{T}) where {T} = true 
 Base.in(x, c::Centroid) = false
-Base.show(io::IO, c::Centroid) = "Centroid: $(c.center)"
+Base.show(io::IO, c::Centroid) = print(io, "Centroid: $(c.center)")
 function Base.merge!(a::Centroid{T}, b::Centroid{T}) where {T <: Number} 
     a.n += b.n
     a.center = smooth(a.center, b.center, b.n / a.n)
 end
 function Base.merge!(a::Centroid, b::Centroid)
     a.n += b.n
-    smooth!(a.n, b.n, b.n / a.n)
+    smooth!(a.center, b.center, b.n / a.n)
+    a
+end
+adjust_domain!(o::Part{Centroid{T}}, x) where {T} = merge!(o.domain, Centroid{T}(x, 1))
+
+#-----------------------------------------------------------------------------# Constant 
+mutable struct Constant{T}
+    c::T
+    n::Int
+end
+Constant(c) = Constant(c, 0)
+Base.show(io::IO, c::Constant) = print(io, "Constant: $(c.c)")
+Base.in(x, c::Constant) = (x == c.c)
+function Base.merge!(a::Constant, b::Constant)
+    a.c == b.c || error("Attempted to merge Constant with different values: $(a.c) != $(b.c)")
+    a.n += b.n 
+    a
 end
