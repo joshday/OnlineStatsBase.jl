@@ -169,6 +169,12 @@ println("  > Moments")
         @test v1 ≈ v2
     end
 end
+#-----------------------------------------------------------------------# Part
+println("  > Part")
+# @testset "Part" begin 
+#     o = Part(Mean)
+# end
+
 #-----------------------------------------------------------------------# Series/FTSeries
 println("  > Series/FTSeries")
 @testset "Series/FTSeries" begin

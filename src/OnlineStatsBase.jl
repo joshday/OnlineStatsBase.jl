@@ -5,11 +5,14 @@ using Statistics, Dates, OrderedCollections, LinearAlgebra
 import StatsBase: StatsBase, nobs, fit!
 
 export
-    OnlineStat, Weight,
+    OnlineStat,
+    # functions
     nobs, value, fit!, eachrow, eachcol,
+    # Weights
     EqualWeight, ExponentialWeight, LearningRate, LearningRate2, HarmonicWeight, McclainWeight,
     # Stats
-    Counter, CountMap, CovMatrix, Extrema, FTSeries, Group, GroupBy, Mean, Moments, Series, Sum, Variance
+    Counter, CountMap, CovMatrix, Extrema, FTSeries, Group, GroupBy, Mean, Moments, Part, Series, 
+    Sum, Variance
 
 #-----------------------------------------------------------------------# OnlineStat
 abstract type OnlineStat{T} end
@@ -112,10 +115,6 @@ function fit!(o::OnlineStat{I}, y::T) where {I, T}
 end
 
 #-----------------------------------------------------------------------# utils
-function _fit!(o::OnlineStat{T}, arg) where {T}
-    error("A $(typeof(arg)) is not a single observation for $((name(o, false, true)))")
-end
-
 """
     smooth(a, b, γ)
 
@@ -165,9 +164,7 @@ else
     import Base: eachrow, eachcol
 end
 
-@deprecate eachrow(x::AbstractMatrix, y::AbstractVector) zip(eachrow(x), y)
-@deprecate eachcol(x::AbstractMatrix, y::AbstractVector) zip(eachcol(x), y)
-
 include("weight.jl")
 include("stats.jl")
+include("part.jl")
 end
