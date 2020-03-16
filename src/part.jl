@@ -49,15 +49,15 @@ function Base.merge!(a::Centroid, b::Centroid, astat, bstat)
     a
 end
 
-#-----------------------------------------------------------------------------# TimeBucket
-mutable struct TimeBucket{T <: Dates.TimeType}
+#-----------------------------------------------------------------------------# ClosedInterval
+mutable struct ClosedInterval{T}
     first::T 
     last::T
 end
-Base.show(io::IO, b::TimeBucket) = print(io, "TimeBucket: [$(b.first), $(b.last)]")
-Base.in(x, bucket::TimeBucket) = bucket.first ≤ x ≤ bucket.last
-Base.isless(a::TimeBucket, b::TimeBucket) = isless(a.first, b.first)
-function Base.merge!(a::TimeBucket, b::TimeBucket)
+Base.show(io::IO, b::ClosedInterval) = print(io, "ClosedInterval: [$(b.first), $(b.last)]")
+Base.in(x, bucket::ClosedInterval) = bucket.first ≤ x ≤ bucket.last
+Base.isless(a::ClosedInterval, b::ClosedInterval) = isless(a.first, b.first)
+function Base.merge!(a::ClosedInterval, b::ClosedInterval)
     a.first = min(a.first, b.first)
     a.last = max(a.last, b.last)
     a

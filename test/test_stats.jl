@@ -181,7 +181,7 @@ println("  > Part")
     a, b = mergevals(Part(Counter(), OnlineStatsBase.Centroid(0.0)), zip(y,y), zip(y2,y2))
     @test a.stat == b.stat
 
-    o = Part(Mean(), OnlineStatsBase.TimeBucket(today() - Day(10), today()))
+    o = Part(Mean(), OnlineStatsBase.ClosedInterval(today() - Day(10), today()))
     fit!(o, today() => 10)
     fit!(o, today() - Day(5) => 20)
     @test value(value(o).stat) == 15.0
