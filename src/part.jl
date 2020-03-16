@@ -1,87 +1,70 @@
 #-----------------------------------------------------------------------------# Part
-"""
-    Part(stat, domain)
-
-A `stat` calculated over a cross section (`domain`) of another variable.
-
-# Example 
-
-    o = Part(Mean(), OnlineStatsBase.Interval(0, 1))
-
-    fit!(o, .5 => rand())
-
-    # errors 
-    fit!(o, 1.5 => rand())
-"""
-mutable struct Part{D, O<:OnlineStat} <: OnlineStat{TwoThings}
+struct Part{D, O} <: OnlineStat{TwoThings}
     stat::O 
     domain::D
 end
 value(o::Part) = (domain=o.domain, stat=o.stat)
-_merge!(a::Part, b::Part) = (merge!(a.stat, b.stat); merge!(a.domain, b.domain))
 Base.in(x, o::Part) = x ∈ o.domain
+Base.isless(a::Part, b::Part) = isless(a.domain, b.domain)
+
 nobs(o::Part) = nobs(o.stat)
+
 function _fit!(o::Part, xy)
-    x, y = xy 
-    x in o.domain || error("$x ∉ $(o.domain)")
-    adjust_domain!(o, x)
-    _fit!(o.stat, y)
+    first(xy) in o.domain || error("$(first(xy)) ∉ $(o.domain)")
+    _fit!(o.stat, last(xy))
 end
 
-adjust_domain!(o, x) = nothing
-
-#-----------------------------------------------------------------------------# Interval (Part)
-const interval_types = [:left_closed, :right_closed, :closed, :open]
-
-mutable struct Interval{type, T}
-    a::T
-    b::T 
-    function Interval(a, b, type = :left_closed) 
-        a < b || error("$a needs to be less than $b")
-        new{type, promote_type(typeof(a), typeof(b))}(a, b)
-    end
+function _merge!(a::Part, b::Part)
+    merge!(a.stat, b.stat)
+    merge!(a.domain, b.domain, a.stat, b.stat)
 end
-Base.in(x, d::Interval{:open})          = (d.a < x < d.b)
-Base.in(x, d::Interval{:closed})        = (d.a ≤ x ≤ d.b)
-Base.in(x, d::Interval{:left_closed})   = (d.a ≤ x < d.b)
-Base.in(x, d::Interval{:right_closed})  = (d.a < x ≤ d.b)
-function Base.show(io::IO, d::Interval{type}) where {type}
-    l = type in [:open, :right_closed] ? '(' : '['
-    r = type in [:open, :left_closed] ? ')' : ']'
-    print(io, "Interval: $l$(d.a), $(d.b)$r")
-end
-Base.merge!(i::Interval, j::Interval) = (i.a = min(i.a, j.a); i.b = min(i.b, j.b); a)
+
+#-----------------------------------------------------------------------------#
+#-----------------------------------------------------------------------------# Domains
+#-----------------------------------------------------------------------------#
+# Required methods:
+#   - Base.merge!
+#   - Base.in 
+#   - Base.isless
 
 #-----------------------------------------------------------------------------# Centroid
 mutable struct Centroid{T}
     center::T 
-    n::Int
 end
-Centroid(center) = Centroid(center, 0)
+
 Base.in(x::T, c::Centroid{T}) where {T} = true 
 Base.in(x, c::Centroid) = false
+Base.isless(a::Centroid, b::Centroid) = isless(a.center, b.center)
 Base.show(io::IO, c::Centroid) = print(io, "Centroid: $(c.center)")
-function Base.merge!(a::Centroid{T}, b::Centroid{T}) where {T <: Number} 
-    a.n += b.n
-    a.center = smooth(a.center, b.center, b.n / a.n)
-end
-function Base.merge!(a::Centroid, b::Centroid)
-    a.n += b.n
-    smooth!(a.center, b.center, b.n / a.n)
-    a
-end
-adjust_domain!(o::Part{Centroid{T}}, x) where {T} = merge!(o.domain, Centroid{T}(x, 1))
 
-#-----------------------------------------------------------------------------# Constant 
-mutable struct Constant{T}
-    c::T
-    n::Int
-end
-Constant(c) = Constant(c, 0)
-Base.show(io::IO, c::Constant) = print(io, "Constant: $(c.c)")
-Base.in(x, c::Constant) = (x == c.c)
-function Base.merge!(a::Constant, b::Constant)
-    a.c == b.c || error("Attempted to merge Constant with different values: $(a.c) != $(b.c)")
-    a.n += b.n 
+function Base.merge!(a::Centroid{T}, b::Centroid{T}, astat, bstat) where {T}
+    w = nobs(bstat) / nobs(astat)
+    a.center = smooth(a.center, b.center, w)
     a
 end
+
+#-----------------------------------------------------------------------------# Interval (Part)
+# const interval_types = [:left_closed, :right_closed, :closed, :open]
+
+# struct Interval{type, T}
+#     a::T
+#     b::T 
+#     function Interval(a, b, type = :left_closed) 
+#         a < b || error("$a needs to be less than $b")
+#         new{type, promote_type(typeof(a), typeof(b))}(a, b)
+#     end
+# end
+# Base.in(x, d::Interval{:open})          = (d.a < x < d.b)
+# Base.in(x, d::Interval{:closed})        = (d.a ≤ x ≤ d.b)
+# Base.in(x, d::Interval{:left_closed})   = (d.a ≤ x < d.b)
+# Base.in(x, d::Interval{:right_closed})  = (d.a < x ≤ d.b)
+# function Base.show(io::IO, d::Interval{type}) where {type}
+#     l = type in [:open, :right_closed] ? '(' : '['
+#     r = type in [:open, :left_closed] ? ')' : ']'
+#     print(io, "Interval: $l$(d.a), $(d.b)$r")
+# end
+
+# function _merge(a::Part{Interval{:left_closed}}, b::Part{Interval{:closed}})
+#     error("not implemented yet")
+# end
+

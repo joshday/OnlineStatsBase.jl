@@ -1,13 +1,15 @@
 module OnlineStatsBase
 
-using Statistics, Dates, OrderedCollections, LinearAlgebra
+using Statistics, Dates, LinearAlgebra
+using OrderedCollections: OrderedDict
 
+using StatsBase: fweights
 import StatsBase: StatsBase, nobs, fit!
 
 export
     OnlineStat,
     # functions
-    nobs, value, fit!, eachrow, eachcol,
+    nobs, value, fit!,
     # Weights
     EqualWeight, ExponentialWeight, LearningRate, LearningRate2, HarmonicWeight, McclainWeight,
     # Stats
@@ -155,15 +157,7 @@ input(o::OnlineStat{T}) where {T} = T
 
 const TwoThings{T,S} = Union{Tuple{T,S}, Pair{T,S}, NamedTuple{names, Tuple{T,S}}} where names
 
-#-----------------------------------------------------------------------# Compat
-@static if VERSION < v"1.1.0"
-    export eachrow, eachcol
-    eachrow(A::Union{AbstractVector, AbstractMatrix}) = (view(A, i, :) for i in axes(A, 1))
-    eachcol(A::Union{AbstractVector, AbstractMatrix}) = (view(A, :, i) for i in axes(A, 2))
-else
-    import Base: eachrow, eachcol
-end
-
+#-----------------------------------------------------------------------# includes
 include("weight.jl")
 include("stats.jl")
 include("part.jl")

@@ -8,7 +8,6 @@ p = 5
 xmat,  ymat,  zmat  = rand(Bool, n, p), randn(n, p), rand(1:10, n, p)
 xmat2, ymat2, zmat2 = rand(Bool, n, p), randn(n, p), rand(1:10, n, p)
 
-
 function mergestats(a::OnlineStat, y1, y2)
     b = copy(a)
     fit!(a, y1)             # fit a on y1
@@ -84,8 +83,15 @@ println("  > Extrema")
     @test minimum(o) == minimum(y)
     @test maximum(o) == maximum(y)
 
-    @test value(fit!(Extrema(Bool), x)) == extrema(x)
-    @test value(fit!(Extrema(Int), z)) == extrema(z)
+    f(x) = (
+        min = minimum(x), 
+        max = maximum(x), 
+        nmin = sum(collect(x) .== minimum(x)), 
+        nmax = sum(collect(x) .== maximum(x))
+    )
+
+    @test value(fit!(Extrema(Bool), x)) == f(x)
+    @test value(fit!(Extrema(Int), z)) == f(z)
 
     @test ==(mergevals(Extrema(), y, y2)...)
 
@@ -93,9 +99,9 @@ println("  > Extrema")
     @test minimum(o) == Date(2010)
     @test maximum(o) == Date(2011)
 
-    @test value(fit!(Extrema(Char), 'a':'z')) == ('a', 'z')
-    @test value(fit!(Extrema(Char), "abc")) == ('a', 'c')
-    @test value(fit!(Extrema(String), ["a", "b"])) == ("a", "b")
+    @test value(fit!(Extrema(Char), 'a':'z')) == f('a':'z')
+    @test value(fit!(Extrema(Char), "abc")) == f("abc")
+    @test value(fit!(Extrema(String), ["a", "b"])) == f(["a","b"])
 
     o = fit!(Extrema(), x)
     @test o.nmin == length(x) - sum(x)
@@ -171,9 +177,10 @@ println("  > Moments")
 end
 #-----------------------------------------------------------------------# Part
 println("  > Part")
-# @testset "Part" begin 
-#     o = Part(Mean)
-# end
+@testset "Part" begin 
+    a, b = mergevals(Part(Counter(), OnlineStatsBase.Centroid(0.0)), zip(y,y), zip(y2,y2))
+    @test a.stat == b.stat
+end
 
 #-----------------------------------------------------------------------# Series/FTSeries
 println("  > Series/FTSeries")
