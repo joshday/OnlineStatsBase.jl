@@ -1,5 +1,5 @@
 #-----------------------------------------------------------------------------# Part
-struct Part{D, O} <: OnlineStat{TwoThings}
+struct Part{D, O<:OnlineStat} <: OnlineStat{TwoThings}
     stat::O 
     domain::D
 end
@@ -53,11 +53,12 @@ end
 mutable struct ClosedInterval{T}
     first::T 
     last::T
+    ClosedInterval(a::T, b::T) where {T} = a < b ? new{T}(a,b) : error("Arguments must be ordered")
 end
 Base.show(io::IO, b::ClosedInterval) = print(io, "ClosedInterval: [$(b.first), $(b.last)]")
 Base.in(x, bucket::ClosedInterval) = bucket.first ≤ x ≤ bucket.last
 Base.isless(a::ClosedInterval, b::ClosedInterval) = isless(a.first, b.first)
-function Base.merge!(a::ClosedInterval, b::ClosedInterval)
+function Base.merge!(a::ClosedInterval, b::ClosedInterval, astat, bstat)
     a.first = min(a.first, b.first)
     a.last = max(a.last, b.last)
     a
