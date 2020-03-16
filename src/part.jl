@@ -19,9 +19,15 @@ function _merge!(a::Part, b::Part)
     merge!(a.domain, b.domain, a.stat, b.stat)
 end
 
+
+
 #-----------------------------------------------------------------------------#
 #-----------------------------------------------------------------------------# Domains
 #-----------------------------------------------------------------------------#
+abstract type Domain end 
+
+Base.merge!(a::Domain, b::Domain, astat, bstat) = merge!(a, b)
+
 # Required methods:
 #   - Base.merge!
 #   - Base.in 
@@ -37,9 +43,23 @@ Base.in(x, c::Centroid) = false
 Base.isless(a::Centroid, b::Centroid) = isless(a.center, b.center)
 Base.show(io::IO, c::Centroid) = print(io, "Centroid: $(c.center)")
 
-function Base.merge!(a::Centroid{T}, b::Centroid{T}, astat, bstat) where {T}
+function Base.merge!(a::Centroid, b::Centroid, astat, bstat)
     w = nobs(bstat) / nobs(astat)
     a.center = smooth(a.center, b.center, w)
+    a
+end
+
+#-----------------------------------------------------------------------------# TimeBucket
+mutable struct TimeBucket{T <: Dates.TimeType}
+    first::T 
+    last::T
+end
+Base.show(io::IO, b::TimeBucket) = print(io, "TimeBucket: [$(b.first), $(b.last)]")
+Base.in(x, bucket::TimeBucket) = bucket.first ≤ x ≤ bucket.last
+Base.isless(a::TimeBucket, b::TimeBucket) = isless(a.first, b.first)
+function Base.merge!(a::TimeBucket, b::TimeBucket)
+    a.first = min(a.first, b.first)
+    a.last = max(a.last, b.last)
     a
 end
 
