@@ -43,9 +43,14 @@ Base.in(x, c::Centroid) = false
 Base.isless(a::Centroid, b::Centroid) = isless(a.center, b.center)
 Base.show(io::IO, c::Centroid) = print(io, "Centroid: $(c.center)")
 
-function Base.merge!(a::Centroid, b::Centroid, astat, bstat)
+function Base.merge!(a::Centroid{<:Number}, b::Centroid{<:Number}, astat, bstat)
     w = nobs(bstat) / nobs(astat)
     a.center = smooth(a.center, b.center, w)
+    a
+end
+function Base.merge!(a::Centroid, b::Centroid, astat, bstat)
+    w = nobs(bstat) / nobs(astat)
+    smooth!(a.center, b.center, w)
     a
 end
 
