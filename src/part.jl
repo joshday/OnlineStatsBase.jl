@@ -34,7 +34,7 @@ Base.merge!(a::Domain, b::Domain, astat, bstat) = merge!(a, b)
 #   - Base.isless
 
 #-----------------------------------------------------------------------------# Centroid
-mutable struct Centroid{T}
+mutable struct Centroid{T} <: Domain
     center::T 
 end
 
@@ -55,7 +55,7 @@ function Base.merge!(a::Centroid, b::Centroid, astat, bstat)
 end
 
 #-----------------------------------------------------------------------------# ClosedInterval
-mutable struct ClosedInterval{T}
+mutable struct ClosedInterval{T} <: Domain
     first::T 
     last::T
     ClosedInterval(a::T, b::T) where {T} = a < b ? new{T}(a,b) : error("Arguments must be ordered")
@@ -68,4 +68,3 @@ function Base.merge!(a::ClosedInterval, b::ClosedInterval, astat, bstat)
     a.last = max(a.last, b.last)
     a
 end
-Base.merge!(a::ClosedInterval, b::ClosedInterval) = merge!(a, b, nothing, nothing)
