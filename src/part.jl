@@ -68,29 +68,4 @@ function Base.merge!(a::ClosedInterval, b::ClosedInterval, astat, bstat)
     a.last = max(a.last, b.last)
     a
 end
-
-#-----------------------------------------------------------------------------# Interval (Part)
-# const interval_types = [:left_closed, :right_closed, :closed, :open]
-
-# struct Interval{type, T}
-#     a::T
-#     b::T 
-#     function Interval(a, b, type = :left_closed) 
-#         a < b || error("$a needs to be less than $b")
-#         new{type, promote_type(typeof(a), typeof(b))}(a, b)
-#     end
-# end
-# Base.in(x, d::Interval{:open})          = (d.a < x < d.b)
-# Base.in(x, d::Interval{:closed})        = (d.a ≤ x ≤ d.b)
-# Base.in(x, d::Interval{:left_closed})   = (d.a ≤ x < d.b)
-# Base.in(x, d::Interval{:right_closed})  = (d.a < x ≤ d.b)
-# function Base.show(io::IO, d::Interval{type}) where {type}
-#     l = type in [:open, :right_closed] ? '(' : '['
-#     r = type in [:open, :left_closed] ? ')' : ']'
-#     print(io, "Interval: $l$(d.a), $(d.b)$r")
-# end
-
-# function _merge(a::Part{Interval{:left_closed}}, b::Part{Interval{:closed}})
-#     error("not implemented yet")
-# end
-
+Base.merge!(a::ClosedInterval, b::ClosedInterval) = merge!(a, b, nothing, nothing)
