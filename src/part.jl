@@ -58,7 +58,7 @@ end
 mutable struct ClosedInterval{T} <: Domain
     first::T 
     last::T
-    ClosedInterval(a::T, b::T) where {T} = a ≤ b ? new{T}(a,b) : error("Arguments must be ordered")
+    ClosedInterval(a::T, b::T) where {T} = a ≤ b ? new{T}(a,b) : error("Arguments must be ordered: [$a, $b]")
 end
 Base.show(io::IO, b::ClosedInterval) = print(io, "ClosedInterval: [$(b.first), $(b.last)]")
 Base.in(x, bucket::ClosedInterval) = bucket.first ≤ x ≤ bucket.last
