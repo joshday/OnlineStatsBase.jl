@@ -58,6 +58,20 @@ nkeys(o::CountMap) = length(o.value)
 Base.values(o::CountMap) = values(o.value)
 Base.getindex(o::CountMap, i) = o.value[i]
 
+#-----------------------------------------------------------------------------# CountMissing
+mutable struct CountMissing{T, O<:OnlineStat{T}} <: OnlineStat{Union{Missing,T}}
+    stat::O
+    nmissing::Int
+end
+CountMissing(stat::OnlineStat) = CountMissing(stat, 0)
+value(o::CountMissing) = (nmissing=o.nmissing, stat=o.stat)
+nobs(o::CountMissing) = nobs(o.stat) + o.nmissing
+
+_fit!(o::CountMissing, x) = _fit!(o.stat, x)
+_fit!(o::CountMissing, ::Missing) = (o.nmissing += 1)
+
+_merge!(a::CountMissing, b::CountMissing) = (merge!(a.stat, b.stat); a.nmissing += b.nmissing)
+
 #-----------------------------------------------------------------------# CovMatrix
 """
     CovMatrix(p=0; weight=EqualWeight())
@@ -496,4 +510,3 @@ function _merge!(o::FTSeries, o2::FTSeries)
     o.nfiltered += o2.nfiltered
     _merge!.(o.stats, o2.stats)
 end
-

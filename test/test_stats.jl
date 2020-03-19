@@ -58,6 +58,17 @@ println("  > CountMap")
     @test ==(mergevals(CountMap(Dict{Bool,Int}()), x, x2)...)
     @test ==(mergevals(CountMap(Dict{Int,Int}()), z, z2)...)
 end
+#-----------------------------------------------------------------------# CountMissing
+println("  > CountMissing")
+@testset "CountMissing" begin 
+    data = Vector{Union{Missing,Float64}}(copy(y))
+    data2 = Vector{Union{Missing,Float64}}(copy(y2))
+    data[x] .= missing
+    data2[x2] .= missing
+    a, b = mergevals(CountMissing(Mean()), data, data2)
+    @test value(a.stat) ≈ value(b.stat)
+    @test a.nmissing == b.nmissing
+end
 #-----------------------------------------------------------------------# CovMatrix
 println("  > CovMatrix")
 @testset "CovMatrix" begin

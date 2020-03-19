@@ -13,8 +13,8 @@ export
     # Weights
     EqualWeight, ExponentialWeight, LearningRate, LearningRate2, HarmonicWeight, McclainWeight,
     # Stats
-    Counter, CountMap, CovMatrix, Extrema, FTSeries, Group, GroupBy, Mean, Moments, Part, Series, 
-    Sum, Variance
+    Counter, CountMap, CountMissing, CovMatrix, Extrema, FTSeries, Group, GroupBy, Mean, Moments, 
+    Part, Series, Sum, Variance
 
 #-----------------------------------------------------------------------# OnlineStat
 abstract type OnlineStat{T} end
