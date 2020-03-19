@@ -19,6 +19,8 @@ function _merge!(a::Part, b::Part)
     merge!(a.domain, b.domain)
 end
 
+Base.diff(a::Part, b::Part) = diff(a.domain, b.domain)
+
 
 
 #-----------------------------------------------------------------------------#
@@ -28,6 +30,7 @@ end
 #   - Base.merge!
 #   - Base.in 
 #   - Base.isless
+#   - Base.diff
 
 #-----------------------------------------------------------------------------# Centroid
 mutable struct Centroid{T}
@@ -38,6 +41,7 @@ Base.in(x::T, c::Centroid{T}) where {T} = true
 Base.in(x, c::Centroid) = false
 Base.isless(a::Centroid, b::Centroid) = isless(a.center, b.center)
 Base.show(io::IO, c::Centroid) = print(io, "Centroid: $(c.center)")
+Base.diff(a::Centroid, b::Centroid) = norm(a.center - b.center)
 
 function Base.merge!(a::Part{Centroid{T}, O}, b::Part{Centroid{T}, O}) where {T <: Number, O}
     merge!(a.stat, b.stat)
@@ -59,7 +63,12 @@ end
 Base.show(io::IO, b::ClosedInterval) = print(io, "ClosedInterval: [$(b.first), $(b.last)]")
 Base.in(x, bucket::ClosedInterval) = bucket.first ≤ x ≤ bucket.last
 Base.isless(a::ClosedInterval, b::ClosedInterval) = isless(a.first, b.first)
+function Base.diff(a::ClosedInterval, b::ClosedInterval) 
+    a < b ? _value(b.last) - _value(a.first) : _value(a.last) - _value(b.first)
+end
 
+_value(x) = x 
+_value(x::Dates.TimeType) = Dates.value(x)
 
 function Base.merge!(a::ClosedInterval, b::ClosedInterval)
     a.first = min(a.first, b.first)
