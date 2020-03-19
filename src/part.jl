@@ -21,8 +21,6 @@ end
 
 Base.diff(a::Part, b::Part) = diff(a.domain, b.domain)
 
-
-
 #-----------------------------------------------------------------------------#
 #-----------------------------------------------------------------------------# Domains
 #-----------------------------------------------------------------------------#
@@ -64,7 +62,7 @@ Base.show(io::IO, b::ClosedInterval) = print(io, "ClosedInterval: [$(b.first), $
 Base.in(x, bucket::ClosedInterval) = bucket.first ≤ x ≤ bucket.last
 Base.isless(a::ClosedInterval, b::ClosedInterval) = isless(a.first, b.first)
 function Base.diff(a::ClosedInterval, b::ClosedInterval) 
-    a < b ? _value(b.last) - _value(a.first) : _value(a.last) - _value(b.first)
+    a < b ? _value(b.first) - _value(a.last) : _value(a.first) - _value(b.last)
 end
 
 _value(x) = x 
