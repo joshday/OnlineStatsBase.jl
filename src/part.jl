@@ -61,12 +61,10 @@ end
 Base.show(io::IO, b::ClosedInterval) = print(io, "ClosedInterval: [$(b.first), $(b.last)]")
 Base.in(x, bucket::ClosedInterval) = bucket.first ≤ x ≤ bucket.last
 Base.isless(a::ClosedInterval, b::ClosedInterval) = isless(a.first, b.first)
-function Base.diff(a::ClosedInterval, b::ClosedInterval) 
-    a < b ? _value(b.first) - _value(a.last) : _value(a.first) - _value(b.last)
+Base.diff(a::ClosedInterval, b::ClosedInterval) = a < b ? b.first - a.last : a.first - b.last
+function Base.diff(a::ClosedInterval{T}, b::ClosedInterval{T}) where {T<:Dates.TimeType}
+    a < b ? value(b.first) - value(a.last) : value(a.first) - value(b.last)
 end
-
-_value(x) = x 
-_value(x::Dates.TimeType) = Dates.value(x)
 
 function Base.merge!(a::ClosedInterval, b::ClosedInterval)
     a.first = min(a.first, b.first)
