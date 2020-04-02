@@ -15,7 +15,6 @@ string(McclainWeight())
 @test Mean() == merge(Mean(), fit!(Variance(), 1:5))
 @test_throws Exception fit!(Mean(), "abc")
 @test_throws Exception OnlineStatsBase._fit!(Mean(), "a")
-@test OnlineStatsBase.input(Mean()) == Number
 end
 
 #-----------------------------------------------------------------------# Weight

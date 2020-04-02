@@ -3,7 +3,6 @@ module OnlineStatsBase
 using Statistics, Dates, LinearAlgebra
 using OrderedCollections: OrderedDict
 
-using StatsBase: fweights
 import StatsBase: StatsBase, nobs, fit!
 
 export
@@ -142,7 +141,7 @@ Weighted average of symmetric rank-1 update.  Updates the upper triangle of:
 
 `A = (1 - γ) * A + γ * x * x'`
 """
-function smooth_syr!(A::AbstractMatrix, x, γ::Number)
+function smooth_syr!(A::AbstractMatrix, x, γ)
     for j in 1:size(A, 2), i in 1:j
         A[i, j] = smooth(A[i,j], x[i] * conj(x[j]), γ)
     end
@@ -152,8 +151,6 @@ end
 bessel(o) = nobs(o) / (nobs(o) - 1)
 
 Statistics.std(o::OnlineStat; kw...) = sqrt.(var(o; kw...))
-
-input(o::OnlineStat{T}) where {T} = T
 
 const TwoThings{T,S} = Union{Tuple{T,S}, Pair{T,S}, NamedTuple{names, Tuple{T,S}}} where names
 
