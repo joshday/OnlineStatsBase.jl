@@ -4,6 +4,7 @@ using Statistics, Dates, LinearAlgebra
 using OrderedCollections: OrderedDict
 
 import StatsBase: StatsBase, nobs, fit!
+import AbstractTrees: AbstractTrees
 
 export
     OnlineStat,
@@ -17,21 +18,24 @@ export
 
 #-----------------------------------------------------------------------# OnlineStat
 abstract type OnlineStat{T} end
+input(o::OnlineStat{T}) where {T} = T
+nobs(o::OnlineStat) = o.n
 
 # Stats that hold a collection of other stats
 abstract type StatCollection{T} <: OnlineStat{T} end
-function Base.show(io::IO, o::StatCollection)
-    print(io, name(o, false, false))
-    print_stat_tree(io, o.stats)
-end
-function print_stat_tree(io::IO, stats)
-    for (i, stat) in enumerate(stats)
-        char = i == length(stats) ? '└' : '├'
-        print(io, "\n  $(char)── $stat")
-    end
-end
+Base.show(io::IO, o::StatCollection) = AbstractTrees.print_tree(io, o)
 
-nobs(o::OnlineStat) = o.n
+AbstractTrees.printnode(io::IO, o::StatCollection) = print(io, name(o, false, false))
+AbstractTrees.children(::OnlineStat) = ()
+AbstractTrees.children(o::StatCollection) = collect(o.stats)
+
+struct SameLine 
+    items 
+    sep
+    SameLine(items, sep='|') = new(items, sep)
+end
+AbstractTrees.printnode(io::IO, o::SameLine) = print(io, join(o.items, o.sep))
+
 
 """
     value(stat::OnlineStat)
@@ -152,7 +156,7 @@ bessel(o) = nobs(o) / (nobs(o) - 1)
 
 Statistics.std(o::OnlineStat; kw...) = sqrt.(var(o; kw...))
 
-const TwoThings{T,S} = Union{Tuple{T,S}, Pair{T,S}, NamedTuple{names, Tuple{T,S}}} where names
+const TwoThings{T,S} = Union{Tuple{T,S}, Pair{<:T,<:S}, NamedTuple{names, Tuple{T,S}}} where names
 
 neighbors(x) = ((x[i], x[i+1]) for i in eachindex(x)[1:end-1])
 

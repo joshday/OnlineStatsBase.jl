@@ -1,20 +1,26 @@
 using OnlineStatsBase, OrderedCollections, StatsBase, Statistics, Dates, Test
 
-import OnlineStatsBase: _fit!, _merge!, Mean, Variance
+import OnlineStatsBase: _fit!, _merge!
+
+O = OnlineStatsBase
 
 include("test_stats.jl")
 
 #-----------------------------------------------------------------------# Random
 @testset "Random Stuff" begin
 string(Series(Mean(), Variance()))
+string(Group(Series(Mean(), Variance()), Extrema()))
 string(Mean())
 string(McclainWeight())
+string(Part(Counter(), O.Centroid(0)))
+string(Part(Counter(), O.ClosedInterval(0,1)))
 @test Mean() != Variance()
 @test !(Mean() == Variance())
 @test Mean() == merge(Mean(), Mean())
 @test Mean() == merge(Mean(), fit!(Variance(), 1:5))
 @test_throws Exception fit!(Mean(), "abc")
 @test_throws Exception OnlineStatsBase._fit!(Mean(), "a")
+@test collect(OnlineStatsBase.neighbors([1,3,5])) == [(1,3), (3,5)]
 end
 
 #-----------------------------------------------------------------------# Weight

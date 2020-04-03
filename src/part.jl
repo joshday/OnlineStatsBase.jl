@@ -33,8 +33,13 @@ Base.diff(a::Part, b::Part) = diff(a.domain, b.domain)
 #-----------------------------------------------------------------------------# Centroid
 mutable struct Centroid{T}
     center::T 
+    function Centroid(x) 
+        x2 = x ./ one(eltype(x))
+        new{typeof(x2)}(x2)
+    end
 end
 
+Base.in(x::Number, c::Centroid{<:Number}) = true 
 Base.in(x::T, c::Centroid{T}) where {T} = true 
 Base.in(x, c::Centroid) = false
 Base.isless(a::Centroid, b::Centroid) = isless(a.center, b.center)

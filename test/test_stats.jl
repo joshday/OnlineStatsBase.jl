@@ -35,21 +35,21 @@ println("  > CountMap")
 @testset "CountMap" begin
     a = fit!(CountMap(Bool), x)
     @test sort(value(a)) == sort(countmap(x))
-    @test OnlineStatsBase.pdf(a, true) == mean(x)
-    @test OnlineStatsBase.pdf(a, false) == mean(!, x)
-    @test OnlineStatsBase.pdf(a, 2) == 0.0
+    @test O.pdf(a, true) == mean(x)
+    @test O.pdf(a, false) == mean(!, x)
+    @test O.pdf(a, 2) == 0.0
     @test keys(a) == keys(a.value)
     @test values(a) == values(a.value)
     @test a[true] == a.value[true]
-    @test OnlineStatsBase.nkeys(a) == 2
+    @test O.nkeys(a) == 2
 
     b = fit!(CountMap(Int), z)
     @test sort(value(b)) == sort(countmap(z))
     for i in 1:11
-        @test OnlineStatsBase.pdf(b, i) ≈ sum(==(i), z) / n
+        @test O.pdf(b, i) ≈ sum(==(i), z) / n
     end
-    @test all(x -> 0 < x < 1, OnlineStatsBase.probs(b))
-    @test OnlineStatsBase.probs(b, 11:13) == zeros(3)
+    @test all(x -> 0 < x < 1, O.probs(b))
+    @test O.probs(b, 11:13) == zeros(3)
 
     @test ==(mergevals(CountMap(Bool), x, x2)...)
     @test ==(mergevals(CountMap(Int), z, z2)...)
@@ -73,7 +73,7 @@ end
 println("  > CovMatrix")
 @testset "CovMatrix" begin
     o = fit!(CovMatrix(), eachrow(ymat))
-    @test OnlineStatsBase.nvars(o) == size(ymat, 2)
+    @test O.nvars(o) == size(ymat, 2)
     @test value(o) ≈ cov(ymat)
     @test cov(o) ≈ cov(ymat)
     @test cor(o) ≈ cor(ymat)
@@ -81,10 +81,10 @@ println("  > CovMatrix")
     @test all(x -> ≈(x...), zip(std(o), std(ymat; dims=1)))
     @test all(x -> ≈(x...), zip(mean(o), mean(ymat; dims=1)))
 
-    @test ≈(mergevals(CovMatrix(), OnlineStatsBase.eachrow(ymat), OnlineStatsBase.eachrow(ymat2))...)
-    @test ≈(mergevals(CovMatrix(), OnlineStatsBase.eachcol(ymat'), OnlineStatsBase.eachcol(ymat2'))...)
-    @test ≈(mergevals(CovMatrix(Complex{Float64}), OnlineStatsBase.eachrow(ymat * im), OnlineStatsBase.eachrow(ymat2))...)
-    @test ≈(mergevals(CovMatrix(Complex{Float64}), OnlineStatsBase.eachrow(ymat * im), OnlineStatsBase.eachrow(ymat2 * im))...)
+    @test ≈(mergevals(CovMatrix(), O.eachrow(ymat), O.eachrow(ymat2))...)
+    @test ≈(mergevals(CovMatrix(), O.eachcol(ymat'), O.eachcol(ymat2'))...)
+    @test ≈(mergevals(CovMatrix(Complex{Float64}), O.eachrow(ymat * im), O.eachrow(ymat2))...)
+    @test ≈(mergevals(CovMatrix(Complex{Float64}), O.eachrow(ymat * im), O.eachrow(ymat2 * im))...)
 end
 #-----------------------------------------------------------------------# Extrema
 println("  > Extrema")
@@ -121,7 +121,7 @@ end
 #-----------------------------------------------------------------------# Group
 println("  > Group")
 @testset "Group" begin
-    o = fit!(5Mean(), OnlineStatsBase.eachrow(ymat))
+    o = fit!(5Mean(), O.eachrow(ymat))
     @test o[1] == first(o)
     @test o[end] == last(o)
     @test 5Mean() == 5Mean()
@@ -134,8 +134,8 @@ println("  > Group")
 
     a, b = mergevals(
         Group(Mean(), Variance(), Sum(), Moments(), Mean()),
-        OnlineStatsBase.eachrow(ymat),
-        OnlineStatsBase.eachrow(ymat2)
+        O.eachrow(ymat),
+        O.eachrow(ymat2)
     )
     for (ai, bi) in zip(a, b)
         @test value(ai) ≈ value(bi)
@@ -189,10 +189,26 @@ end
 #-----------------------------------------------------------------------# Part
 println("  > Part")
 @testset "Part" begin 
-    a, b = mergevals(Part(Counter(), OnlineStatsBase.Centroid(0.0)), zip(y,y), zip(y2,y2))
+    a, b = mergevals(Part(Counter(), O.Centroid(0)), zip(y,y), zip(y2,y2))
     @test a.stat == b.stat
 
-    o = Part(Mean(), OnlineStatsBase.ClosedInterval(today() - Day(10), today()))
+    # in 
+    @test 0 ∈ Part(Counter(), O.Centroid(0))
+    @test 1 ∈ Part(Counter(), O.ClosedInterval(1,2))
+    @test 2 ∈ Part(Counter(), O.ClosedInterval(1,2))
+    @test 0 ∉ Part(Counter(), O.ClosedInterval(1,2))
+
+    # isless 
+    @test Part(Counter(), O.Centroid(0)) < Part(Counter(), O.Centroid(1))
+    @test Part(Counter(), O.ClosedInterval(0,1)) < Part(Counter(), O.ClosedInterval(2,3))
+
+    # diff 
+    @test diff(Part(Counter(), O.Centroid(0)), Part(Counter(), O.Centroid(5))) == 5
+    @test diff(Part(Counter(), O.Centroid(5)), Part(Counter(), O.Centroid(0))) == 5
+    @test diff(Part(Counter(), O.ClosedInterval(0, 1)), Part(Counter(), O.ClosedInterval(5, 6))) == 4
+    @test diff(Part(Counter(), O.ClosedInterval(5, 6)), Part(Counter(), O.ClosedInterval(0, 1))) == 4
+
+    o = Part(Mean(), O.ClosedInterval(today() - Day(10), today()))
     fit!(o, today() => 10)
     fit!(o, today() - Day(5) => 20)
     @test value(value(o).stat) == 15.0

@@ -258,7 +258,7 @@ tuple with two elements or a Pair.
     y = x .+ randn(10^5)
     fit!(GroupBy{Int}(Extrema()), zip(x,y))
 """
-mutable struct GroupBy{T, S, O <: OnlineStat{S}} <: OnlineStat{TwoThings{T,S}}
+mutable struct GroupBy{T, S, O <: OnlineStat{S}} <: StatCollection{TwoThings{T,S}}
     value::OrderedDict{T, O}
     init::O
     n::Int
@@ -273,13 +273,9 @@ function _fit!(o::GroupBy, xy)
     x in keys(o.value) ? fit!(o.value[x], y) : (o.value[x] = fit!(copy(o.init), y))
 end
 Base.getindex(o::GroupBy{T}, i::T) where {T} = o.value[i]
-function Base.show(io::IO, o::GroupBy{T,S,O}) where {T,S,O}
-    print(io, name(o, false, false) * ": $T => $O")
-    for (i, (k,v)) in enumerate(o.value)
-        char = i == length(o.value) ?  '└' : '├'
-        print(io, "\n  $(char)── $k: $v")
-    end
-end
+AbstractTrees.children(o::GroupBy) = SameLine.(collect(o.value), ") ")
+AbstractTrees.printnode(io::IO, o::GroupBy{T,S,O}) where {T,S,O} = print(io, "GroupBy: $T => $(name(O,false,false))")
+Base.sort!(o::GroupBy) = (sort!(o.value); o)
 function _merge!(a::GroupBy{T,O}, b::GroupBy{T,O}) where {T,O}
     a.init == b.init || error("Cannot merge GroupBy objects with different inits")
     a.n += b.n
