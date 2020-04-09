@@ -26,7 +26,6 @@ abstract type StatCollection{T} <: OnlineStat{T} end
 Base.show(io::IO, o::StatCollection) = AbstractTrees.print_tree(io, o)
 
 AbstractTrees.printnode(io::IO, o::StatCollection) = print(io, name(o, false, false))
-AbstractTrees.children(::OnlineStat) = ()
 AbstractTrees.children(o::StatCollection) = collect(o.stats)
 
 struct SameLine 

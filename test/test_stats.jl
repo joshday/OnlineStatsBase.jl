@@ -105,6 +105,7 @@ println("  > Extrema")
     @test value(fit!(Extrema(Int), z)) == f(z)
 
     @test ==(mergevals(Extrema(), y, y2)...)
+    @test ==(mergevals(Extrema(), x, x2)...)
 
     o = fit!(Extrema(Date), Date(2010):Day(1):Date(2011))
     @test minimum(o) == Date(2010)

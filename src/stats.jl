@@ -136,8 +136,7 @@ end
 """
     Extrema(T::Type = Float64)
 
-Maximum and minimum for a data stream of type `T`.  Also keeps track of the number of times the 
-maximum and minimum value occur.
+Maximum and minimum (and number of occurrences for each) for a data stream of type `T`.
 
 # Example
 
@@ -161,7 +160,7 @@ function Extrema(T::Type = Float64)
 end
 extrema_init(T::Type{<:Number}) = typemax(T), typemin(T), Number
 extrema_init(T::Type{String}) = "", "", String
-extrema_init(T::Type{Date}) = typemax(Date), typemin(Date), Date
+extrema_init(T::Type{Date}) = typemax(Date), typemin(Date), Union{Date, Dates.AbstractDateTime}
 extrema_init(T::Type) = rand(T), rand(T), T
 function _fit!(o::Extrema, y)
     (o.n += 1) == 1 && (o.min = o.max = y)
@@ -175,10 +174,20 @@ function _fit!(o::Extrema, y)
     y == o.min && (o.nmin += 1)
     y == o.max && (o.nmax += 1)
 end
-function _merge!(o::Extrema, o2::Extrema)
-    o.min = min(o.min, o2.min)
-    o.max = max(o.max, o2.max)
-    o.n += o2.n
+function _merge!(a::Extrema, b::Extrema)
+    if a.min == b.min 
+        a.nmin += b.nmin 
+    elseif b.min < a.min 
+        a.min = b.min
+        a.nmin = b.nmin
+    end
+    if a.max == b.max 
+        a.nmax += b.nmax
+    elseif b.max > a.max
+        a.max = b.max 
+        a.nmax = b.nmax
+    end
+    a.n += b.n
 end
 value(o::Extrema) = (min=o.min, max=o.max, nmin=o.nmin, nmax=o.nmax)
 Base.extrema(o::Extrema) = (o.min, o.max)
@@ -246,7 +255,6 @@ Base.:*(n::Integer, o::OnlineStat) = Group([copy(o) for i in 1:n]...)
 
 #-----------------------------------------------------------------------# GroupBy
 """
-    GroupBy{T}(stat)
     GroupBy(T, stat)
 
 Update `stat` for each group (of type `T`).  A single observation is either a (named)
@@ -254,9 +262,9 @@ tuple with two elements or a Pair.
 
 # Example
 
-    x = rand(1:10, 10^5)
+    x = rand(Bool, 10^5)
     y = x .+ randn(10^5)
-    fit!(GroupBy{Int}(Extrema()), zip(x,y))
+    fit!(GroupBy(Bool, Series(Mean(), Extrema())), zip(x,y))
 """
 mutable struct GroupBy{T, S, O <: OnlineStat{S}} <: StatCollection{TwoThings{T,S}}
     value::OrderedDict{T, O}
@@ -273,7 +281,7 @@ function _fit!(o::GroupBy, xy)
     x in keys(o.value) ? fit!(o.value[x], y) : (o.value[x] = fit!(copy(o.init), y))
 end
 Base.getindex(o::GroupBy{T}, i::T) where {T} = o.value[i]
-AbstractTrees.children(o::GroupBy) = SameLine.(collect(o.value), ") ")
+AbstractTrees.children(o::GroupBy) = collect(o.value)
 AbstractTrees.printnode(io::IO, o::GroupBy{T,S,O}) where {T,S,O} = print(io, "GroupBy: $T => $(name(O,false,false))")
 Base.sort!(o::GroupBy) = (sort!(o.value); o)
 function _merge!(a::GroupBy{T,O}, b::GroupBy{T,O}) where {T,O}
