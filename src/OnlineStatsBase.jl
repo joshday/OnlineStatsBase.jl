@@ -157,7 +157,7 @@ Statistics.std(o::OnlineStat; kw...) = sqrt.(var(o; kw...))
 
 const TwoThings{T,S} = Union{Tuple{T,S}, Pair{<:T,<:S}, NamedTuple{names, Tuple{T,S}}} where names
 
-neighbors(x) = ((x[i], x[i+1]) for i in eachindex(x)[1:end-1])
+neighbors(x) = @inbounds ((x[i], x[i+1]) for i in eachindex(x)[1:end-1])
 
 #-----------------------------------------------------------------------# includes
 include("weight.jl")
