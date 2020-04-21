@@ -59,6 +59,16 @@ Base.values(o::CountMap) = values(o.value)
 Base.getindex(o::CountMap, i) = o.value[i]
 
 #-----------------------------------------------------------------------------# CountMissing
+"""
+    CountMissing(stat)
+
+Calculate a `stat` along with the count of `missing` values.  
+
+# Example 
+
+    o = CountMissing(Mean())
+    fit!(o, [1, missing, 3])
+"""
 mutable struct CountMissing{T, O<:OnlineStat{T}} <: OnlineStat{Union{Missing,T}}
     stat::O
     nmissing::Int
