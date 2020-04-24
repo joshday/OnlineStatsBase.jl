@@ -1,8 +1,10 @@
 #-----------------------------------------------------------------------------# Part
 struct Part{D, O<:OnlineStat} <: OnlineStat{TwoThings}
-    stat::O 
     domain::D
+    stat::O 
 end
+Part(stat::OnlineStat, domain) = Part(domain, stat)
+
 value(o::Part) = (domain=o.domain, stat=o.stat)
 Base.in(x, o::Part) = x ∈ o.domain
 Base.isless(a::Part, b::Part) = isless(a.domain, b.domain)

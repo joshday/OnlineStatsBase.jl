@@ -81,10 +81,10 @@ println("  > CovMatrix")
     @test all(x -> ≈(x...), zip(std(o), std(ymat; dims=1)))
     @test all(x -> ≈(x...), zip(mean(o), mean(ymat; dims=1)))
 
-    @test ≈(mergevals(CovMatrix(), O.eachrow(ymat), O.eachrow(ymat2))...)
+    @test ≈(mergevals(CovMatrix(), eachrow(ymat), eachrow(ymat2))...)
     @test ≈(mergevals(CovMatrix(), O.eachcol(ymat'), O.eachcol(ymat2'))...)
-    @test ≈(mergevals(CovMatrix(Complex{Float64}), O.eachrow(ymat * im), O.eachrow(ymat2))...)
-    @test ≈(mergevals(CovMatrix(Complex{Float64}), O.eachrow(ymat * im), O.eachrow(ymat2 * im))...)
+    @test ≈(mergevals(CovMatrix(Complex{Float64}), eachrow(ymat * im), eachrow(ymat2))...)
+    @test ≈(mergevals(CovMatrix(Complex{Float64}), eachrow(ymat * im), eachrow(ymat2 * im))...)
 end
 #-----------------------------------------------------------------------# Extrema
 println("  > Extrema")
@@ -122,7 +122,7 @@ end
 #-----------------------------------------------------------------------# Group
 println("  > Group")
 @testset "Group" begin
-    o = fit!(5Mean(), O.eachrow(ymat))
+    o = fit!(5Mean(), eachrow(ymat))
     @test o[1] == first(o)
     @test o[end] == last(o)
     @test 5Mean() == 5Mean()
@@ -134,9 +134,7 @@ println("  > Group")
     @test length(o2) == 5
 
     a, b = mergevals(
-        Group(Mean(), Variance(), Sum(), Moments(), Mean()),
-        O.eachrow(ymat),
-        O.eachrow(ymat2)
+        Group(Mean(), Variance(), Sum(), Moments(), Mean()), eachrow(ymat), eachrow(ymat2)
     )
     for (ai, bi) in zip(a, b)
         @test value(ai) ≈ value(bi)
