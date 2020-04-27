@@ -7,7 +7,7 @@ import StatsBase: StatsBase, nobs, fit!
 import AbstractTrees: AbstractTrees
 
 export
-    OnlineStat,
+    OnlineStat, Weight,
     # functions
     nobs, value, fit!,
     # Weights
@@ -162,5 +162,4 @@ neighbors(x) = @inbounds ((x[i], x[i+1]) for i in eachindex(x)[1:end-1])
 #-----------------------------------------------------------------------# includes
 include("weight.jl")
 include("stats.jl")
-include("part.jl")
 end

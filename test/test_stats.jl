@@ -188,22 +188,15 @@ end
 #-----------------------------------------------------------------------# Part
 println("  > Part")
 @testset "Part" begin 
-    a, b = mergevals(Part(Counter(), O.Centroid(0)), zip(y,y), zip(y2,y2))
-    @test a.stat == b.stat
-
     # in 
-    @test 0 ∈ Part(Counter(), O.Centroid(0))
     @test 1 ∈ Part(Counter(), O.ClosedInterval(1,2))
     @test 2 ∈ Part(Counter(), O.ClosedInterval(1,2))
     @test 0 ∉ Part(Counter(), O.ClosedInterval(1,2))
 
     # isless 
-    @test Part(Counter(), O.Centroid(0)) < Part(Counter(), O.Centroid(1))
     @test Part(Counter(), O.ClosedInterval(0,1)) < Part(Counter(), O.ClosedInterval(2,3))
 
     # diff 
-    @test diff(Part(Counter(), O.Centroid(0)), Part(Counter(), O.Centroid(5))) == 5
-    @test diff(Part(Counter(), O.Centroid(5)), Part(Counter(), O.Centroid(0))) == 5
     @test diff(Part(Counter(), O.ClosedInterval(0, 1)), Part(Counter(), O.ClosedInterval(5, 6))) == 4
     @test diff(Part(Counter(), O.ClosedInterval(5, 6)), Part(Counter(), O.ClosedInterval(0, 1))) == 4
 
