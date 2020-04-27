@@ -11,7 +11,7 @@ export
     # functions
     nobs, value, fit!,
     # Weights
-    EqualWeight, ExponentialWeight, LearningRate, LearningRate2, HarmonicWeight, McclainWeight,
+    EqualWeight, ExponentialWeight, LearningRate, LearningRate2, HarmonicWeight, McclainWeight, Weight,
     # Stats
     Counter, CountMap, CountMissing, CovMatrix, Extrema, FTSeries, Group, GroupBy, Mean, Moments, 
     Part, Series, Sum, Variance
