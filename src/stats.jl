@@ -28,9 +28,11 @@ Track a dictionary that maps unique values to its number of occurrences.  Simila
 
     o = fit!(CountMap(Int), rand(1:10, 1000))
     value(o)
-    probs(o)
+    OnlineStatsBase.probs(o)
     OnlineStats.pdf(o, 1)
     collect(keys(o))
+    sort!(o)
+    delete!(o, 1)
 """
 mutable struct CountMap{T, A <: AbstractDict{T, Int}} <: OnlineStat{T}
     value::A  # OrderedDict by default
@@ -53,10 +55,11 @@ function probs(o::CountMap, kys = keys(o.value))
     sum(out) == 0 ? Float64.(out) : out ./ sum(out)
 end
 pdf(o::CountMap, y) = y in keys(o.value) ? o.value[y] / nobs(o) : 0.0
-Base.keys(o::CountMap) = keys(o.value)
-nkeys(o::CountMap) = length(o.value)
-Base.values(o::CountMap) = values(o.value)
-Base.getindex(o::CountMap, i) = o.value[i]
+Base.keys(o::CountMap) = keys(value(o))
+nkeys(o::CountMap) = length(value(o))
+Base.values(o::CountMap) = values(value(o))
+Base.getindex(o::CountMap, i) = value(o)[i]
+Base.sort!(o::CountMap) = (sort!(value(o)); o)
 function Base.delete!(o::CountMap, level)
     x = value(o)[level]
     delete!(value(o), level)

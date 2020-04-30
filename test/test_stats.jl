@@ -185,26 +185,6 @@ println("  > Moments")
         @test v1 ≈ v2
     end
 end
-#-----------------------------------------------------------------------# Part
-println("  > Part")
-@testset "Part" begin 
-    # in 
-    @test 1 ∈ Part(Counter(), O.ClosedInterval(1,2))
-    @test 2 ∈ Part(Counter(), O.ClosedInterval(1,2))
-    @test 0 ∉ Part(Counter(), O.ClosedInterval(1,2))
-
-    # isless 
-    @test Part(Counter(), O.ClosedInterval(0,1)) < Part(Counter(), O.ClosedInterval(2,3))
-
-    # diff 
-    @test diff(Part(Counter(), O.ClosedInterval(0, 1)), Part(Counter(), O.ClosedInterval(5, 6))) == 4
-    @test diff(Part(Counter(), O.ClosedInterval(5, 6)), Part(Counter(), O.ClosedInterval(0, 1))) == 4
-
-    o = Part(Mean(), O.ClosedInterval(today() - Day(10), today()))
-    fit!(o, today() => 10)
-    fit!(o, today() - Day(5) => 20)
-    @test value(value(o).stat) == 15.0
-end
 
 #-----------------------------------------------------------------------# Series/FTSeries
 println("  > Series/FTSeries")
