@@ -57,6 +57,12 @@ Base.keys(o::CountMap) = keys(o.value)
 nkeys(o::CountMap) = length(o.value)
 Base.values(o::CountMap) = values(o.value)
 Base.getindex(o::CountMap, i) = o.value[i]
+function Base.delete!(o::CountMap, level)
+    x = value(o)[level]
+    delete!(value(o), level)
+    o.n -= x 
+    o
+end
 
 #-----------------------------------------------------------------------------# CountMissing
 """
