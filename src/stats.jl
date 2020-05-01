@@ -34,7 +34,7 @@ Track a dictionary that maps unique values to its number of occurrences.  Simila
     sort!(o)
     delete!(o, 1)
 """
-mutable struct CountMap{T, A <: AbstractDict{T, Int}} <: OnlineStat{T}
+mutable struct CountMap{T, A <: AbstractDict{T, Int}} <: OnlineStat{Union{T, Pair{T,Int}}}
     value::A  # OrderedDict by default
     n::Int
 end
@@ -45,6 +45,12 @@ function _fit!(o::CountMap, x)
     o.n += 1
     o.value[x] = get!(o.value, x, 0) + 1
 end
+function _fit!(o::CountMap{T}, xy::Pair{<:T, Int}) where {T}
+    x, y = xy 
+    o.n += y 
+    o.value[x] = get!(o.value, x, 0) + y
+end
+
 _merge!(o::CountMap, o2::CountMap) = (merge!(+, o.value, o2.value); o.n += o2.n)
 function probs(o::CountMap, kys = keys(o.value))
     out = zeros(Int, length(kys))
