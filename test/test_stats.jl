@@ -8,16 +8,20 @@ p = 5
 xmat,  ymat,  zmat  = rand(Bool, n, p), randn(n, p), rand(1:10, n, p)
 xmat2, ymat2, zmat2 = rand(Bool, n, p), randn(n, p), rand(1:10, n, p)
 
-function mergestats(a::OnlineStat, y1, y2)
+function mergestats(a::OnlineStat, y1, y2; nobs_equals_length=true)
     b = copy(a)
     fit!(a, y1)             # fit a on y1
     fit!(b, y2)             # fit b on y2
     merge!(a, b)            # merge b into a
     fit!(b, y1)             # fit b on y1
-    @test nobs(a) == nobs(b) == length(y1) + length(y2)
+    if nobs_equals_length 
+        @test nobs(a) == nobs(b) == length(y1) + length(y2)
+    else
+        @test nobs(a) == nobs(b)
+    end
     a, b
 end
-mergevals(o1::OnlineStat, y1, y2) = map(value, mergestats(o1, y1, y2))
+mergevals(o1::OnlineStat, y1, y2; kw...) = map(value, mergestats(o1, y1, y2; kw...))
 
 @testset "Testing Stats" begin
 #-----------------------------------------------------------------------# Counter
@@ -57,6 +61,9 @@ println("  > CountMap")
     @test ==(mergevals(CountMap{Int}(), z, z2)...)
     @test ==(mergevals(CountMap(Dict{Bool,Int}()), x, x2)...)
     @test ==(mergevals(CountMap(Dict{Int,Int}()), z, z2)...)
+    # Pair method
+    @test ==(mergevals(CountMap(Bool), Pair.(x,z), Pair.(x2,z2); nobs_equals_length=false)...)
+    @test ==(mergevals(CountMap(Int), Pair.(z,z), Pair.(z2,z2); nobs_equals_length=false)...)
 end
 #-----------------------------------------------------------------------# CountMissing
 println("  > CountMissing")
