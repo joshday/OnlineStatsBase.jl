@@ -9,12 +9,17 @@ import AbstractTrees: AbstractTrees
 export
     OnlineStat, Weight,
     # functions
-    nobs, value, fit!,
+    nobs, value, fit!, eachrow, eachcol,
     # Weights
     EqualWeight, ExponentialWeight, LearningRate, LearningRate2, HarmonicWeight, McclainWeight,
     # Stats
     Counter, CountMap, CountMissing, CovMatrix, Extrema, FTSeries, Group, GroupBy, Mean, Moments, 
     Series, Sum, Variance
+
+@static if VERSION < v"1.1.0"
+    eachrow(A::AbstractVecOrMat) = (view(A, i, :) for i in axes(A, 1))
+    eachcol(A::AbstractVecOrMat) = (view(A, :, i) for i in axes(A, 2))
+end
 
 #-----------------------------------------------------------------------# OnlineStat
 abstract type OnlineStat{T} end

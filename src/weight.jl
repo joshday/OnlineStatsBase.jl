@@ -24,8 +24,7 @@ struct EqualWeight <: Weight end
     ExponentialWeight(λ::Float64)
     ExponentialWeight(lookback::Int)
 
-Exponentially weighted observations.  The first weight is 1.0 and all else are
-`λ = 2 / (lookback + 1)`.
+Exponentially weighted observations.  Each weight is `λ = 2 / (lookback + 1)`.
 
 ``γ(t) = λ``
 """
@@ -34,7 +33,7 @@ struct ExponentialWeight <: Weight
     ExponentialWeight(λ::Real = .1) = new(λ)
     ExponentialWeight(lookback::Integer) = new(2 / (lookback + 1))
 end
-(w::ExponentialWeight)(n) = n == 1 ? 1.0 : w.λ
+(w::ExponentialWeight)(n) = w.λ
 Base.show(io::IO, w::ExponentialWeight) = print(io, name(w) * "(λ = $(w.λ))")
 
 #-----------------------------------------------------------------------# LearningRate

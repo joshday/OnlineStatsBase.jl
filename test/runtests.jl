@@ -31,7 +31,7 @@ function test_weight(w::OnlineStatsBase.Weight, f::Function)
     end
 end
 test_weight(@inferred(EqualWeight()),               i -> 1 / i)
-test_weight(@inferred(ExponentialWeight(.1)),       i -> ifelse(i==1, 1.0, .1))
+test_weight(@inferred(ExponentialWeight(.1)),       i -> .1)
 test_weight(@inferred(LearningRate(.6)),            i -> 1 / i^.6)
 test_weight(@inferred(LearningRate2(.5)),           i -> 1 / (1 + .5*(i-1)))
 test_weight(@inferred(HarmonicWeight(4.)),          i -> 4 / (4 + i - 1))
@@ -45,8 +45,7 @@ test_weight(@inferred(HarmonicWeight(4.)),          i -> 4 / (4 + i - 1))
     end
 end
 @testset "first weight is one" begin
-    for w in [EqualWeight(), ExponentialWeight(), LearningRate(), LearningRate2(),
-              HarmonicWeight(), McclainWeight()]
+    for w in [EqualWeight(), LearningRate(), LearningRate2(), HarmonicWeight(), McclainWeight()]
         @test w(1) == 1
     end
 end
