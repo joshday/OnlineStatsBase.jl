@@ -19,6 +19,7 @@ string(McclainWeight())
 @test_throws Exception fit!(Mean(), "abc")
 @test_throws Exception OnlineStatsBase._fit!(Mean(), "a")
 @test collect(OnlineStatsBase.neighbors([1,3,5])) == [(1,3), (3,5)]
+@test isnan(value(fit!(Variance(), NaN)))
 end
 
 #-----------------------------------------------------------------------# Weight
