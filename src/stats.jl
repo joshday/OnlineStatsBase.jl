@@ -458,7 +458,7 @@ function value(o::Variance)
     if nobs(o) > 1 
         o.σ2 * bessel(o) 
     else
-        isfinite(o.μ) ? 1.0 : NaN
+        isfinite(mean(o)) ? 1.0 : NaN
     end
 end
 Statistics.var(o::Variance) = value(o)
