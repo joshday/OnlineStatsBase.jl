@@ -439,7 +439,7 @@ mutable struct Variance{T, S, W} <: OnlineStat{Number}
     n::Int
 end
 function Variance(T::Type{<:Number} = Float64; weight = EqualWeight())
-    Variance(zero(T) ^ 2, zero(T), weight, 0)
+    Variance(zero(T) ^ 2 / one(T), zero(T) / one(T), weight, 0)
 end
 Base.copy(o::Variance) = Variance(o.σ2, o.μ, o.weight, o.n)
 function _fit!(o::Variance{T}, x) where {T}
@@ -458,7 +458,7 @@ function value(o::Variance{T}) where {T}
     if nobs(o) > 1 
         o.σ2 * bessel(o) 
     else
-        isfinite(mean(o)) ? T(1) : NaN * T(1)
+        isfinite(mean(o)) ? T(1) ^ 2 : NaN * T(1) ^ 2
     end
 end
 Statistics.var(o::Variance) = value(o)
