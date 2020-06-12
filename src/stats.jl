@@ -432,19 +432,19 @@ Univariate variance, tracked as type `T`.
     var(o)
     std(o)
 """
-mutable struct Variance{T, W} <: OnlineStat{Number}
-    σ2::T
+mutable struct Variance{T, S, W} <: OnlineStat{Number}
+    σ2::S
     μ::T
     weight::W
     n::Int
 end
 function Variance(T::Type{<:Number} = Float64; weight = EqualWeight())
-    Variance(zero(T), zero(T), weight, 0)
+    Variance(zero(T) ^ 2, zero(T), weight, 0)
 end
 Base.copy(o::Variance) = Variance(o.σ2, o.μ, o.weight, o.n)
 function _fit!(o::Variance{T}, x) where {T}
     μ = o.μ
-    γ = T(o.weight(o.n += 1))
+    γ = o.weight(o.n += 1)
     o.μ = smooth(o.μ, T(x), γ)
     o.σ2 = smooth(o.σ2, (T(x) - o.μ) * (T(x) - μ), γ)
 end
@@ -454,11 +454,11 @@ function _merge!(o::Variance, o2::Variance)
     o.σ2 = smooth(o.σ2, o2.σ2, γ) + δ ^ 2 * γ * (1.0 - γ)
     o.μ = smooth(o.μ, o2.μ, γ)
 end
-function value(o::Variance) 
+function value(o::Variance{T}) where {T} 
     if nobs(o) > 1 
         o.σ2 * bessel(o) 
     else
-        isfinite(mean(o)) ? 1.0 : NaN
+        isfinite(mean(o)) ? T(1) : NaN * T(1)
     end
 end
 Statistics.var(o::Variance) = value(o)
