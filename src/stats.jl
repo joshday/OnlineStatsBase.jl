@@ -193,7 +193,7 @@ function Extrema(T::Type = Float64)
 end
 extrema_init(T::Type{<:Number}) = typemax(T), typemin(T), Number
 extrema_init(T::Type{String}) = "", "", String
-extrema_init(T::Type{Date}) = typemax(Date), typemin(Date), Union{Date, Dates.AbstractDateTime}
+extrema_init(T::Type{<:TimeType}) = typemax(T), typemin(T), TimeType
 extrema_init(T::Type) = rand(T), rand(T), T
 function _fit!(o::Extrema, y)
     (o.n += 1) == 1 && (o.min = o.max = y)
