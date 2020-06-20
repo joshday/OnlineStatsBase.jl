@@ -340,7 +340,7 @@ mutable struct Mean{T,W} <: OnlineStat{Number}
 end
 Mean(T::Type{<:Number} = Float64; weight = EqualWeight()) = Mean(zero(T), weight, 0)
 function _fit!(o::Mean{T}, x) where {T} 
-    o.μ = (o.n += 1) == 1 ? x : smooth(o.μ, x, T(o.weight(o.n)))
+    o.μ = smooth(o.μ, x, T(o.weight(o.n += 1)))
 end
 function _merge!(o::Mean, o2::Mean)
     o.n += o2.n
