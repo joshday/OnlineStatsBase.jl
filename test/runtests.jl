@@ -22,6 +22,14 @@ string(McclainWeight())
 @test isnan(value(fit!(Variance(), NaN)))
 end
 
+@testset "Broadcasting" begin
+    o1 = Mean()
+    o2 = Variance()
+    @test tuple.(o1, o2, [1, 2]) == [(o1, o2, 1), (o1, o2, 2)]
+    @test tuple.(o1, o2, [1, 2])[1][1] === o1
+    @test tuple.(o1, o2, [1, 2])[2][1] === o1
+end
+
 #-----------------------------------------------------------------------# Weight
 @testset "Weight" begin
 function test_weight(w::OnlineStatsBase.Weight, f::Function)

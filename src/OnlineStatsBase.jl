@@ -26,6 +26,8 @@ abstract type OnlineStat{T} end
 input(o::OnlineStat{T}) where {T} = T
 nobs(o::OnlineStat) = o.n
 
+Broadcast.broadcastable(o::OnlineStat) = Ref(o)
+
 # Stats that hold a collection of other stats
 abstract type StatCollection{T} <: OnlineStat{T} end
 Base.show(io::IO, o::StatCollection) = AbstractTrees.print_tree(io, o)
