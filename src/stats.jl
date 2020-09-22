@@ -456,7 +456,7 @@ function _merge!(o::Variance, o2::Variance)
 end
 function value(o::Variance{T}) where {T} 
     if nobs(o) > 1 
-        o.σ2 * bessel(o) 
+        o.σ2 * T(bessel(o))
     else
         isfinite(mean(o)) ? T(1) ^ 2 : NaN * T(1) ^ 2
     end

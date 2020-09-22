@@ -251,6 +251,8 @@ println("  > Variance")
     @test std(Variance()) == 1
     @test std(fit!(Variance(), 1)) == 1
     @test std(fit!(Variance(), [1, 2])) == sqrt(.5)
+    # https://github.com/joshday/OnlineStats.jl/issues/217
+    @test value(fit!(Variance(Float32), randn(Float32, 10))) isa Float32
 end
 
 end # end "Test Stats"
