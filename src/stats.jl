@@ -1,3 +1,46 @@
+#-----------------------------------------------------------------------------# CircBuff
+struct RepeatingRange
+    rng::Base.OneTo{Int}
+end
+Base.getindex(o::RepeatingRange, i::Int) = o.rng[rem(i - 1, length(o.rng)) + 1]
+Base.getindex(o::RepeatingRange, rng::AbstractRange) = map(i -> getindex(o, i), rng)
+
+"""
+    CircBuff(T, b)
+
+Create a fixed-length circular buffer of `b` items of type `T`.
+
+# Example 
+
+    o = CircBuff(Int, 5)
+    fit!(o, 1:10)
+    o[1]    # Next value overwritten
+    o[end]  # Most recent value
+    value(o; ordered=false)  # Retrieve values (no copy) without ordering
+"""
+mutable struct CircBuff{T} <: OnlineStat{T}
+    value::Vector{T}
+    rng::RepeatingRange
+    n::Int
+end
+CircBuff(b::Int, T = Float64) = CircBuff(T, b)
+CircBuff(T, b::Int) = CircBuff(Vector{T}(undef, b), RepeatingRange(Base.OneTo(b)), 0)
+
+Base.getindex(o::CircBuff, i::Int) = o.value[o.rng[i + o.n]]
+Base.lastindex(o::CircBuff) = length(o.value)
+
+function value(o::CircBuff; ordered=true) 
+    if o.n < length(o.value) 
+        return o.value[1:nobs(o)]
+    elseif ordered
+        return [o[i] for i in 1:length(o.value)]
+    else
+        return o.value 
+    end
+end
+
+_fit!(o::CircBuff, y) = o.value[o.rng[o.n += 1]] = y
+
 #-----------------------------------------------------------------------# Counter
 """
     Counter(T=Number)
@@ -389,8 +432,6 @@ function StatsBase.skewness(o::Moments)
     (v[3] - 3.0 * v[1] * vr - v[1] ^ 3) / vr ^ 1.5
 end
 function StatsBase.kurtosis(o::Moments)
-    # v = value(o)
-    # (v[4] - 4.0 * v[1] * v[3] + 6.0 * v[1] ^ 2 * v[2] - 3.0 * v[1] ^ 4) / var(o) ^ 2 - 3.0
     m1, m2, m3, m4 = value(o)
     (m4 - 4.0 * m1 * m3 + 6.0 * m1^2 * m2 - 3.0 * m1 ^ 4) / var(o; corrected=false) ^ 2 - 3.0
 end

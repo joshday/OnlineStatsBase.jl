@@ -24,6 +24,17 @@ end
 mergevals(o1::OnlineStat, y1, y2; kw...) = map(value, mergestats(o1, y1, y2; kw...))
 
 @testset "Testing Stats" begin
+#-----------------------------------------------------------------------------# CircBuff
+println("  > CircBuff")
+@testset "CircBuff" begin 
+    o = CircBuff(Int, 5)
+    fit!(o, 1:2)
+    @test value(o) == [1,2]
+    fit!(o, 3:11)
+    @test o[1] == 7
+    @test o[end] == 11
+end
+
 #-----------------------------------------------------------------------# Counter
 println("  > Counter")
 @testset "Counter" begin
