@@ -558,13 +558,13 @@ Create an FTSeries and specify the type `T` of the pre-transformed values.
 
     # Remove missing values represented as Missing
     y = [rand(Bool) ? rand() : missing for i in 1:100]
-    o = FTSeries(Mean(); filter=!ismissing)
+    o = FTSeries(Union{Missing,Number}, Mean(); filter=!ismissing)
     fit!(o, y)
 
     # Alternatively for Missing:
     fit!(Mean(), skipmissing(y))
 """
-mutable struct FTSeries{IN, OS, F, T} <: StatCollection{Union{IN,Missing}}
+mutable struct FTSeries{IN, OS, F, T} <: StatCollection{IN}
     stats::OS
     filter::F
     transform::T
@@ -596,3 +596,13 @@ function _merge!(o::FTSeries, o2::FTSeries)
     o.nfiltered += o2.nfiltered
     _merge!.(o.stats, o2.stats)
 end
+
+
+#-----------------------------------------------------------------------------# SkipMissing 
+struct SkipMissing{T, O<:OnlineStat{T}} <: StatWrapper{Union{Missing,T}}
+    stat::O 
+    SkipMissing(stat::OnlineStat{T}) where {T} = new{T, typeof(stat)}(stat)
+end
+_fit!(o::SkipMissing, x::Missing) = nothing 
+_fit!(o::SkipMissing, x) = _fit!(o.stat, x)
+Base.skipmissing(o::OnlineStat) = SkipMissing(o)

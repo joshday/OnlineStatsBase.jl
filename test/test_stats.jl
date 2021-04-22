@@ -222,17 +222,26 @@ println("  > Series/FTSeries")
         @test value(o)[1] ≈ mean(abs, y)
 
         data = vcat(y, fill(missing, 20))
-        o = fit!(FTSeries(Mean(); transform=abs, filter=!ismissing), data)
+        o = fit!(FTSeries(Union{Number,Missing}, Mean(); transform=abs, filter=!ismissing), data)
         @test value(o)[1] ≈ mean(abs, y)
         @test o.nfiltered == 20
 
-        o2 = fit!(FTSeries(Float64, Mean(); transform=abs, filter=!ismissing), data)
+        o2 = fit!(FTSeries(Union{Missing,Float64}, Mean(); transform=abs, filter=!ismissing), data)
         @test value(o2)[1] ≈ mean(abs, y)
         @test o2.nfiltered == 20
 
-        a, b = mergestats(FTSeries(Mean(), Variance(); transform=abs, filter=!ismissing), y, y2)
+        a, b = mergestats(FTSeries(Union{Missing,Number}, Mean(), Variance(); transform=abs, filter=!ismissing), y, y2)
         @test a.nfiltered == b.nfiltered
     end
+end
+
+#-----------------------------------------------------------------------------# SkipMissing
+println("  > SkipMissing")
+@testset "SkipMissing" begin 
+    data = [rand() > .5 ? missing : rand() for i in 1:1000]
+    o = fit!(skipmissing(Mean()), data)
+    @test nobs(o) == sum(!ismissing, data)
+    @test value(o) ≈ mean(skipmissing(data))
 end
 
 #-----------------------------------------------------------------------# Sum

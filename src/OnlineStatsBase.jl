@@ -14,7 +14,7 @@ export
     EqualWeight, ExponentialWeight, LearningRate, LearningRate2, HarmonicWeight, McclainWeight,
     # Stats
     CircBuff, Counter, CountMap, CountMissing, CovMatrix, Extrema, FTSeries, Group, GroupBy, Mean, 
-    Moments, Series, Sum, Variance
+    Moments, Series, SkipMissing, Sum, Variance
 
 @static if VERSION < v"1.1.0"
     eachrow(A::AbstractVecOrMat) = (view(A, i, :) for i in axes(A, 1))
@@ -27,6 +27,13 @@ input(o::OnlineStat{T}) where {T} = T
 nobs(o::OnlineStat) = o.n
 
 Broadcast.broadcastable(o::OnlineStat) = Ref(o)
+
+# Stats that hold a single stat
+abstract type StatWrapper{T} <: OnlineStat{T} end 
+nobs(o::StatWrapper) = nobs(o.stat)
+value(o::StatWrapper) = value(o.stat)
+_merge!(a::StatWrapper{T}, b::StatWrapper{T}) where {T} = _merge!(a.stat, b.stat)
+Base.show(io::IO, o::T) where {T<:StatWrapper} = print(io, "SkipMissing $(o.stat)")
 
 # Stats that hold a collection of other stats
 abstract type StatCollection{T} <: OnlineStat{T} end
