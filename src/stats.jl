@@ -221,9 +221,9 @@ Maximum and minimum (and number of occurrences for each) for a data stream of ty
     maximum(o)
     minimum(o)
 """
+mutable struct Extrema{T,S} <: OnlineStat{S}
 # T is type to store data, S is type of single observation.
 # E.g. you may want to accept any Number even if you are storing values as Float64
-mutable struct Extrema{T,S} <: OnlineStat{S}
     min::T
     max::T
     nmin::Int 
