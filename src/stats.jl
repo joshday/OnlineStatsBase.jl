@@ -302,7 +302,7 @@ end
 Group(o::OnlineStat...) = Group(o)
 Group(;o...) = Group(o.data)
 nobs(o::Group) = nobs(first(o.stats))
-Base.:(==)(a::Group, b::Group) = all(a.stats .== b.stats)
+Base.:(==)(a::Group, b::Group) = all(x -> ==(x...), zip(a.stats, b.stats))
 
 Base.getindex(o::Group, i) = o.stats[i]
 Base.first(o::Group) = first(o.stats)
