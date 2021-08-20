@@ -123,6 +123,7 @@ end
 ```
 """
 fit!(o::OnlineStat{T}, yi::T) where {T} = (_fit!(o, yi); return o)
+fit!(o::OnlineStat, o2::OnlineStat) = merge!(o, o2)
 
 function fit!(o::OnlineStat{I}, y::T) where {I, T}
     T == eltype(y) && error("The input for $(name(o,false,false)) is $I.  Found $T.")
