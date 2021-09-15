@@ -72,7 +72,7 @@ Base.copy(o::OnlineStat) = deepcopy(o)
 """
     merge!(stat1, stat2)
 
-Merge `stat1` into `stat2` (supported by most `OnlineStat` types).
+Merge `stat2` into `stat1` (supported by most `OnlineStat` types).
 
 # Example
 
@@ -123,6 +123,27 @@ end
 ```
 """
 fit!(o::OnlineStat{T}, yi::T) where {T} = (_fit!(o, yi); return o)
+
+"""
+    fit!(stat1::OnlineStat, stat2::OnlineStat)
+
+Alias for `merge!`. Merges `stat2` into `stat1`.
+
+Useful for reductions of OnlineStats using `fit!`.
+
+# Example
+```
+julia> v = [reduce(fit!, [1, 2, 3], init=Mean()) for _ in 1:3]
+3-element Vector{Mean{Float64, EqualWeight}}:
+ Mean: n=3 | value=2.0
+ Mean: n=3 | value=2.0
+ Mean: n=3 | value=2.0
+
+julia> reduce(fit!, v, init=Mean())
+Mean: n=9 | value=2.0
+```
+"""
+fit!(o::OnlineStat, o2::OnlineStat) = merge!(o, o2)
 
 function fit!(o::OnlineStat{I}, y::T) where {I, T}
     T == eltype(y) && error("The input for $(name(o,false,false)) is $I.  Found $T.")

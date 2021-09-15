@@ -60,6 +60,15 @@ end
 end
 end #Weight
 
+@testset "Merging OnlineStats with fit!" begin
+    s = 100
+    x = rand(Int32, s).%100
+    ranges = Iterators.partition(1:s, 10)
 
+    v = [reduce(fit!, x[r], init=Mean()) for r in ranges]
+    r1 = reduce(fit!, v, init=Mean())
+    r2 = fit!(Mean(), x)
 
-
+    @test isapprox(value(r1), value(r2))
+    @test nobs(r1) == nobs(r2)
+end
