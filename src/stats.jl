@@ -235,7 +235,7 @@ function Extrema(T::Type = Float64)
     Extrema{T,S}(a, b, 0, 0, 0)
 end
 extrema_init(T::Type{<:Number}) = typemax(T), typemin(T), Number
-extrema_init(T::Type{String}) = "", "", String
+extrema_init(T::Type{<:AbstractString}) = T(""), T(""), AbstractString
 extrema_init(T::Type{<:TimeType}) = typemax(T), typemin(T), TimeType
 extrema_init(T::Type) = rand(T), rand(T), T
 function _fit!(o::Extrema, y)
