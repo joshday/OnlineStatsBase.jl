@@ -135,7 +135,7 @@ Calculate a `stat` along with the count of `missing` values.
     o = CountMissing(Mean())
     fit!(o, [1, missing, 3])
 """
-mutable struct CountMissing{T, O<:OnlineStat{T}} <: OnlineStat{Union{Missing,T}}
+mutable struct CountMissing{T, O<:OnlineStat{T}} <: StatWrapper{Union{Missing,T}}
     stat::O
     nmissing::Int
 end
