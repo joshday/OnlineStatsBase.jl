@@ -33,7 +33,7 @@ abstract type StatWrapper{T} <: OnlineStat{T} end
 nobs(o::StatWrapper) = nobs(o.stat)
 value(o::StatWrapper) = value(o.stat)
 _merge!(a::StatWrapper{T}, b::StatWrapper{T}) where {T} = _merge!(a.stat, b.stat)
-Base.show(io::IO, o::T) where {T<:StatWrapper} = print(io, "SkipMissing $(o.stat)")
+name(o::T, args...) where {T<:StatWrapper} = name(typeof(o), args...) * "($(name(o.stat, args...)))"
 
 # Stats that hold a collection of other stats
 abstract type StatCollection{T} <: OnlineStat{T} end
@@ -41,14 +41,6 @@ Base.show(io::IO, o::StatCollection) = AbstractTrees.print_tree(io, o)
 
 AbstractTrees.printnode(io::IO, o::StatCollection) = print(io, name(o, false, false))
 AbstractTrees.children(o::StatCollection) = collect(o.stats)
-
-struct SameLine 
-    items 
-    sep
-    SameLine(items, sep='|') = new(items, sep)
-end
-AbstractTrees.printnode(io::IO, o::SameLine) = print(io, join(o.items, o.sep))
-
 
 """
     value(stat::OnlineStat)

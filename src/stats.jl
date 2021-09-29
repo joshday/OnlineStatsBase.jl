@@ -599,6 +599,17 @@ end
 
 
 #-----------------------------------------------------------------------------# SkipMissing 
+"""
+    SkipMissing(stat)
+
+Wrapper around an OnlineStat that will skip over `missing` values.
+
+# Example 
+
+    o = SkipMissing(Mean())
+
+    fit!(o, [1, missing, 3])
+"""
 struct SkipMissing{T, O<:OnlineStat{T}} <: StatWrapper{Union{Missing,T}}
     stat::O 
     SkipMissing(stat::OnlineStat{T}) where {T} = new{T, typeof(stat)}(stat)
