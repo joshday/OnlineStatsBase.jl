@@ -27,19 +27,19 @@ mergevals(o1::OnlineStat, y1, y2; kw...) = map(value, mergestats(o1, y1, y2; kw.
 #-----------------------------------------------------------------------------# CircBuff
 println("  > CircBuff")
 @testset "CircBuff" begin 
-    o = CircBuff(Int, 5)
-    fit!(o, 1:2)
-    @test value(o) == [1,2]
-    fit!(o, 3:11)
-    @test o[1] == 7
-    @test o[end] == 11
+    a = CircBuff(Int, 5)
+    fit!(a, 1:2)
+    @test value(a) == [1,2]
+    fit!(a, 3:11)
+    @test a[1] == 7
+    @test a[end] == 11
 
-    o = CircBuff(Int, 5, rev=true)
-    fit!(o, 1:2)
-    @test value(o) == [1,2]
-    fit!(o, 3:11)
-    @test o[end] == 7
-    @test o[1] == 11
+    b = CircBuff(Int, 5, rev=true)
+    fit!(b, 1:2)
+    @test value(b) == [2, 1]
+    fit!(b, 3:11)
+    @test b[end] == 7
+    @test b[1] == 11
 end
 
 #-----------------------------------------------------------------------# Counter

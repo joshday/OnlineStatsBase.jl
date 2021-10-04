@@ -1,4 +1,12 @@
 #-----------------------------------------------------------------------------# CircBuff
+"""
+    RepeatingRange(rng)
+
+Range that repeats forever. e.g.
+
+    r = OnlineStatsBase.RepeatingRange(1:2)
+    r[1:5] == [1, 2, 1, 2, 1]
+"""
 struct RepeatingRange{T<:AbstractRange}
     rng::T
 end
@@ -10,8 +18,8 @@ Base.reverse(o::RepeatingRange) = RepeatingRange(reverse(o.rng))
     CircBuff(T, b; rev=false)
 
 Create a fixed-length circular buffer of `b` items of type `T`.
-- `rev=false`: the first element is the oldest.
-- `rev=true`: the last element is the oldest.
+- `rev=false`: `o[1]` is the oldest.
+- `rev=true`: `o[end]` is the oldest.
 
 # Example 
 
@@ -26,35 +34,33 @@ Create a fixed-length circular buffer of `b` items of type `T`.
 
     value(o; ordered=false)  # Retrieve values (no copy) without ordering
 """
-mutable struct CircBuff{T} <: OnlineStat{T}
+mutable struct CircBuff{T,rev} <: OnlineStat{T}
     value::Vector{T}
-    rng::RepeatingRange
-    rev::Bool
+    rng::RepeatingRange{Base.OneTo{Int}}
     n::Int
 end
+CircBuff(T, b::Int; rev=false) = CircBuff{T,rev}(T[], RepeatingRange(Base.OneTo(b)), 0)
 CircBuff(b::Int, T = Float64; rev=false) = CircBuff(T, b; rev)
-function CircBuff(T, b::Int; rev=false) 
-    CircBuff(Vector{T}(undef, b), RepeatingRange(Base.OneTo(b)), rev, 0)
-end
 
-function Base.getindex(o::CircBuff, i::Int) 
-    idx = o.rev ? o.rng[length(o.value) - i + o.n + 1] : o.rng[i + o.n]
-    o.value[idx]
-end
 Base.lastindex(o::CircBuff) = length(o.value)
 Base.length(o::CircBuff) = length(o.value)
 
-function value(o::CircBuff; ordered=true) 
-    if o.n < length(o.value) 
-        return o.value[1:nobs(o)]
-    elseif ordered
-        return [o[i] for i in 1:length(o.value)]
-    else
-        return o.value 
-    end
+function Base.getindex(o::CircBuff, i::Int) 
+    nobs(o) ≤ length(o.rng.rng) ? o.value[i] : o.value[o.rng[nobs(o) + i]]
+end
+function Base.getindex(o::CircBuff{<:Any, true}, i::Int) 
+    i = length(o.value) - i + 1
+    nobs(o) ≤ length(o.rng.rng) ? o.value[i] : o.value[o.rng[nobs(o) + i]]
 end
 
-_fit!(o::CircBuff, y) = o.value[o.rng[o.n += 1]] = y
+function _fit!(o::CircBuff, y) 
+    (o.n += 1) ≤ length(o.rng.rng) ? push!(o.value, y) : o.value[o.rng[nobs(o)]] = y
+end
+
+value(o::CircBuff; ordered=true) = ordered ? eltype(o.value)[o[i] for i in 1:length(o.value)] : o.value
+
+
+
 
 #-----------------------------------------------------------------------# Counter
 """
