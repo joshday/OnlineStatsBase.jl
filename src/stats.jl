@@ -1,33 +1,48 @@
 #-----------------------------------------------------------------------------# CircBuff
-struct RepeatingRange
-    rng::Base.OneTo{Int}
+struct RepeatingRange{T<:AbstractRange}
+    rng::T
 end
 Base.getindex(o::RepeatingRange, i::Int) = o.rng[rem(i - 1, length(o.rng)) + 1]
 Base.getindex(o::RepeatingRange, rng::AbstractRange) = map(i -> getindex(o, i), rng)
+Base.reverse(o::RepeatingRange) = RepeatingRange(reverse(o.rng))
 
 """
-    CircBuff(T, b)
+    CircBuff(T, b; rev=false)
 
 Create a fixed-length circular buffer of `b` items of type `T`.
+- `rev=false`: the first element is the oldest.
+- `rev=true`: the last element is the oldest.
 
 # Example 
 
-    o = CircBuff(Int, 5)
-    fit!(o, 1:10)
-    o[1]    # Next value overwritten
-    o[end]  # Most recent value
+    a = CircBuff(Int, 5)
+    b = CircBuff(Int, 5, rev=true)
+
+    fit!(a, 1:10)
+    fit!(b, 1:10)
+
+    a[1] == b[end] == 1
+    a[end] == b[1] == 10
+
     value(o; ordered=false)  # Retrieve values (no copy) without ordering
 """
 mutable struct CircBuff{T} <: OnlineStat{T}
     value::Vector{T}
     rng::RepeatingRange
+    rev::Bool
     n::Int
 end
-CircBuff(b::Int, T = Float64) = CircBuff(T, b)
-CircBuff(T, b::Int) = CircBuff(Vector{T}(undef, b), RepeatingRange(Base.OneTo(b)), 0)
+CircBuff(b::Int, T = Float64; rev=false) = CircBuff(T, b; rev)
+function CircBuff(T, b::Int; rev=false) 
+    CircBuff(Vector{T}(undef, b), RepeatingRange(Base.OneTo(b)), rev, 0)
+end
 
-Base.getindex(o::CircBuff, i::Int) = o.value[o.rng[i + o.n]]
+function Base.getindex(o::CircBuff, i::Int) 
+    idx = o.rev ? o.rng[length(o.value) - i + o.n + 1] : o.rng[i + o.n]
+    o.value[idx]
+end
 Base.lastindex(o::CircBuff) = length(o.value)
+Base.length(o::CircBuff) = length(o.value)
 
 function value(o::CircBuff; ordered=true) 
     if o.n < length(o.value) 

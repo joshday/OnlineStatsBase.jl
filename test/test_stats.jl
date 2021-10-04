@@ -33,6 +33,13 @@ println("  > CircBuff")
     fit!(o, 3:11)
     @test o[1] == 7
     @test o[end] == 11
+
+    o = CircBuff(Int, 5, rev=true)
+    fit!(o, 1:2)
+    @test value(o) == [1,2]
+    fit!(o, 3:11)
+    @test o[end] == 7
+    @test o[1] == 11
 end
 
 #-----------------------------------------------------------------------# Counter
