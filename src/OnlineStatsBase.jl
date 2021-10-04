@@ -13,8 +13,8 @@ export
     # Weights
     EqualWeight, ExponentialWeight, LearningRate, LearningRate2, HarmonicWeight, McclainWeight,
     # Stats
-    CircBuff, Counter, CountMap, CountMissing, CovMatrix, Extrema, FTSeries, Group, GroupBy, Mean, 
-    Moments, Series, SkipMissing, Sum, Variance
+    CircBuff, Counter, CountMap, CountMissing, CovMatrix, Extrema, FilterTransform, FTSeries, 
+    Group, GroupBy, Mean, Moments, Series, SkipMissing, Sum, TryCatch, Variance
 
 @static if VERSION < v"1.1.0"
     eachrow(A::AbstractVecOrMat) = (view(A, i, :) for i in axes(A, 1))
@@ -27,13 +27,6 @@ input(o::OnlineStat{T}) where {T} = T
 nobs(o::OnlineStat) = o.n
 
 Broadcast.broadcastable(o::OnlineStat) = Ref(o)
-
-# Stats that hold a single stat
-abstract type StatWrapper{T} <: OnlineStat{T} end 
-nobs(o::StatWrapper) = nobs(o.stat)
-value(o::StatWrapper) = value(o.stat)
-_merge!(a::StatWrapper{T}, b::StatWrapper{T}) where {T} = _merge!(a.stat, b.stat)
-name(o::T, args...) where {T<:StatWrapper} = name(typeof(o), args...) * "($(name(o.stat, args...)))"
 
 # Stats that hold a collection of other stats
 abstract type StatCollection{T} <: OnlineStat{T} end
@@ -79,10 +72,13 @@ end
 _merge!(o, o2) = @warn("Merging $(name(o2)) into $(name(o)) is not well-defined.  No merging occurred.")
 Base.merge(o::OnlineStat, o2::OnlineStat) = merge!(copy(o), o2)
 
-#-----------------------------------------------------------------------# Show
+#-----------------------------------------------------------------------# Base.show
 function Base.show(io::IO, o::OnlineStat)
     print(io, name(o, false, false), ": ")
     print(io, "n=", nobs(o))
+    for (k,v) in pairs(additional_info(o))
+        print(io, " | $k=$v")
+    end
     print(io, " | value=")
     show(IOContext(io, :compact => true), value(o))
 end
@@ -98,6 +94,8 @@ function name(T::Type, withmodule = false, withparams = true)
 end
 name(o, args...) = name(typeof(o), args...)
 
+additional_info(o) = ()
+
 #-----------------------------------------------------------------------# fit!
 """
     fit!(stat::OnlineStat, data)
@@ -107,12 +105,15 @@ the type of a single observation for the provided `stat`, `fit!` will attempt to
 through and `fit!` each item in `data`.  Therefore, `fit!(Mean(), 1:10)` translates
 roughly to:
 
-```
-o = Mean()
-for x in 1:10
-    fit!(o, x)
-end
-```
+# Example
+
+    o = Mean()
+
+    for x in 1:10
+        fit!(o, x)
+    end
+
+    fit!(o, 11:20)
 """
 fit!(o::OnlineStat{T}, yi::T) where {T} = (_fit!(o, yi); return o)
 
@@ -124,16 +125,15 @@ Alias for `merge!`. Merges `stat2` into `stat1`.
 Useful for reductions of OnlineStats using `fit!`.
 
 # Example
-```
-julia> v = [reduce(fit!, [1, 2, 3], init=Mean()) for _ in 1:3]
-3-element Vector{Mean{Float64, EqualWeight}}:
- Mean: n=3 | value=2.0
- Mean: n=3 | value=2.0
- Mean: n=3 | value=2.0
 
-julia> reduce(fit!, v, init=Mean())
-Mean: n=9 | value=2.0
-```
+    julia> v = [reduce(fit!, [1, 2, 3], init=Mean()) for _ in 1:3]
+    3-element Vector{Mean{Float64, EqualWeight}}:
+    Mean: n=3 | value=2.0
+    Mean: n=3 | value=2.0
+    Mean: n=3 | value=2.0
+
+    julia> reduce(fit!, v, init=Mean())
+    Mean: n=9 | value=2.0
 """
 fit!(o::OnlineStat, o2::OnlineStat) = merge!(o, o2)
 
@@ -150,6 +150,8 @@ end
     smooth(a, b, γ)
 
 Weighted average of `a` and `b` with weight `γ`.
+
+``(1 - γ) * a + γ * b``
 """
 smooth(a, b, γ) = a + γ * (b - a)
 
@@ -189,4 +191,5 @@ neighbors(x) = @inbounds ((x[i], x[i+1]) for i in eachindex(x)[1:end-1])
 #-----------------------------------------------------------------------# includes
 include("weight.jl")
 include("stats.jl")
+include("wrappers.jl")
 end

@@ -137,6 +137,14 @@ println("  > Extrema")
     @test o.nmin == length(x) - sum(x)
     @test o.nmax == sum(x)
 end
+#-----------------------------------------------------------------------------# FilterTransform
+println("  > FilterTransform")
+@testset "FilterTransform" begin 
+    o = FilterTransform(String => (x->true) => (x -> parse(Int,x)) => Mean())
+    fit!(o, ["1", "3", "5"])
+    @test value(o) ≈ 3
+end
+
 #-----------------------------------------------------------------------# Group
 println("  > Group")
 @testset "Group" begin
@@ -255,6 +263,17 @@ println("  > Sum")
     @test ≈(mergevals(Sum(), y, y2)...)
     @test ==(mergevals(Sum(Int), z, z2)...)
 end
+
+#-----------------------------------------------------------------------------# TryCatch 
+println("  > TryCatch")
+@testset "TryCatch" begin 
+    o = TryCatch(Mean())
+    fit!(o, [1, missing, 3])
+    @test value(o) ≈ 2
+    merge!(o, fit!(TryCatch(Mean()), [missing, 5, missing]))
+    @test value(o) ≈ 3
+end
+
 #-----------------------------------------------------------------------# Variance
 println("  > Variance")
 @testset "Variance" begin
