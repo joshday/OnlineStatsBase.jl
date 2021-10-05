@@ -90,8 +90,8 @@ println("  > CountMissing")
     data2 = Vector{Union{Missing,Float64}}(copy(y2))
     data[x] .= missing
     data2[x2] .= missing
-    a, b = mergevals(CountMissing(Mean()), data, data2)
-    @test value(a.stat) ≈ value(b.stat)
+    a, b = mergestats(CountMissing(Mean()), data, data2, nobs_equals_length=false)
+    @test value(a) ≈ value(b)
     @test a.nmissing == b.nmissing
 end
 #-----------------------------------------------------------------------# CovMatrix
@@ -150,6 +150,11 @@ println("  > FilterTransform")
     o = FilterTransform(String => (x->true) => (x -> parse(Int,x)) => Mean())
     fit!(o, ["1", "3", "5"])
     @test value(o) ≈ 3
+
+    o = FilterTransform(String => (x -> x != "1") => (x -> parse(Int,x)) => Mean()) 
+    fit!(o, ["1", "3", "5"]) 
+    @test value(o) ≈ 4
+    @test o.nfiltered == 1
 end
 
 #-----------------------------------------------------------------------# Group

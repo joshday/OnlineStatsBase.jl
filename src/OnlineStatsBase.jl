@@ -113,8 +113,6 @@ roughly to:
     for x in 1:10
         fit!(o, x)
     end
-
-    fit!(o, 11:20)
 """
 fit!(o::OnlineStat{T}, yi::T) where {T} = (_fit!(o, yi); return o)
 

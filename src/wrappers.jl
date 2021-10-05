@@ -21,8 +21,7 @@ mutable struct CountMissing{T, O<:OnlineStat{T}} <: StatWrapper{Union{Missing,T}
     nmissing::Int
 end
 CountMissing(stat::OnlineStat) = CountMissing(stat, 0)
-value(o::CountMissing) = (nmissing=o.nmissing, stat=o.stat)
-nobs(o::CountMissing) = nobs(o.stat) + o.nmissing
+additional_info(o::CountMissing) = (; nmissing=o.nmissing)
 
 _fit!(o::CountMissing, x) = _fit!(o.stat, x)
 _fit!(o::CountMissing, ::Missing) = (o.nmissing += 1)
@@ -45,22 +44,23 @@ your transformation, you may need to specify the type of a single observation (`
     o = FilterTransform(String => (x->true) => (x->parse(Int,x)) => Mean())
     fit!(o, "1")
 """
-struct FilterTransform{S, T, O<:OnlineStat{T},F,F2} <: StatWrapper{S}
+mutable struct FilterTransform{S, T, O<:OnlineStat{T},F,F2} <: StatWrapper{S}
     stat::O
     filter::F 
     transform::F2
+    nfiltered::Int
+end
+function FilterTransform(stat::OnlineStat{T}, intype=T; filter=always_true, transform=identity) where {T}
+    FilterTransform{intype, T, typeof(stat), typeof(filter), typeof(transform)}(stat, filter, transform, 0)
 end
 FilterTransform(intype::DataType, stat::OnlineStat; kw...) = FilterTransform(stat, intype; kw...)
-function FilterTransform(stat::OnlineStat{T}, intype=T; filter=always_true, transform=identity) where {T}
-    FilterTransform{intype, T, typeof(stat), typeof(filter), typeof(transform)}(stat, filter, transform)
-end
 function FilterTransform(p::Pair{DataType, <:Pair{<:Function, <:Pair{<:Function, <:OnlineStat}}})
     FilterTransform(p[1], p[2][2][2]; filter=p[2][1], transform=p[2][2][1])
 end
 
-_fit!(o::FilterTransform, y) = o.filter(y) && _fit!(o.stat, o.transform(y))
+_fit!(o::FilterTransform, y) = o.filter(y) ? _fit!(o.stat, o.transform(y)) : (o.nfiltered += 1)
 
-additional_info(o::FilterTransform) = (; filter=o.filter, transform=o.transform)
+additional_info(o::FilterTransform) = (; filter=o.filter, transform=o.transform, nfiltered=o.nfiltered)
 
 always_true(x) = true
 
@@ -112,13 +112,9 @@ function TryCatch(stat::OnlineStat; error_limit=1000, error_message_limit=90)
 end
 
 errors(o::TryCatch) = value(o.errors)
+nerrors(o::TryCatch) = sum(values(value(o.errors)))
 
-function additional_info(o::TryCatch)
-    ex = errors(o)
-    nex = length(ex)
-    msg = length(ex) ≥ o.error_limit ? "$nex (limit reached)" : nex
-    nex == 0 ? () : (; errors=msg)
-end
+additional_info(o::TryCatch) = (;nerrors = nerrors(o))
 
 function handle_error!(o::TryCatch, ex) 
     io = IOBuffer()
@@ -126,7 +122,11 @@ function handle_error!(o::TryCatch, ex)
     s = String(take!(io))
     lim = o.error_message_limit
     s = length(s) > lim ? s[1:lim] * "..." : s
-    length(value(o.errors)) < o.error_limit && _fit!(o.errors, s)
+    if length(value(o.errors)) < o.error_limit || haskey(value(o.errors), s)
+        _fit!(o.errors, s) 
+    else 
+        _fit!(o.errors, "Other (error_limit reached)")
+    end
 end
 
 function fit!(o::TryCatch{T}, y::T) where {T}
