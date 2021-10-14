@@ -40,7 +40,7 @@ mutable struct CircBuff{T,rev} <: OnlineStat{T}
     n::Int
 end
 CircBuff(T, b::Int; rev=false) = CircBuff{T,rev}(T[], RepeatingRange(Base.OneTo(b)), 0)
-CircBuff(b::Int, T = Float64; rev=false) = CircBuff(T, b; rev)
+CircBuff(b::Int, T = Float64; rev=false) = CircBuff(T, b; rev=rev)
 
 Base.lastindex(o::CircBuff) = length(o.value)
 Base.length(o::CircBuff) = length(o.value)
