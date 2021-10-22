@@ -151,6 +151,8 @@ println("  > ExtremeValues")
     ysorted = sort(y)
     @test first.(value(o).lo) == ysorted[1:5]
     @test first.(value(o).hi) == ysorted[end-4:end]
+
+    @test ==(mergevals(ExtremeValues(), y, y2)...)
 end
 
 #-----------------------------------------------------------------------------# FilterTransform
