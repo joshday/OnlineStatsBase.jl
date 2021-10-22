@@ -13,8 +13,8 @@ export
     # Weights
     EqualWeight, ExponentialWeight, LearningRate, LearningRate2, HarmonicWeight, McclainWeight,
     # Stats
-    CircBuff, Counter, CountMap, CountMissing, CovMatrix, Extrema, FilterTransform, FTSeries, 
-    Group, GroupBy, Mean, Moments, Series, SkipMissing, Sum, TryCatch, Variance
+    CircBuff, Counter, CountMap, CountMissing, CovMatrix, Extrema, ExtremeValues, FilterTransform, 
+    FTSeries, Group, GroupBy, Mean, Moments, Series, SkipMissing, Sum, TryCatch, Variance
 
 @static if VERSION < v"1.1.0"
     eachrow(A::AbstractVecOrMat) = (view(A, i, :) for i in axes(A, 1))

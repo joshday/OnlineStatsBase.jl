@@ -144,6 +144,15 @@ println("  > Extrema")
     @test o.nmin == length(x) - sum(x)
     @test o.nmax == sum(x)
 end
+#-----------------------------------------------------------------------------# ExtremeValues 
+println("  > ExtremeValues")
+@testset "ExtremeValues" begin 
+    o = fit!(ExtremeValues(Float64, 5), y)
+    ysorted = sort(y)
+    @test first.(value(o).lo) == ysorted[1:5]
+    @test first.(value(o).hi) == ysorted[end-4:end]
+end
+
 #-----------------------------------------------------------------------------# FilterTransform
 println("  > FilterTransform")
 @testset "FilterTransform" begin 

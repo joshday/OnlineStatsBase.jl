@@ -208,10 +208,13 @@ end
 #-----------------------------------------------------------------------# Extrema
 """
     Extrema(T::Type = Float64)
+    Extrema(min_init::T, max_init::T)
 
 Maximum and minimum (and number of occurrences for each) for a data stream of type `T`.
 
 # Example
+
+    Extrema(Float64) == Extrema(Inf, -Inf)
 
     o = fit!(Extrema(), rand(10^5))
     extrema(o)
@@ -227,6 +230,7 @@ mutable struct Extrema{T,S} <: OnlineStat{S}
     nmax::Int
     n::Int
 end
+Extrema(a::T, b::T) where {T} = Extrema{T,S}(a, b, 0, 0, 0)
 function Extrema(T::Type = Float64)
     a, b, S = extrema_init(T)
     Extrema{T,S}(a, b, 0, 0, 0)
@@ -267,6 +271,64 @@ Base.extrema(o::Extrema) = (o.min, o.max)
 Base.maximum(o::Extrema) = o.max
 Base.minimum(o::Extrema) = o.min
 
+#-----------------------------------------------------------------------------# ExtremeValues
+"""
+
+
+"""
+mutable struct ExtremeValues{T,S} <: OnlineStat{S}
+    lo::Vector{Pair{T,Int}}
+    hi::Vector{Pair{T,Int}}
+    b::Int
+    n::Int
+end
+value(o::ExtremeValues) = (; lo=o.lo, hi=o.hi)
+function ExtremeValues(T::Type = Float64, b=25)
+    _, _, S = extrema_init(T)
+    ExtremeValues{T,S}(Pair{T,Int}[], Pair{T,Int}[], b, 0)
+end
+
+_fit!(o::ExtremeValues{T,S}, y::S) where {T,S} = _fit!(o, y => 1)
+
+function _fit!(o::ExtremeValues{T,S}, pr::Pair{<:S, Int}) where {T,S}
+    y, yn = pr 
+    o.n += yn
+    lo, hi, b = o.lo, o.hi, o.b
+    if length(lo) < b 
+        push!(lo, pr); push!(hi, pr)
+        sort!(lo); sort!(hi)
+    elseif y ≤ first(lo[end])
+        if y in (first(el) for el in lo)
+            i = findfirst(x -> x[1] == y, lo)
+            lo[i] = lo[i][1] => lo[i][2] + yn
+        else
+            push!(lo, pr)
+            sort!(lo)
+            length(lo) > b && deleteat!(lo, b + 1)
+        end
+    elseif first(hi[1]) ≤ y
+        if y in (first(el) for el in hi)
+            i = findfirst(x -> x[1] == y, hi)
+            hi[i] = hi[i][1] => hi[i][2] + yn
+        else
+            push!(hi, pr)
+            sort!(hi)
+            length(hi) > b && deleteat!(hi, 1)
+        end
+    end
+end
+
+function _merge!(a::ExtremeValues, b::ExtremeValues) 
+    old_n = a.n
+    for pair in b.lo 
+        _fit!(a, pair)
+    end
+    for pair in b.hi 
+        _fit!(a, pair)
+    end
+    a.n = old_n + b.n
+end
+    
 #-----------------------------------------------------------------------# Group
 """
     Group(stats::OnlineStat...)
