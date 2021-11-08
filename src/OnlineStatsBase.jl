@@ -110,8 +110,6 @@ the type of a single observation for the provided `stat`, `fit!` will attempt to
 through and `fit!` each item in `data`.  Therefore, `fit!(Mean(), 1:10)` translates
 roughly to:
 
-# Example
-
     o = Mean()
 
     for x in 1:10
@@ -182,7 +180,7 @@ function smooth_syr!(A::AbstractMatrix, x, γ)
     end
 end
 
-# bessel correction
+# bessel correction (https://en.wikipedia.org/wiki/Bessel%27s_correction)
 bessel(o) = nobs(o) / (nobs(o) - 1)
 
 Statistics.std(o::OnlineStat; kw...) = sqrt.(var(o; kw...))
