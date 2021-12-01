@@ -370,7 +370,7 @@ struct Group{T, S} <: StatCollection{S}
     end
 end
 Group(o::OnlineStat...) = Group(o)
-Group(;o...) = Group(o.data)
+Group(;o...) = Group(NamedTuple(o))
 nobs(o::Group) = nobs(first(o.stats))
 Base.:(==)(a::Group, b::Group) = all(x -> ==(x...), zip(a.stats, b.stats))
 
@@ -594,7 +594,7 @@ struct Series{IN, T} <: StatCollection{IN}
     Series(stats::T) where {T} = new{Union{map(input, stats)...}, T}(stats)
 end
 Series(t::OnlineStat...) = Series(t)
-Series(; t...) = Series(t.data)
+Series(; t...) = Series(NamedTuple(t))
 
 value(o::Series) = map(value, o.stats)
 nobs(o::Series) = nobs(o.stats[1])
