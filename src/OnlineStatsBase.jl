@@ -55,9 +55,9 @@ end
 Base.copy(o::OnlineStat) = deepcopy(o)
 
 """
-    merge!(stat1, stat2)
+    merge!(a, b)
 
-Merge `stat2` into `stat1` (supported by most `OnlineStat` types).
+Merge `OnlineStat` `b` into `a` (supported by most `OnlineStat` types).
 
 # Example
 
@@ -77,7 +77,7 @@ function Base.show(io::IO, o::OnlineStat)
     print(io, name(o, false, false))
     printstyled(io, ": ", color=:light_black)
     print(io, "n=")
-    print(io, nobs(o))
+    print(io, nobs_string(o))
     for (k,v) in pairs(additional_info(o))
         printstyled(io, " |", color=:light_black)
         print(io, " $k=")
@@ -99,7 +99,20 @@ function name(T::Type, withmodule = false, withparams = true)
 end
 name(o, args...) = name(typeof(o), args...)
 
+# key->value pairs to print e.g. Mean: n=0 | value=0.0 | key=value
 additional_info(o) = ()
+
+# Borrowed from Humanize.jl
+function nobs_string(o::OnlineStat)
+    n = nobs(o)
+    isnegative = n < zero(n)
+    n = string(abs(n))  # Stringify, no seperators.
+    # Figure out last character index of each group of digits.
+    group_ends = reverse(collect(length(n):-3:1))
+    groups = [n[max(end_index - 3 + 1, 1):end_index]
+              for end_index in group_ends]
+    return (isnegative ? "-" : "") * join(groups, '_')
+end
 
 #-----------------------------------------------------------------------# fit!
 """
