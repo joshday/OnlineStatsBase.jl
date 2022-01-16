@@ -10,15 +10,18 @@ This package defines the basic types and interface for [OnlineStats](https://git
 # Interface
 
 ### Required
+
 - **`_fit!(stat, y)`**: Update the "sufficient statistics" of the estimator from a single observation `y`.
 
+#### Required (with Defaults)
+
+- **`value(stat, args...; kw...) = <first field of struct>`**:  Calculate the value of the estimator from the "sufficient statistics".
+- **`nobs(stat) = stat.n`**: Return the number of observations.
+
 ### Optional
-- **`_merge!(stat1, stat2)`** Merge `stat2` into `stat1`.  By default, a warning will occur.
 
-### Defaults
-- **`value(stat, args...; kw...)`**:  Calculate the value of the estimator from the "sufficient statistics".  By default, this returns the first field of the OnlineStat.
-- **`nobs(stat)`**: Return the number of observations.  By default, this returns `stat.n`.
-
+- **`_merge!(stat1, stat2)`**: Merge `stat2` into `stat1` (an error by default in OnlineStatsBase versions >= 1.5).
+- **`Base.empty!(stat)`**: Return the stat to its initial state (an error by default).
 
 
 # Example
@@ -46,4 +49,5 @@ end
 y = randn(1000)
 
 o = fit!(MyMean(), y)
+# MyMean: n=1_000 | value=0.0530535
 ```

@@ -6,20 +6,20 @@ O = OnlineStatsBase
 
 include("test_stats.jl")
 
-#-----------------------------------------------------------------------# Random
-@testset "Random Stuff" begin
-string(Series(Mean(), Variance()))
-string(Group(Series(Mean(), Variance()), Extrema()))
-string(Mean())
-string(McclainWeight())
-@test Mean() != Variance()
-@test !(Mean() == Variance())
-@test Mean() == merge(Mean(), Mean())
-@test Mean() == merge(Mean(), fit!(Variance(), 1:5))
-@test_throws Exception fit!(Mean(), "abc")
-@test_throws Exception OnlineStatsBase._fit!(Mean(), "a")
-@test collect(OnlineStatsBase.neighbors([1,3,5])) == [(1,3), (3,5)]
-@test isnan(value(fit!(Variance(), NaN)))
+#-----------------------------------------------------------------------# Misc
+@testset "Misc." begin
+    string(Series(Mean(), Variance()))
+    string(Group(Series(Mean(), Variance()), Extrema()))
+    string(Mean())
+    string(McclainWeight())
+    @test Mean() != Variance()
+    @test !(Mean() == Variance())
+    @test Mean() == merge(Mean(), Mean())
+    @test_throws Exception Mean() == merge(Mean(), fit!(Variance(), 1:5))
+    @test_throws Exception fit!(Mean(), "abc")
+    @test_throws Exception OnlineStatsBase._fit!(Mean(), "a")
+    @test collect(OnlineStatsBase.neighbors([1,3,5])) == [(1,3), (3,5)]
+    @test isnan(value(fit!(Variance(), NaN)))
 end
 
 @testset "Broadcasting" begin

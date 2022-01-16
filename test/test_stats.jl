@@ -14,7 +14,7 @@ function mergestats(a::OnlineStat, y1, y2; nobs_equals_length=true)
     fit!(b, y2)             # fit b on y2
     merge!(a, b)            # merge b into a
     fit!(b, y1)             # fit b on y1
-    if nobs_equals_length 
+    if nobs_equals_length
         @test nobs(a) == nobs(b) == length(y1) + length(y2)
     else
         @test nobs(a) == nobs(b)
@@ -26,7 +26,7 @@ mergevals(o1::OnlineStat, y1, y2; kw...) = map(value, mergestats(o1, y1, y2; kw.
 @testset "Testing Stats" begin
 #-----------------------------------------------------------------------------# CircBuff
 println("  > CircBuff")
-@testset "CircBuff" begin 
+@testset "CircBuff" begin
     a = CircBuff(Int, 5)
     fit!(a, 1:2)
     @test value(a) == [1,2]
@@ -56,7 +56,7 @@ end
 println("  > CountMap")
 @testset "CountMap" begin
     a = fit!(CountMap(Bool), x)
-    @test sort(value(a)) == sort(countmap(x))
+    @test sort(value(a)) == sort!(OrderedDict(countmap(x)))
     @test O.pdf(a, true) == mean(x)
     @test O.pdf(a, false) == mean(!, x)
     @test O.pdf(a, 2) == 0.0
@@ -66,7 +66,7 @@ println("  > CountMap")
     @test O.nkeys(a) == 2
 
     b = fit!(CountMap(Int), z)
-    @test sort(value(b)) == sort(countmap(z))
+    @test sort(value(b)) == sort!(OrderedDict(countmap(z)))
     for i in 1:11
         @test O.pdf(b, i) ≈ sum(==(i), z) / n
     end
@@ -85,7 +85,7 @@ println("  > CountMap")
 end
 #-----------------------------------------------------------------------# CountMissing
 println("  > CountMissing")
-@testset "CountMissing" begin 
+@testset "CountMissing" begin
     data = Vector{Union{Missing,Float64}}(copy(y))
     data2 = Vector{Union{Missing,Float64}}(copy(y2))
     data[x] .= missing
@@ -120,9 +120,9 @@ println("  > Extrema")
     @test maximum(o) == maximum(y)
 
     f(x) = (
-        min = minimum(x), 
-        max = maximum(x), 
-        nmin = sum(collect(x) .== minimum(x)), 
+        min = minimum(x),
+        max = maximum(x),
+        nmin = sum(collect(x) .== minimum(x)),
         nmax = sum(collect(x) .== maximum(x))
     )
 
@@ -144,9 +144,9 @@ println("  > Extrema")
     @test o.nmin == length(x) - sum(x)
     @test o.nmax == sum(x)
 end
-#-----------------------------------------------------------------------------# ExtremeValues 
+#-----------------------------------------------------------------------------# ExtremeValues
 println("  > ExtremeValues")
-@testset "ExtremeValues" begin 
+@testset "ExtremeValues" begin
     o = fit!(ExtremeValues(Float64, 5), y)
     ysorted = sort(y)
     @test first.(value(o).lo) == ysorted[1:5]
@@ -157,13 +157,13 @@ end
 
 #-----------------------------------------------------------------------------# FilterTransform
 println("  > FilterTransform")
-@testset "FilterTransform" begin 
+@testset "FilterTransform" begin
     o = FilterTransform(String => (x->true) => (x -> parse(Int,x)) => Mean())
     fit!(o, ["1", "3", "5"])
     @test value(o) ≈ 3
 
-    o = FilterTransform(String => (x -> x != "1") => (x -> parse(Int,x)) => Mean()) 
-    fit!(o, ["1", "3", "5"]) 
+    o = FilterTransform(String => (x -> x != "1") => (x -> parse(Int,x)) => Mean())
+    fit!(o, ["1", "3", "5"])
     @test value(o) ≈ 4
     @test o.nfiltered == 1
 end
@@ -236,8 +236,8 @@ println("  > Moments")
 end
 
 #-----------------------------------------------------------------------# Series/FTSeries
-println("  > Series/FTSeries")
-@testset "Series/FTSeries" begin
+println("  > Series")
+@testset "Series" begin
     @testset "Series" begin
         a, b = mergevals(Series(Mean(), Variance()), y, y2)
         @test a[1] ≈ b[1]
@@ -247,28 +247,11 @@ println("  > Series/FTSeries")
         @test a.m ≈ b.m
         @test a.v ≈ b.v
     end
-
-    @testset "FTSeries" begin
-        o = fit!(FTSeries(Mean(); transform=abs), y)
-        @test value(o)[1] ≈ mean(abs, y)
-
-        data = vcat(y, fill(missing, 20))
-        o = fit!(FTSeries(Union{Number,Missing}, Mean(); transform=abs, filter=!ismissing), data)
-        @test value(o)[1] ≈ mean(abs, y)
-        @test o.nfiltered == 20
-
-        o2 = fit!(FTSeries(Union{Missing,Float64}, Mean(); transform=abs, filter=!ismissing), data)
-        @test value(o2)[1] ≈ mean(abs, y)
-        @test o2.nfiltered == 20
-
-        a, b = mergestats(FTSeries(Union{Missing,Number}, Mean(), Variance(); transform=abs, filter=!ismissing), y, y2)
-        @test a.nfiltered == b.nfiltered
-    end
 end
 
 #-----------------------------------------------------------------------------# SkipMissing
 println("  > SkipMissing")
-@testset "SkipMissing" begin 
+@testset "SkipMissing" begin
     data = [rand() > .5 ? missing : rand() for i in 1:1000]
     o = fit!(skipmissing(Mean()), data)
     @test nobs(o) == sum(!ismissing, data)
@@ -287,9 +270,9 @@ println("  > Sum")
     @test ==(mergevals(Sum(Int), z, z2)...)
 end
 
-#-----------------------------------------------------------------------------# TryCatch 
+#-----------------------------------------------------------------------------# TryCatch
 println("  > TryCatch")
-@testset "TryCatch" begin 
+@testset "TryCatch" begin
     o = TryCatch(Mean())
     fit!(o, [1, missing, 3])
     @test value(o) ≈ 2

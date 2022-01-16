@@ -13,13 +13,9 @@ export
     # Weights
     EqualWeight, ExponentialWeight, LearningRate, LearningRate2, HarmonicWeight, McclainWeight,
     # Stats
-    CircBuff, Counter, CountMap, CountMissing, CovMatrix, Extrema, ExtremeValues, FilterTransform, 
+    CircBuff, Counter, CountMap, CountMissing, CovMatrix, Extrema, ExtremeValues, FilterTransform,
     FTSeries, Group, GroupBy, Mean, Moments, Series, SkipMissing, Sum, TryCatch, Variance
 
-@static if VERSION < v"1.1.0"
-    eachrow(A::AbstractVecOrMat) = (view(A, i, :) for i in axes(A, 1))
-    eachcol(A::AbstractVecOrMat) = (view(A, :, i) for i in axes(A, 2))
-end
 
 #-----------------------------------------------------------------------# OnlineStat
 abstract type OnlineStat{T} end
@@ -69,8 +65,10 @@ function Base.merge!(o::OnlineStat, o2::OnlineStat)
     (nobs(o) > 0 || nobs(o2) > 0) && _merge!(o, o2)
     o
 end
-_merge!(o, o2) = @warn("Merging $(name(o2)) into $(name(o)) is not well-defined.  No merging occurred.")
+_merge!(o, o2) = error("Merging $(name(o2)) into $(name(o)) is not defined.")
 Base.merge(o::OnlineStat, o2::OnlineStat) = merge!(copy(o), o2)
+
+Base.empty!(o::OnlineStat) = error("$(typeof(o)) has no `Base.empty!` method.")
 
 #-----------------------------------------------------------------------# Base.show
 function Base.show(io::IO, o::OnlineStat)
@@ -85,7 +83,7 @@ function Base.show(io::IO, o::OnlineStat)
     end
     printstyled(io, " |", color=:light_black)
     print(io, " value=")
-    show(IOContext(io, :compact => true, :displaysize => (1, 50)), value(o))
+    show(IOContext(io, :compact => true, :displaysize => (1, 70)), value(o))
 end
 function name(T::Type, withmodule = false, withparams = true)
     s = string(T)

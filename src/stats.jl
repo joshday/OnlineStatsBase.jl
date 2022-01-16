@@ -21,7 +21,7 @@ Create a fixed-length circular buffer of `b` items of type `T`.
 - `rev=false`: `o[1]` is the oldest.
 - `rev=true`: `o[end]` is the oldest.
 
-# Example 
+# Example
 
     a = CircBuff(Int, 5)
     b = CircBuff(Int, 5, rev=true)
@@ -45,15 +45,15 @@ CircBuff(b::Int, T = Float64; rev=false) = CircBuff(T, b; rev=rev)
 Base.lastindex(o::CircBuff) = length(o.value)
 Base.length(o::CircBuff) = length(o.value)
 
-function Base.getindex(o::CircBuff, i::Int) 
+function Base.getindex(o::CircBuff, i::Int)
     nobs(o) ≤ length(o.rng.rng) ? o.value[i] : o.value[o.rng[nobs(o) + i]]
 end
-function Base.getindex(o::CircBuff{<:Any, true}, i::Int) 
+function Base.getindex(o::CircBuff{<:Any, true}, i::Int)
     i = length(o.value) - i + 1
     nobs(o) ≤ length(o.rng.rng) ? o.value[i] : o.value[o.rng[nobs(o) + i]]
 end
 
-function _fit!(o::CircBuff, y) 
+function _fit!(o::CircBuff, y)
     (o.n += 1) ≤ length(o.rng.rng) ? push!(o.value, y) : o.value[o.rng[nobs(o)]] = y
 end
 
@@ -92,7 +92,7 @@ Counts can be incremented by values other than one (and decremented) using the `
 
 ```julia
 o = fit!(CountMap(String), ["A", "B"])
-fit!(o, "A" => 5)  
+fit!(o, "A" => 5)
 fit!(o, "A" => -1)
 ```
 
@@ -118,8 +118,8 @@ function _fit!(o::CountMap, x)
     o.value[x] = get!(o.value, x, 0) + 1
 end
 function _fit!(o::CountMap{T}, xy::Pair{<:T, <:Integer}) where {T}
-    x, y = xy 
-    o.n += y 
+    x, y = xy
+    o.n += y
     o.value[x] = get!(o.value, x, 0) + y
 end
 
@@ -141,7 +141,7 @@ Base.sort!(o::CountMap) = (sort!(value(o)); o)
 function Base.delete!(o::CountMap, level)
     x = value(o)[level]
     delete!(value(o), level)
-    o.n -= x 
+    o.n -= x
     o
 end
 
@@ -226,7 +226,7 @@ mutable struct Extrema{T,S} <: OnlineStat{S}
 # E.g. you may want to accept any Number even if you are storing values as Float64
     min::T
     max::T
-    nmin::Int 
+    nmin::Int
     nmax::Int
     n::Int
 end
@@ -241,27 +241,27 @@ extrema_init(T::Type{<:TimeType}) = typemax(T), typemin(T), TimeType
 extrema_init(T::Type) = rand(T), rand(T), T
 function _fit!(o::Extrema, y)
     (o.n += 1) == 1 && (o.min = o.max = y)
-    if y < o.min 
-        o.min = y 
+    if y < o.min
+        o.min = y
         o.nmin = 0
-    elseif y > o.max 
-        o.max = y 
+    elseif y > o.max
+        o.max = y
         o.nmax = 0
     end
     y == o.min && (o.nmin += 1)
     y == o.max && (o.nmax += 1)
 end
 function _merge!(a::Extrema, b::Extrema)
-    if a.min == b.min 
-        a.nmin += b.nmin 
-    elseif b.min < a.min 
+    if a.min == b.min
+        a.nmin += b.nmin
+    elseif b.min < a.min
         a.min = b.min
         a.nmin = b.nmin
     end
-    if a.max == b.max 
+    if a.max == b.max
         a.nmax += b.nmax
     elseif b.max > a.max
-        a.max = b.max 
+        a.max = b.max
         a.nmax = b.nmax
     end
     a.n += b.n
@@ -277,7 +277,7 @@ Base.minimum(o::Extrema) = o.min
 
 Track the `b` smallest and largest values of a data stream (as well as how many times that value occurred).
 
-# Example 
+# Example
 
     o = ExtremeValues(Int, 3)
 
@@ -302,10 +302,10 @@ end
 _fit!(o::ExtremeValues{T,S}, y::S) where {T,S} = _fit!(o, y => 1)
 
 function _fit!(o::ExtremeValues{T,S}, pr::Pair{<:S, Int}) where {T,S}
-    y, yn = pr 
+    y, yn = pr
     o.n += yn
     lo, hi, b = o.lo, o.hi, o.b
-    if length(lo) < b 
+    if length(lo) < b
         push!(lo, pr); push!(hi, pr)
         sort!(lo); sort!(hi)
     elseif y ≤ first(lo[end])
@@ -329,17 +329,17 @@ function _fit!(o::ExtremeValues{T,S}, pr::Pair{<:S, Int}) where {T,S}
     end
 end
 
-function _merge!(a::ExtremeValues, b::ExtremeValues) 
+function _merge!(a::ExtremeValues, b::ExtremeValues)
     old_n = a.n
-    for pair in b.lo 
+    for pair in b.lo
         _fit!(a, pair)
     end
-    for pair in b.hi 
+    for pair in b.hi
         _fit!(a, pair)
     end
     a.n = old_n + b.n
 end
-    
+
 #-----------------------------------------------------------------------# Group
 """
     Group(stats::OnlineStat...)
@@ -452,7 +452,7 @@ mutable struct Mean{T,W} <: OnlineStat{Number}
     n::Int
 end
 Mean(T::Type{<:Number} = Float64; weight = EqualWeight()) = Mean(zero(T), weight, 0)
-function _fit!(o::Mean{T}, x) where {T} 
+function _fit!(o::Mean{T}, x) where {T}
     o.μ = smooth(o.μ, x, o.weight(o.n += 1))
 end
 function _merge!(o::Mean, o2::Mean)
@@ -565,8 +565,8 @@ function _merge!(o::Variance, o2::Variance)
     o.σ2 = smooth(o.σ2, o2.σ2, γ) + δ ^ 2 * γ * (1.0 - γ)
     o.μ = smooth(o.μ, o2.μ, γ)
 end
-function value(o::Variance{T}) where {T} 
-    if nobs(o) > 1 
+function value(o::Variance{T}) where {T}
+    if nobs(o) > 1
         o.σ2 * T(bessel(o))
     else
         isfinite(mean(o)) ? T(1) ^ 2 : NaN * T(1) ^ 2
@@ -605,68 +605,4 @@ end
 _merge!(o::Series, o2::Series) = map(_merge!, o.stats, o2.stats)
 
 #-----------------------------------------------------------------------# FTSeries
-"""
-Deprecated!  See [`FilterTransform`](@ref).
-
-    FTSeries(stats...; filter=x->true, transform=identity)
-
-Track multiple stats for one data stream that is filtered and transformed before being
-fitted.
-
-    FTSeries(T, stats...; filter, transform)
-
-Create an FTSeries and specify the type `T` of the pre-transformed values.
-
-# Example
-
-    o = FTSeries(Mean(), Variance(); transform=abs)
-    fit!(o, -rand(1000))
-
-    # Remove missing values represented as DataValues
-    using DataValues
-    y = DataValueArray(randn(100), rand(Bool, 100))
-    o = FTSeries(DataValue, Mean(); transform=get, filter=!isna)
-    fit!(o, y)
-
-    # Remove missing values represented as Missing
-    y = [rand(Bool) ? rand() : missing for i in 1:100]
-    o = FTSeries(Union{Missing,Number}, Mean(); filter=!ismissing)
-    fit!(o, y)
-
-    # Alternatively for Missing:
-    fit!(Mean(), skipmissing(y))
-"""
-mutable struct FTSeries{IN, OS, F, T} <: StatCollection{IN}
-    stats::OS
-    filter::F
-    transform::T
-    nfiltered::Int
-end
-function FTSeries(stats::OnlineStat...; kw...)
-    IN = Union{map(input, stats)...}
-    FTSeries(IN, stats...; kw...)
-end
-function FTSeries(T::Type, stats::OnlineStat...; filter=x->true, transform=identity)
-    Base.depwarn("`FTSeries(args...; kw...)` is deprecated.  Use `FilterTransform(Series(args...; kw...))` instead.", 
-        :FTSeries; force=true)
-    FTSeries{T, typeof(stats), typeof(filter), typeof(transform)}(stats, filter, transform, 0)
-end
-value(o::FTSeries) = value.(o.stats)
-nobs(o::FTSeries) = nobs(o.stats[1])
-@generated function _fit!(o::FTSeries{N, OS}, y) where {N, OS}
-    n = length(fieldnames(OS))
-    quote
-        if o.filter(y)
-            yt = o.transform(y)
-            Base.Cartesian.@nexprs $n i -> @inbounds begin
-                _fit!(o.stats[i], yt)
-            end
-        else
-            o.nfiltered += 1
-        end
-    end
-end
-function _merge!(o::FTSeries, o2::FTSeries)
-    o.nfiltered += o2.nfiltered
-    _merge!.(o.stats, o2.stats)
-end
+FTSeries(args...; kw...) = error("FTSeries no longer exists.  Use FilterTransform instead.")
