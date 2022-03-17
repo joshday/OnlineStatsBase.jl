@@ -7,6 +7,8 @@
 
 This package defines the basic types and interface for [OnlineStats](https://github.com/joshday/OnlineStats.jl).
 
+<br><br>
+
 # Interface
 
 ### Required
@@ -23,6 +25,7 @@ This package defines the basic types and interface for [OnlineStats](https://git
 - **`_merge!(stat1, stat2)`**: Merge `stat2` into `stat1` (an error by default in OnlineStatsBase versions >= 1.5).
 - **`Base.empty!(stat)`**: Return the stat to its initial state (an error by default).
 
+<br><br>
 
 # Example
 
@@ -42,6 +45,8 @@ function OnlineStatsBase._fit!(o::MyMean, y)
     o.value += (1 / o.n) * (y - o.value)
 end
 ```
+
+<br><br>
 
 ## That's all there is to it!
 
