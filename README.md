@@ -3,7 +3,7 @@
 |------|--------|-------|
 | [![](https://img.shields.io/badge/docs-stable-blue.svg)](https://joshday.github.io/OnlineStats.jl/stable) [![](https://img.shields.io/badge/docs-latest-blue.svg)](https://joshday.github.io/OnlineStats.jl/latest)  | [![Build status](https://github.com/joshday/OnlineStatsBase.jl/workflows/CI/badge.svg)](https://github.com/joshday/OnlineStatsBase.jl/actions?query=workflow%3ACI+branch%3Amaster) | [![codecov](https://codecov.io/gh/joshday/OnlineStatsBase.jl/branch/master/graph/badge.svg)](https://codecov.io/gh/joshday/OnlineStatsBase.jl) |
 
-# OnlineStatsBase
+<h1 align="center">OnlineStatsBase</h1>
 
 This package defines the basic types and interface for [OnlineStats](https://github.com/joshday/OnlineStats.jl).
 
