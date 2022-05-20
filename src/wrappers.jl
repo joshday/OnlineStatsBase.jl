@@ -1,17 +1,17 @@
 #-----------------------------------------------------------------------------# StatWrapper
-abstract type StatWrapper{T} <: OnlineStat{T} end 
+abstract type StatWrapper{T} <: OnlineStat{T} end
 nobs(o::StatWrapper) = nobs(o.stat)
 value(o::StatWrapper) = value(o.stat)
 _merge!(a::StatWrapper{T}, b::StatWrapper{T}) where {T} = _merge!(a.stat, b.stat)
-name(o::T, args...) where {T<:StatWrapper} = name(typeof(o), args...) * "($(name(o.stat, args...)))"
+# name(o::T, args...) where {T<:StatWrapper} = name(typeof(o), args...) * "($(name(o.stat, args...)))"
 
 #-----------------------------------------------------------------------------# CountMissing
 """
     CountMissing(stat)
 
-Calculate a `stat` along with the count of `missing` values.  
+Calculate a `stat` along with the count of `missing` values.
 
-# Example 
+# Example
 
     o = CountMissing(Mean())
     fit!(o, [1, missing, 3])
@@ -33,7 +33,7 @@ _merge!(a::CountMissing, b::CountMissing) = (merge!(a.stat, b.stat); a.nmissing 
     FilterTransform(stat::OnlineStat{S}, T = S; filter = x->true, transform = identity)
     FilterTransform(T => filter => transform => stat)
 
-Wrapper around an OnlineStat that the filters and transforms its input.  Note that, depending on 
+Wrapper around an OnlineStat that the filters and transforms its input.  Note that, depending on
 your transformation, you may need to specify the type of a single observation (`T`).
 
 # Examples
@@ -46,7 +46,7 @@ your transformation, you may need to specify the type of a single observation (`
 """
 mutable struct FilterTransform{S, T, O<:OnlineStat{T},F,F2} <: StatWrapper{S}
     stat::O
-    filter::F 
+    filter::F
     transform::F2
     nfiltered::Int
 end
@@ -65,23 +65,23 @@ additional_info(o::FilterTransform) = (; filter=o.filter, transform=o.transform,
 always_true(x) = true
 
 
-#-----------------------------------------------------------------------------# SkipMissing 
+#-----------------------------------------------------------------------------# SkipMissing
 """
     SkipMissing(stat)
 
 Wrapper around an OnlineStat that will skip over `missing` values.
 
-# Example 
+# Example
 
     o = SkipMissing(Mean())
 
     fit!(o, [1, missing, 3])
 """
 struct SkipMissing{T, O<:OnlineStat{T}} <: StatWrapper{Union{Missing,T}}
-    stat::O 
+    stat::O
     SkipMissing(stat::OnlineStat{T}) where {T} = new{T, typeof(stat)}(stat)
 end
-_fit!(o::SkipMissing, x::Missing) = nothing 
+_fit!(o::SkipMissing, x::Missing) = nothing
 _fit!(o::SkipMissing, x) = _fit!(o.stat, x)
 Base.skipmissing(o::OnlineStat) = SkipMissing(o)
 
@@ -89,12 +89,12 @@ Base.skipmissing(o::OnlineStat) = SkipMissing(o)
 """
     TryCatch(stat; error_limit=1000, error_message_limit=90)
 
-Wrap each call to `fit!` in a `try`-`catch` block and track the errors encountered (via [`CountMap`](@ref)).  
-Only `error_limit` unique errors will be included in the `CountMap`.  If a new error occurs after 
-`error_limit` has been reached, it will be included in the `CountMap` as `"Other"`.  Only the first 
+Wrap each call to `fit!` in a `try`-`catch` block and track the errors encountered (via [`CountMap`](@ref)).
+Only `error_limit` unique errors will be included in the `CountMap`.  If a new error occurs after
+`error_limit` has been reached, it will be included in the `CountMap` as `"Other"`.  Only the first
 `error_message_limit` characters of each error message will be recorded.
 
-# Example 
+# Example
 
     o = TryCatch(Mean())
 
@@ -108,7 +108,7 @@ struct TryCatch{T, O<:OnlineStat{T}} <: StatWrapper{T}
     error_limit::Int
     error_message_limit::Int
 end
-function TryCatch(stat::OnlineStat; error_limit=1000, error_message_limit=90) 
+function TryCatch(stat::OnlineStat; error_limit=1000, error_message_limit=90)
     TryCatch(stat, CountMap(String), error_limit, error_message_limit)
 end
 
@@ -117,15 +117,15 @@ nerrors(o::TryCatch) = sum(values(value(o.errors)))
 
 additional_info(o::TryCatch) = (;nerrors = nerrors(o))
 
-function handle_error!(o::TryCatch, ex) 
+function handle_error!(o::TryCatch, ex)
     io = IOBuffer()
     Base.showerror(io, ex)
     s = String(take!(io))
     lim = o.error_message_limit
     s = length(s) > lim ? s[1:lim] * "..." : s
     if length(value(o.errors)) < o.error_limit || haskey(value(o.errors), s)
-        _fit!(o.errors, s) 
-    else 
+        _fit!(o.errors, s)
+    else
         _fit!(o.errors, "Other (error_limit reached)")
     end
 end
@@ -142,7 +142,7 @@ end
 function fit!(o::TryCatch{I}, y::T) where {I, T}
     try
         T == eltype(y) && error("The input for $(name(o,false,false)) is $I.  Found $T.")
-        for yi in y 
+        for yi in y
             fit!(o, yi)
         end
     catch ex

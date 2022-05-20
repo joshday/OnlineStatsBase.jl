@@ -8,41 +8,60 @@ This package defines the basic types and interface for [OnlineStats](https://git
 
 <br><br>
 
-# Interface
+## Interface
 
-### Required
+- Every statistic is an `OnlineStat{T}` where `T` is the type of a single observation.
+- Statistics should be either `<: ExactStat{T}` or `<: ApproxStat{T}`, depending on whether the online calculation can be equivalent to the offline calculation.
+- Required methods:
 
-- **`_fit!(stat, y)`**: Update the "sufficient statistics" of the estimator from a single observation `y`.
+```julia
+# update the "sufficient statistics" from a single observation with weight `w`.
+_fit!(o::OnlineStat{T}, x::T, w) where {T}
 
-#### Required (with Defaults)
+# Or if weighting isn't possible/defined (e.g. Maximum)
+_fit!(o::OnlineStat{T}, x::T) where {T}
 
-- **`value(stat, args...; kw...) = <first field of struct>`**:  Calculate the value of the estimator from the "sufficient statistics".
-- **`nobs(stat) = stat.n`**: Return the number of observations.
+# Calculate the value from the "sufficient statistics".
+value(o)  # (Returns the first field of the type by default)
+```
 
-### Optional
+- Optional methods:
 
-- **`_merge!(stat1, stat2)`**: Merge `stat2` into `stat1` (an error by default in OnlineStatsBase versions >= 1.5).
-- **`Base.empty!(stat)`**: Return the stat to its initial state (an error by default).
+```julia
+# Update `a` with the
+_merge!(a, b)
+
+# Return statistic to original state
+Base.empty!(o)
+
+# Create a copy
+Base.copy(o)
+
+# Additional info that should be printed
+OnlineStatsBase.keyvalues(o) = (; key=value)
+```
 
 <br><br>
 
-# Example
-
-- Make a subtype of OnlineStat and give it a `_fit!(::OnlineStat{T}, y::T)` method.
-- `T` is the type of a single observation.  Make sure it's adequately wide.
+## Example
 
 ```julia
 using OnlineStatsBase
 
-mutable struct MyMean <: OnlineStat{Number}
+mutable struct Mean <: ExactStat{Real}
     value::Float64
     n::Int
-    MyMean() = new(0.0, 0)
+    Mean() = new(0.0, 0)
 end
-function OnlineStatsBase._fit!(o::MyMean, y)
+function OnlineStatsBase._fit!(o::Mean, y, w)
     o.n += 1
-    o.value += (1 / o.n) * (y - o.value)
+    o.value += w * (y - o.value)
 end
+function OnlineStatsBase._merge!(a::Mean, b::Mean)
+    a.n += b.n
+    a.value += (b.n / a.n) * (b.value - a.value)
+end
+OnlineStatsBase.keyvalues(o::Mean) = (; nobs=o.n)
 ```
 
 <br><br>
@@ -50,8 +69,15 @@ end
 ## That's all there is to it!
 
 ```julia
-y = randn(1000)
+y = randn(10^6)
+y2 = randn(10^6)
 
-o = fit!(MyMean(), y)
-# MyMean: n=1_000 | value=0.0530535
+a = fit!(Mean(), y)
+b = fit!(Mean(), y2)
+
+merge!(a, b)
+# Mean: value=-0.0021030658536789247 | nobs=2_000_000
+
+mean(vcat(y,y2)) ≈ value(a)
+# true
 ```
