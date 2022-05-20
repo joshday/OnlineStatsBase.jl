@@ -603,6 +603,3 @@ nobs(o::Series) = nobs(o.stats[1])
     :(Base.Cartesian.@nexprs $n i -> _fit!(o.stats[i], y))
 end
 _merge!(o::Series, o2::Series) = map(_merge!, o.stats, o2.stats)
-
-#-----------------------------------------------------------------------# FTSeries
-FTSeries(args...; kw...) = error("FTSeries no longer exists.  Use FilterTransform instead.")

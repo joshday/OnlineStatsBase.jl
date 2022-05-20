@@ -235,7 +235,7 @@ println("  > Moments")
     end
 end
 
-#-----------------------------------------------------------------------# Series/FTSeries
+#-----------------------------------------------------------------------# Series
 println("  > Series")
 @testset "Series" begin
     @testset "Series" begin
@@ -278,6 +278,7 @@ println("  > TryCatch")
     @test value(o) ≈ 2
     merge!(o, fit!(TryCatch(Mean()), [missing, 5, missing]))
     @test value(o) ≈ 3
+    @test length(OnlineStatsBase.errors(o)) == OnlineStatsBase.nerrors(o)
 end
 
 #-----------------------------------------------------------------------# Variance

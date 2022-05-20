@@ -14,7 +14,7 @@ export
     EqualWeight, ExponentialWeight, LearningRate, LearningRate2, HarmonicWeight, McclainWeight,
     # Stats
     CircBuff, Counter, CountMap, CountMissing, CovMatrix, Extrema, ExtremeValues, FilterTransform,
-    FTSeries, Group, GroupBy, Mean, Moments, Series, SkipMissing, Sum, TryCatch, Variance
+    Group, GroupBy, Mean, Moments, Series, SkipMissing, Sum, TryCatch, Variance
 
 
 #-----------------------------------------------------------------------# OnlineStat
@@ -36,18 +36,11 @@ AbstractTrees.children(o::StatCollection) = collect(o.stats)
 
 Calculate the value of `stat` from its "sufficient statistics".
 """
-@generated function value(o::OnlineStat)
-    r = first(fieldnames(o))
-    return :(o.$r)
-end
+value(o::T) where {T<:OnlineStat} = getfield(o, first(fieldnames(T)))
 
 #-----------------------------------------------------------------------# Base
 Base.:(==)(o::OnlineStat, o2::OnlineStat) = false
-function Base.:(==)(o1::T, o2::T) where {T<:OnlineStat}
-    nms = fieldnames(typeof(o1))
-    all(getfield.(Ref(o1), nms) .== getfield.(Ref(o2), nms))
-end
-
+Base.:(==)(a::T, b::T) where {T<:OnlineStat} = all(getfield(a, f) == getfield(b, f) for f in fieldnames(T))
 Base.copy(o::OnlineStat) = deepcopy(o)
 
 """
@@ -86,14 +79,7 @@ function Base.show(io::IO, o::OnlineStat)
     show(IOContext(io, :compact => true, :displaysize => (1, 70)), value(o))
 end
 function name(T::Type, withmodule = false, withparams = true)
-    s = string(T)
-    if !withmodule
-        s = replace(s, r"([a-zA-Z]*\.)" => "")  # remove text that ends in period
-    end
-    if !withparams
-        s = replace(s, r"\{(.*)" => "")  # remove "{" to the end of the string
-    end
-    s
+    replace(string(T), withmodule ? r"([a-zA-Z]*\.)" => "" : ""=>"", withparams ? r"\{(.*)" => "" : ""=>"")
 end
 name(o, args...) = name(typeof(o), args...)
 
@@ -102,14 +88,9 @@ additional_info(o) = ()
 
 # Borrowed from Humanize.jl
 function nobs_string(o::OnlineStat)
-    n = nobs(o)
-    isnegative = n < zero(n)
-    n = string(abs(n))  # Stringify, no seperators.
-    # Figure out last character index of each group of digits.
-    group_ends = reverse(collect(length(n):-3:1))
-    groups = [n[max(end_index - 3 + 1, 1):end_index]
-              for end_index in group_ends]
-    return (isnegative ? "-" : "") * join(groups, '_')
+    n = string(abs(nobs(o)))
+    groups = [n[max(end_index - 3 + 1, 1):end_index] for end_index in reverse(length(n):-3:1)]
+    return join(groups, '_')
 end
 
 #-----------------------------------------------------------------------# fit!
