@@ -1,6 +1,6 @@
 name = "OnlineStatsBase"
 uuid = "925886fa-5bf2-5e8e-b522-a9147a512338"
-version = "1.5.1"
+version = "1.4.10"
 
 [deps]
 AbstractTrees = "1520ce14-60c1-5f80-bbc7-55ef81b5835c"
