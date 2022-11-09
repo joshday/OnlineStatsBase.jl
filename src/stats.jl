@@ -161,7 +161,7 @@ unknown, leave the default `p=0`.
     mean(o)
     var(o)
 """
-mutable struct CovMatrix{T,W} <: OnlineStat{Union{Tuple, NamedTuple, AbstractVector}} where T<:Number
+mutable struct CovMatrix{T,W} <: OnlineStat{AbstractVector{<:Number}} where T<:Number
     value::Matrix{T}
     A::Matrix{T}  # x'x/n
     b::Vector{T}  # 1'x/n

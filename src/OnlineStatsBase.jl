@@ -178,6 +178,7 @@ bessel(o) = nobs(o) / (nobs(o) - 1)
 Statistics.std(o::OnlineStat; kw...) = sqrt.(var(o; kw...))
 
 const TwoThings{T,S} = Union{Tuple{T,S}, Pair{<:T,<:S}, NamedTuple{names, Tuple{T,S}}} where names
+const Collection{T} = Union{NTuple{N, S} where {N, S<:T}, AbstractArray{S} where {S <: T}, NamedTuple{names,NTuple{N,S}} where {names, N, S<:T}}
 
 neighbors(x) = @inbounds ((x[i], x[i+1]) for i in eachindex(x)[1:end-1])
 
