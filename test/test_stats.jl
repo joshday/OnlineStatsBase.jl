@@ -195,6 +195,14 @@ println("  > Group")
     for m in c
         @test value(m) ≈ mean(1:10)
     end
+
+    # With OrderedDict
+
+    o = Group(OrderedDict("x1" => Mean(), "x2" => Series(Extrema(), Mean())))
+    fit!(o, zip(1:10, 2:11))
+    @test value(o["x1"]) ≈ mean(1:10)
+    @test extrema(o["x2"][1]) == (2, 11)
+    @test value(o["x2"][2]) ≈ mean(2:11)
 end
 #-----------------------------------------------------------------------# GroupBy
 println("  > GroupBy")
@@ -246,6 +254,11 @@ println("  > Series")
         a, b = mergevals(Series(m=Mean(), v=Variance()), y, y2)
         @test a.m ≈ b.m
         @test a.v ≈ b.v
+
+        # OrderedDict input
+        o = Series(OrderedDict("x1" => Mean()))
+        fit!(o, 1:10)
+        @test value(o["x1"]) ≈ mean(1:10)
     end
 end
 

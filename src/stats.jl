@@ -363,7 +363,7 @@ observation `y`, `y[i]` is sent to `stats[i]`.
 struct Group{T, S} <: StatCollection{S}
     stats::T
     function Group(stats::T) where {T}
-        inputs = map(input, stats)
+        inputs = map(input, values(stats))
         tup = Tuple{inputs...}
         promoted_type = reduce(promote_type, inputs)
         S = Union{tup, NamedTuple{names, R} where R<:tup, AbstractVector{<: promoted_type}} where names
@@ -384,6 +384,12 @@ Base.values(o::Group) = map(value, o.stats)
 
 Base.iterate(o::Group) = (o.stats[1], 2)
 Base.iterate(o::Group, i) = i > length(o) ? nothing : (o.stats[i], i + 1)
+
+function _fit!(o::Group{<:OrderedDict}, y)
+    for (yi, stat) in zip(y, values(o.stats))
+        _fit!(stat, yi)
+    end
+end
 
 @generated function _fit!(o::Group{T}, y) where {T}
     N = fieldcount(T)
@@ -592,15 +598,23 @@ Track a collection stats for one data stream.
 """
 struct Series{IN, T} <: StatCollection{IN}
     stats::T
-    Series(stats::T) where {T} = new{Union{map(input, stats)...}, T}(stats)
+    Series(stats::T) where {T} = new{Union{map(input, values(stats))...}, T}(stats)
 end
 Series(t::OnlineStat...) = Series(t)
 Series(; t...) = Series(NamedTuple(t))
 
 value(o::Series) = map(value, o.stats)
 nobs(o::Series) = nobs(o.stats[1])
+
+function _fit!(o::Series{IN, T}, y) where {IN, T <: OrderedDict}
+    for stat in values(o.stats)
+        _fit!(stat, y)
+    end
+end
 @generated function _fit!(o::Series{IN, T}, y) where {IN, T}
     n = length(fieldnames(T))
     :(Base.Cartesian.@nexprs $n i -> _fit!(o.stats[i], y))
 end
 _merge!(o::Series, o2::Series) = map(_merge!, o.stats, o2.stats)
+
+Base.getindex(o::Series, i) = o.stats[i]
