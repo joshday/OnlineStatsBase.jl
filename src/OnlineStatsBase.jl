@@ -80,8 +80,8 @@ function Base.show(io::IO, o::OnlineStat)
 end
 function name(T::Type, withmodule = false, withparams = true)
     s = string(T)
-    s = withmodule ? replace(s, r"([a-zA-Z]*\.)" => "") : s
-    return withparams ? replace(s, r"\{(.*)" => "") : s
+    s = withmodule ? s : replace(s, r"([a-zA-Z]*\.)" => "")
+    return withparams ? s : replace(s, r"\{(.*)" => "")
 end
 name(o, args...) = name(typeof(o), args...)
 
