@@ -4,7 +4,7 @@ import OnlineStatsBase: _fit!, _merge!
 
 O = OnlineStatsBase
 
-include("test_stats.jl")
+
 
 #-----------------------------------------------------------------------# Misc
 @testset "Misc." begin
@@ -23,6 +23,15 @@ include("test_stats.jl")
     @test_throws Exception OnlineStatsBase._fit!(Mean(), "a")
     @test collect(OnlineStatsBase.neighbors([1,3,5])) == [(1,3), (3,5)]
     @test isnan(value(fit!(Variance(), NaN)))
+
+    @testset "name" begin
+        name = OnlineStatsBase.name
+        o = Mean()
+        @test name(o, false, false) == "Mean"
+        @test name(o, true, false) == "OnlineStatsBase.Mean"
+        @test name(o, false, true) == "Mean{Float64, EqualWeight}"
+        @test name(o, true, true) == "OnlineStatsBase.Mean{Float64, EqualWeight}"
+    end
 end
 
 @testset "Broadcasting" begin
@@ -75,3 +84,6 @@ end #Weight
     @test isapprox(value(r1), value(r2))
     @test nobs(r1) == nobs(r2)
 end
+
+#-----------------------------------------------------------------------------# test_stats.jl
+include("test_stats.jl")

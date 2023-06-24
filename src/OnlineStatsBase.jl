@@ -79,7 +79,7 @@ function Base.show(io::IO, o::OnlineStat)
     show(IOContext(io, :compact => true, :displaysize => (1, 70)), value(o))
 end
 function name(T::Type, withmodule = false, withparams = true)
-    s = string(T)
+    s = "OnlineStatsBase." * string(T)
     s = withmodule ? s : replace(s, r"([a-zA-Z]*\.)" => "")
     return withparams ? s : replace(s, r"\{(.*)" => "")
 end
