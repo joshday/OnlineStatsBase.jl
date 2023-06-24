@@ -79,7 +79,9 @@ function Base.show(io::IO, o::OnlineStat)
     show(IOContext(io, :compact => true, :displaysize => (1, 70)), value(o))
 end
 function name(T::Type, withmodule = false, withparams = true)
-    replace(string(T), withmodule ? ""=>"" : r"([a-zA-Z]*\.)" => "", withparams ?  ""=>"" : r"\{(.*)" => "")
+    s = string(T)
+    s = withmodule ? replace(s, r"([a-zA-Z]*\.)" => "") : s
+    return withparams ? replace(s, r"\{(.*)" => "") : s
 end
 name(o, args...) = name(typeof(o), args...)
 
