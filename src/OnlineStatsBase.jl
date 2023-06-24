@@ -78,8 +78,16 @@ function Base.show(io::IO, o::OnlineStat)
     print(io, " value=")
     show(IOContext(io, :compact => true, :displaysize => (1, 70)), value(o))
 end
-function name(T::Type, withmodule = false, withparams = true)
-    replace(string(T), withmodule ? ""=>"" : r"([a-zA-Z]*\.)" => "", withparams ?  ""=>"" : r"\{(.*)" => "")
+
+if Base.VERSION >= v"1.7" #Support for multiple patterns requires version 1.7. 
+    function name(T::Type, withmodule = false, withparams = true)
+        replace(string(T), withmodule ? ""=>"" : r"([a-zA-Z]*\.)" => "", withparams ?  ""=>"" : r"\{(.*)" => "")
+    end
+else
+    function name(T::Type, withmodule = false, withparams = true)
+        result = replace(string(T), withmodule ? ""=>"" : r"([a-zA-Z]*\.)" => "")
+        return replace(result, withparams ?  ""=>"" : r"\{(.*)" => "")
+    end
 end
 name(o, args...) = name(typeof(o), args...)
 
