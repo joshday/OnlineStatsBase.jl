@@ -55,3 +55,39 @@ y = randn(1000)
 o = fit!(MyMean(), y)
 # MyMean: n=1_000 | value=0.0530535
 ```
+
+## A little more complex example...
+
+- Make a subtype of OnlineStat
+- `OHLC` is the type of a single observation
+- `S` is the type of the "sufficient statistic"
+- Give it a `_fit!(::OnlineStat{T}, y::T)` method.
+
+```julia
+using OnlineStatsBase
+
+struct OHLC{Tprice}
+    open::Tprice
+    high::Tprice
+    low::Tprice
+    close::Tprice
+end
+
+mutable struct TypicalPrice{S} <: OnlineStat{OHLC}
+    value::S
+    n::Int
+    TypicalPrice{S}() where {S} = new{S}(0.0, 0)
+end
+function OnlineStatsBase._fit!(o::TypicalPrice, candle)
+    o.n += 1
+    o.value = (candle.high + candle.low + candle.close) / 3
+end
+```
+### Usage
+```julia
+o = TypicalPrice{Float64}()
+fit!(o, OHLC{Float64}(10.0, 11.0, 9.0, 10.5))
+println(o)
+fit!(o, OHLC{Float64}(10.0, 11.0, 9.0, 10.5))
+println(o)
+```
