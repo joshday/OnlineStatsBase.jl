@@ -61,7 +61,7 @@ o = fit!(MyMean(), y)
 - Make a subtype of OnlineStat
 - `OHLC` is the type of a single observation
 - `S` is the type of the "sufficient statistic"
-- Give it a `_fit!(::OnlineStat{T}, y::T)` method.
+- Give it a `_fit!(::OnlineStat{T}, candle::OHLC)` method.
 
 ```julia
 using OnlineStatsBase
