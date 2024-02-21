@@ -287,46 +287,35 @@ Track the `b` smallest and largest values of a data stream (as well as how many 
 
     value(o).hi  # [98 => 1, 99 => 1, 100 => 1]
 """
-mutable struct ExtremeValues{T,S} <: OnlineStat{S}
-    lo::Vector{Pair{T,Int}}
-    hi::Vector{Pair{T,Int}}
+mutable struct ExtremeValues{T, S} <: OnlineStat{S}
+    lo::OrderedDict{T, Int}
+    hi::OrderedDict{T, Int}
     b::Int
     n::Int
 end
-value(o::ExtremeValues) = (; lo=o.lo, hi=o.hi)
+value(o::ExtremeValues) = (; lo=sort!(o.lo), hi=sort!(o.hi))
 function ExtremeValues(T::Type = Float64, b=25)
     _, _, S = extrema_init(T)
-    ExtremeValues{T,S}(Pair{T,Int}[], Pair{T,Int}[], b, 0)
+    ExtremeValues{T,S}(OrderedDict(), OrderedDict(), b, 0)
 end
 
 _fit!(o::ExtremeValues{T,S}, y::S) where {T,S} = _fit!(o, y => 1)
 
 function _fit!(o::ExtremeValues{T,S}, pr::Pair{<:S, Int}) where {T,S}
-    y, yn = pr
-    o.n += yn
+    y, n = pr
+    o.n += n
     lo, hi, b = o.lo, o.hi, o.b
-    if length(lo) < b
-        push!(lo, pr); push!(hi, pr)
-        sort!(lo); sort!(hi)
-    elseif y ≤ first(lo[end])
-        if y in (first(el) for el in lo)
-            i = findfirst(x -> x[1] == y, lo)
-            lo[i] = lo[i][1] => lo[i][2] + yn
-        else
-            push!(lo, pr)
-            sort!(lo)
-            length(lo) > b && deleteat!(lo, b + 1)
-        end
-    elseif first(hi[1]) ≤ y
-        if y in (first(el) for el in hi)
-            i = findfirst(x -> x[1] == y, hi)
-            hi[i] = hi[i][1] => hi[i][2] + yn
-        else
-            push!(hi, pr)
-            sort!(hi)
-            length(hi) > b && deleteat!(hi, 1)
-        end
+    isempty(lo) && return (lo[y] = hi[y] = n)  # Case 1: First observation
+    if y in keys(lo) || y in keys(hi)  # Case 2: y already in lo and/or hi
+        y in keys(lo) && (lo[y] += n)
+        y in keys(hi) && (hi[y] += n)
+        return
     end
+    length(lo) < b && return (lo[y] = n; hi[y] = n)
+    y < maximum(keys(lo)) && (lo[y] = n)
+    y > minimum(keys(hi)) && (hi[y] = n)
+    length(lo) > b && delete!(lo, maximum(keys(lo)))
+    length(hi) > b && delete!(hi, minimum(keys(hi)))
 end
 
 function _merge!(a::ExtremeValues, b::ExtremeValues)

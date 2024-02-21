@@ -149,8 +149,8 @@ println("  > ExtremeValues")
 @testset "ExtremeValues" begin
     o = fit!(ExtremeValues(Float64, 5), y)
     ysorted = sort(y)
-    @test first.(value(o).lo) == ysorted[1:5]
-    @test first.(value(o).hi) == ysorted[end-4:end]
+    @test collect(keys(value(o).lo)) == ysorted[1:5]
+    @test collect(keys(value(o).hi)) == ysorted[end-4:end]
 
     @test ==(mergevals(ExtremeValues(), y, y2)...)
 end
