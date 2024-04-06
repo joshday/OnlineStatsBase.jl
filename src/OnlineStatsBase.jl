@@ -161,14 +161,14 @@ Mean: n=9 | value=2.0
 fit!(o::OnlineStat, o2::OnlineStat) = merge!(o, o2)
 
 # general fallback for _fit!(o, y) that each stat must implement
-function _fit!(o::OnlineStat{T}, ::S) where {T, S}
+function _fit!(o::OnlineStat{T}, y) where {T}
     error("_fit!(o, y) is not implemented for $(name(o,false,false)). If you are writing " *
     "a new statistic, then this must be implemented. If you are a user, then please " *
     "submit a bug report.")
 end
 
 # general fallback for _fit!(o, y, n) that is optional to implement
-function _fit!(o::OnlineStat{T}, y::S, n::Integer) where {T, S}
+function _fit!(o::OnlineStat{T}, y, n) where {T}
     for _ in 1:n
         _fit!(o, y)
     end
