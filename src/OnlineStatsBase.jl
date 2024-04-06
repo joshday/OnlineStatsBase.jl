@@ -104,13 +104,39 @@ the type of a single observation for the provided `stat`, `fit!` will attempt to
 through and `fit!` each item in `data`.  Therefore, `fit!(Mean(), 1:10)` translates
 roughly to:
 
-    o = Mean()
+```julia
+o = Mean()
 
-    for x in 1:10
-        fit!(o, x)
-    end
+for x in 1:10
+    fit!(o, x)
+end
+```
 """
-fit!(o::OnlineStat{T}, yi::T) where {T} = (_fit!(o, yi); return o)
+fit!(o::OnlineStat{T}, y::T) where {T} = (_fit!(o, y); return o)
+
+function fit!(o::OnlineStat{I}, y::T) where {I, T}
+    T == eltype(y) && error("The input for $(name(o,false,false)) is $I. Found $T.")
+    for yi in y
+        fit!(o, yi)
+    end
+    o
+end
+
+"""
+    fit!(stat::OnlineStat, y, n)
+
+Update the "sufficient statistics" of a `stat` with multiple observations of a single value.
+Unless a specialized formula is used, `fit!(Mean(), 10, 5)` is equivalent to:
+
+```julia
+o = Mean()
+
+for _ in 1:5
+    fit!(o, 10)
+end
+```
+"""
+fit!(o::OnlineStat{T}, y::T, n::Integer) where {T} = (_fit!(o, y, n); return o)
 
 """
     fit!(stat1::OnlineStat, stat2::OnlineStat)
@@ -121,23 +147,33 @@ Useful for reductions of OnlineStats using `fit!`.
 
 # Example
 
-    julia> v = [reduce(fit!, [1, 2, 3], init=Mean()) for _ in 1:3]
-    3-element Vector{Mean{Float64, EqualWeight}}:
-    Mean: n=3 | value=2.0
-    Mean: n=3 | value=2.0
-    Mean: n=3 | value=2.0
+```julia-repl
+julia> v = [reduce(fit!, [1, 2, 3], init=Mean()) for _ in 1:3]
+3-element Vector{Mean{Float64, EqualWeight}}:
+Mean: n=3 | value=2.0
+Mean: n=3 | value=2.0
+Mean: n=3 | value=2.0
 
-    julia> reduce(fit!, v, init=Mean())
-    Mean: n=9 | value=2.0
+julia> reduce(fit!, v, init=Mean())
+Mean: n=9 | value=2.0
+```
 """
 fit!(o::OnlineStat, o2::OnlineStat) = merge!(o, o2)
 
-function fit!(o::OnlineStat{I}, y::T) where {I, T}
-    T == eltype(y) && error("The input for $(name(o,false,false)) is $I.  Found $T.")
-    for yi in y
-        fit!(o, yi)
+# general fallback for _fit!(o, y) that each stat must implement
+function _fit!(o::OnlineStat{T}, ::S) where {T, S}
+    error("_fit!(o, y) is not implemented for $(name(o,false,false)). If you are writing " *
+    "a new statistic, then this must be implemented. If you are a user, then please " *
+    "submit a bug report.")
+end
+
+# general fallback for _fit!(o, y, n) that is optional to implement
+function _fit!(o::OnlineStat{T}, y::S, n::Integer) where {T, S}
+    for _ in 1:n
+        _fit!(o, y)
     end
-    o
+
+    return o
 end
 
 #-----------------------------------------------------------------------# utils

@@ -40,6 +40,13 @@ println("  > CircBuff")
     fit!(b, 3:11)
     @test b[end] == 7
     @test b[1] == 11
+
+    # Multiple obs method
+    c = CircBuff(Int, 5)
+    fit!(c, 5, 5)
+    fit!(c, 10)
+    @test c[1] == 5
+    @test c[end] == 10
 end
 
 #-----------------------------------------------------------------------# Counter
@@ -50,6 +57,10 @@ println("  > Counter")
     o2 = fit!(Counter(Int), 1)
     @test value(merge!(o, o2)) == 11
     ==(mergevals(Counter(), y, y2)...)
+
+    # Multiple obs method
+    o3 = fit!(Counter(Int), 1, 10)
+    @test (value(o3)) == 10
 end
 
 #-----------------------------------------------------------------------# CountMap
@@ -82,6 +93,13 @@ println("  > CountMap")
     # Pair method
     @test ==(mergevals(CountMap(Bool), Pair.(x,z), Pair.(x2,z2); nobs_equals_length=false)...)
     @test ==(mergevals(CountMap(Int), Pair.(z,z), Pair.(z2,z2); nobs_equals_length=false)...)
+
+    # Multiple obs method
+    c = fit!(CountMap(Bool), true, 10)
+    fit!(c, false, 5)
+    @test nobs(c) == 15
+    @test c[true] == 10
+    @test c[false] == 5
 end
 #-----------------------------------------------------------------------# CountMissing
 println("  > CountMissing")
@@ -143,6 +161,15 @@ println("  > Extrema")
     o = fit!(Extrema(), x)
     @test o.nmin == length(x) - sum(x)
     @test o.nmax == sum(x)
+
+    # Multiple obs method
+    o = fit!(Extrema(), y)
+    fit!(o, 20, 5)
+    fit!(o, -20, 7)
+    @test o.nmax == 5
+    @test o.nmin == 7
+    @test maximum(o) == 20
+    @test minimum(o) == -20
 end
 #-----------------------------------------------------------------------------# ExtremeValues
 println("  > ExtremeValues")
@@ -227,6 +254,12 @@ println("  > Mean")
     @test value(o) ≈ mean(y)
     @test mean(o) ≈ mean(y)
     @test ≈(mergevals(Mean(), y, y2)...)
+
+    # Multiple obs method
+    o = fit!(Mean(), y)
+    fit!(o, 1.0, 4)
+    v = vcat(copy(y), [1.0, 1.0, 1.0, 1.0])
+    @test mean(o) ≈ mean(v)
 end
 #-----------------------------------------------------------------------# Moments
 println("  > Moments")
@@ -241,6 +274,17 @@ println("  > Moments")
     for (v1,v2) in zip(mergevals(Moments(), y, y2)...)
         @test v1 ≈ v2
     end
+
+    # Multiple obs method
+    o = fit!(Moments(), y)
+    fit!(o, 1.0, 4)
+    v = vcat(copy(y), [1.0, 1.0, 1.0, 1.0])
+    @test value(o) ≈ [mean(v), mean(v .^ 2), mean(v .^ 3), mean(v .^ 4)]
+    @test mean(o) ≈ mean(v)
+    @test var(o) ≈ var(v)
+    @test std(o) ≈ std(v)
+    @test skewness(o) ≈ skewness(v)
+    @test kurtosis(o) ≈ kurtosis(v)
 end
 
 #-----------------------------------------------------------------------# Series
@@ -281,6 +325,9 @@ println("  > Sum")
     @test ==(mergevals(Sum(Int), x, x2)...)
     @test ≈(mergevals(Sum(), y, y2)...)
     @test ==(mergevals(Sum(Int), z, z2)...)
+
+    # Multiple obs method
+    @test sum(fit!(Sum(Int), 10, 5)) == 50
 end
 
 #-----------------------------------------------------------------------------# TryCatch
@@ -312,6 +359,14 @@ println("  > Variance")
     @test std(fit!(Variance(), [1, 2])) == sqrt(.5)
     # https://github.com/joshday/OnlineStats.jl/issues/217
     @test value(fit!(Variance(Float32), randn(Float32, 10))) isa Float32
+
+    # Multiple obs method
+    o = fit!(Variance(), y)
+    fit!(o, 1.0, 4)
+    v = vcat(copy(y), [1.0, 1.0, 1.0, 1.0])
+    @test mean(o) ≈ mean(v)
+    @test var(o) ≈ var(v)
+    @test std(o) ≈ std(v)
 end
 
 end # end "Test Stats"
