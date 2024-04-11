@@ -468,9 +468,9 @@ Mean(T::Type{<:Number} = Float64; weight = EqualWeight()) = Mean(zero(T), weight
 function _fit!(o::Mean{T}, x) where {T}
     o.μ = smooth(o.μ, x, o.weight(o.n += 1))
 end
-function _fit!(o::Mean{T}, y, n) where {T}
+function _fit!(o::Mean{T, W}, y, n) where {T, W<:EqualWeight}
     o.n += n
-    o.μ = smooth(o.μ, y, n / o.n)
+    o.μ = smooth(o.μ, y, o.weight(o.n / n))
 end
 function _merge!(o::Mean, o2::Mean)
     o.n += o2.n
