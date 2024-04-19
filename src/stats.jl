@@ -78,6 +78,7 @@ mutable struct Counter{T} <: OnlineStat{T}
 end
 Counter(T = Number) = Counter{T}()
 _fit!(o::Counter{T}, y) where {T} = (o.n += 1)
+_fit!(o::Counter{T}, y, n) where {T} = (o.n += n)
 _merge!(a::Counter, b::Counter) = (a.n += b.n)
 
 #-----------------------------------------------------------------------# CountMap
@@ -121,6 +122,10 @@ function _fit!(o::CountMap{T}, xy::Pair{<:T, <:Integer}) where {T}
     x, y = xy
     o.n += y
     o.value[x] = get!(o.value, x, 0) + y
+end
+function _fit!(o::CountMap{T}, x, n) where {T}
+    o.n += n
+    o.value[x] = get!(o.value, x, 0) + n
 end
 
 _merge!(o::CountMap, o2::CountMap) = (merge!(+, o.value, o2.value); o.n += o2.n)
@@ -250,6 +255,18 @@ function _fit!(o::Extrema, y)
     end
     y == o.min && (o.nmin += 1)
     y == o.max && (o.nmax += 1)
+end
+function _fit!(o::Extrema, y, n)
+    (o.n += n) == n && (o.min = o.max = y)
+    if y < o.min
+        o.min = y
+        o.nmin = 0
+    elseif y > o.max
+        o.max = y
+        o.nmax = 0
+    end
+    y == o.min && (o.nmin += n)
+    y == o.max && (o.nmax += n)
 end
 function _merge!(a::Extrema, b::Extrema)
     if a.min == b.min
@@ -451,6 +468,10 @@ Mean(T::Type{<:Number} = Float64; weight = EqualWeight()) = Mean(zero(T), weight
 function _fit!(o::Mean{T}, x) where {T}
     o.μ = smooth(o.μ, x, o.weight(o.n += 1))
 end
+function _fit!(o::Mean{T, W}, y, n) where {T, W<:EqualWeight}
+    o.n += n
+    o.μ = smooth(o.μ, y, o.weight(o.n / n))
+end
 function _merge!(o::Mean, o2::Mean)
     o.n += o2.n
     o.μ = smooth(o.μ, o2.μ, o2.n / o.n)
@@ -524,6 +545,8 @@ Sum(T::Type = Float64) = Sum(T(0), 0)
 Base.sum(o::Sum) = o.sum
 _fit!(o::Sum{T}, x::Real) where {T<:AbstractFloat} = (o.sum += convert(T, x); o.n += 1)
 _fit!(o::Sum{T}, x::Real) where {T<:Integer} =       (o.sum += round(T, x); o.n += 1)
+_fit!(o::Sum{T}, x::Real, n) where {T<:AbstractFloat} = (o.sum += convert(T, x * n); o.n += n)
+_fit!(o::Sum{T}, x::Real, n) where {T<:Integer} =       (o.sum += round(T, x * n); o.n += n)
 _merge!(o::T, o2::T) where {T <: Sum} = (o.sum += o2.sum; o.n += o2.n; o)
 
 #-----------------------------------------------------------------------# Variance
