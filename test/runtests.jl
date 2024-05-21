@@ -27,6 +27,8 @@ O = OnlineStatsBase
     @test is_mergeable(Mean()) == true
     @test is_mergeable(CircBuff(Int, 5)) == false
 
+    @test_throws Exception merge!(fit!(CircBuff(Int,5), 1), fit!(CircBuff(Int,5), 2))
+
     @testset "name" begin
         name = OnlineStatsBase.name
         o = Mean()
