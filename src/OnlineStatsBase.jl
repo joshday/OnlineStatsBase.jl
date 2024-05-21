@@ -63,7 +63,8 @@ Base.merge(o::OnlineStat, o2::OnlineStat) = merge!(copy(o), o2)
 
 Base.empty!(o::OnlineStat) = error("$(typeof(o)) has no `Base.empty!` method.")
 
-is_mergeable(o::T) where {T <: OnlineStat} = hasmethod(_merge!, Tuple{T,T})
+is_mergeable(::Type{T}) where {T<:OnlineStat} = hasmethod(_merge!, Tuple{T,T})
+is_mergeable(o::T) where {T <: OnlineStat} = is_mergeable(T)
 
 #-----------------------------------------------------------------------# Base.show
 function Base.show(io::IO, o::OnlineStat)

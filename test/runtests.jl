@@ -25,7 +25,9 @@ O = OnlineStatsBase
     @test isnan(value(fit!(Variance(), NaN)))
 
     @test is_mergeable(Mean()) == true
+    @test is_mergeable(Mean{Float64, EqualWeight}) == true
     @test is_mergeable(CircBuff(Int, 5)) == false
+    @test is_mergeable(CircBuff{Int64, false}) == false
 
     @test_throws Exception merge!(fit!(CircBuff(Int,5), 1), fit!(CircBuff(Int,5), 2))
 
