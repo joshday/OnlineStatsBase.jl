@@ -58,10 +58,12 @@ function Base.merge!(o::OnlineStat, o2::OnlineStat)
     (nobs(o) > 0 || nobs(o2) > 0) && _merge!(o, o2)
     o
 end
-_merge!(o, o2) = error("Merging $(name(o2)) into $(name(o)) is not defined.")
+
 Base.merge(o::OnlineStat, o2::OnlineStat) = merge!(copy(o), o2)
 
 Base.empty!(o::OnlineStat) = error("$(typeof(o)) has no `Base.empty!` method.")
+
+is_mergeable(o::T) where {T <: OnlineStat} = hasmethod(_merge!, Tuple{T,T})
 
 #-----------------------------------------------------------------------# Base.show
 function Base.show(io::IO, o::OnlineStat)

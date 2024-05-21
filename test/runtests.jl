@@ -1,6 +1,6 @@
 using OnlineStatsBase, OrderedCollections, StatsBase, Statistics, Dates, Test
 
-import OnlineStatsBase: _fit!, _merge!
+import OnlineStatsBase: _fit!, _merge!, is_mergeable
 
 O = OnlineStatsBase
 
@@ -23,6 +23,9 @@ O = OnlineStatsBase
     @test_throws Exception OnlineStatsBase._fit!(Mean(), "a")
     @test collect(OnlineStatsBase.neighbors([1,3,5])) == [(1,3), (3,5)]
     @test isnan(value(fit!(Variance(), NaN)))
+
+    @test is_mergeable(Mean()) == true
+    @test is_mergeable(CircBuff(Int, 5)) == false
 
     @testset "name" begin
         name = OnlineStatsBase.name
