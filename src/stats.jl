@@ -543,10 +543,8 @@ mutable struct Sum{T} <: OnlineStat{Number}
 end
 Sum(T::Type = Float64) = Sum(T(0), 0)
 Base.sum(o::Sum) = o.sum
-_fit!(o::Sum{T}, x::Real) where {T<:AbstractFloat} = (o.sum += convert(T, x); o.n += 1)
-_fit!(o::Sum{T}, x::Real) where {T<:Integer} =       (o.sum += round(T, x); o.n += 1)
-_fit!(o::Sum{T}, x::Real, n) where {T<:AbstractFloat} = (o.sum += convert(T, x * n); o.n += n)
-_fit!(o::Sum{T}, x::Real, n) where {T<:Integer} =       (o.sum += round(T, x * n); o.n += n)
+_fit!(o::Sum{T}, x::Number) where {T} = (o.sum += convert(T, x); o.n += 1)
+_fit!(o::Sum{T}, x::Number, n) where {T} = (o.sum += convert(T, x * n); o.n += n)
 _merge!(o::T, o2::T) where {T <: Sum} = (o.sum += o2.sum; o.n += o2.n; o)
 
 #-----------------------------------------------------------------------# Variance
