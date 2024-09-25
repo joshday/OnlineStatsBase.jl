@@ -69,7 +69,7 @@ is_mergeable(o::T) where {T <: OnlineStat} = is_mergeable(T)
 #-----------------------------------------------------------------------# Base.show
 function Base.show(io::IO, o::OnlineStat)
     print(io, name(o, false, false))
-    printstyled(io, ": n=", nobs_string(o))
+    print(io, ": n=", nobs_string(o))
     for (k,v) in pairs(additional_info(o))
         print(IOContext(io, :compact => true), io, " | ", k, '=', v)
     end
