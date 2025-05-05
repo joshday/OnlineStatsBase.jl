@@ -505,7 +505,7 @@ end
 Moments(;weight = EqualWeight()) = Moments(zeros(4), weight, 0)
 function _fit!(o::Moments, y::Real)
     γ = o.weight(o.n += 1)
-    y2 = y * y
+    y2 = float(y) ^ 2
     @inbounds o.m[1] = smooth(o.m[1], y, γ)
     @inbounds o.m[2] = smooth(o.m[2], y2, γ)
     @inbounds o.m[3] = smooth(o.m[3], y * y2, γ)
