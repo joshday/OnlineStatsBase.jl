@@ -100,17 +100,26 @@ println("  > CountMap")
     @test nobs(c) == 15
     @test c[true] == 10
     @test c[false] == 5
-end
 
-@testset "CountMap Mean" begin
-    # Test Mean for CountMap
+    # Test Mean and Quantile for CountMap
     m = Mean()
     cm = CountMap(Int)
+    # os = OrderStats(100)
+
     for i=1:100
         randints = rand(1:10, 1000)
         fit!(m, randints)
         fit!(cm, randints)
+        # fit!(os, randints)
+
+        # Mean test
         @test mean(cm) ≈ mean(m) atol = 1e-6
+
+        # # Quantile test
+        # q = rand()
+        # cm_quant = quantile(cm, q)
+        # os_quant = quantile(os, q)
+        # @test floor(os_quant) ≤ cm_quant ≤ ceil(os_quant)
     end
 end
 
