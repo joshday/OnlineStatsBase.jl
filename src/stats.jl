@@ -156,7 +156,16 @@ function Statistics.mean(cm::CountMap{T}) where T
     weightedMean = sum(k .* f) / sum(f) # Compute the weighted mean
     return weightedMean
 end    
-# //NOTE: Similarly we could also add quantile (that should be probably added in OnlineStats.jl)
+function Statistics.quantile(cm::CountMap{T}, q::Float64) where T
+	cmdict = value(cm) 
+    k = sort(collect(keys(cmdict))) # Sorted keys (values)
+    f = [cmdict[x] for x in k] # Occupancies (frequency) of each values
+    cum = cumsum(f) ./ sum(f) # Compute the cumulative frequency for each value
+    idx = findfirst(x -> x ≥ q, cum) # Return the first index where the cumulative frequency is greater than or equal to `q`
+	
+    return k[idx]
+end
+Statistics.quantile(cm::CountMap{T}, qvec::Vector{<:Float64}) where T = map(x -> Statistics.quantile(cm, x), qvec)
 
 #-----------------------------------------------------------------------# CovMatrix
 """
