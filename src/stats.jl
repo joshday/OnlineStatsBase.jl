@@ -151,7 +151,7 @@ function Base.delete!(o::CountMap, level)
 end
 function Statistics.mean(cm::CountMap{T}) where T
 	cmdict = value(cm) 
-    k = cmdict |> keys |> collect |> sort # Sorted keys (values)
+    k = sort(collect(keys(cmdict))) # Sorted keys (values)
     f = [cmdict[x] for x in k] # Occupancies (frequency) of each values
     weightedMean = sum(k .* f) / sum(f) # Compute the weighted mean
     return weightedMean
