@@ -155,15 +155,13 @@ function Statistics.mean(cm::CountMap{T}) where T
     f = [cmdict[x] for x in k] # Occupancies (frequency) of each values
     weightedMean = sum(k .* f) / sum(f) # Compute the weighted mean
     return weightedMean
-end    
+end  
+
 function Statistics.quantile(cm::CountMap{T}, q::Float64) where T
-	cmdict = value(cm) 
-    k = sort(collect(keys(cmdict))) # Sorted keys (values)
-    f = [cmdict[x] for x in k] # Occupancies (frequency) of each values
-    cum = cumsum(f) ./ sum(f) # Compute the cumulative frequency for each value
-    idx = findfirst(x -> x ≥ q, cum) # Return the first index where the cumulative frequency is greater than or equal to `q`
-	
-    return k[idx]
+    v = collect(keys(cm)) 
+    w = StatsBase.fweights(collect(values(cm)))
+
+    return StatsBase.quantile(v, w, q)
 end
 Statistics.quantile(cm::CountMap{T}, qvec::Vector{<:Float64}) where T = map(x -> Statistics.quantile(cm, x), qvec)
 

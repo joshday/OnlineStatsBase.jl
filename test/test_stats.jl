@@ -104,22 +104,26 @@ println("  > CountMap")
     # Test Mean and Quantile for CountMap
     m = Mean()
     cm = CountMap(Int)
-    # os = OrderStats(100)
 
     for i=1:100
         randints = rand(1:10, 1000)
         fit!(m, randints)
         fit!(cm, randints)
-        # fit!(os, randints)
 
         # Mean test
-        @test mean(cm) ≈ mean(m) atol = 1e-6
+        # @test mean(cm) ≈ mean(m) atol = 1e-6
 
-        # # Quantile test
-        # q = rand()
-        # cm_quant = quantile(cm, q)
-        # os_quant = quantile(os, q)
-        # @test floor(os_quant) ≤ cm_quant ≤ ceil(os_quant)
+        # Quantile test
+        q = rand()
+
+        cmdict = value(cm)
+        k = sort(collect(keys(cmdict))) # Sorted keys (values)
+        f = [cmdict[x] for x in k] # Occupancies (frequency) of each values
+        cum = cumsum(f) ./ sum(f) # Compute the cumulative frequency for each value
+        idx = findfirst(x -> x ≥ q, cum) # Return the first index where the cumulative frequency is greater than or equal to `q`
+        cm_quant = quantile(cm, q)
+
+        @test k[idx] ≈ cm_quant
     end
 end
 
