@@ -111,7 +111,7 @@ println("  > CountMap")
         fit!(cm, randints)
 
         # Mean test
-        # @test mean(cm) ≈ mean(m) atol = 1e-6
+        @test mean(cm) ≈ mean(m) atol = 1e-6
 
         # Quantile test
         q = rand()
