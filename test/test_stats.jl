@@ -104,7 +104,7 @@ println("  > CountMap")
     # Test Mean and Quantile for CountMap
     m = Mean()
     cm = CountMap(Int)
-
+    q_vec = [0.1, 0.5, 1.0]
     for i=1:100
         randints = rand(1:10, 1000)
         fit!(m, randints)
@@ -113,7 +113,7 @@ println("  > CountMap")
         # Mean test
         @test mean(cm) ≈ mean(m) atol = 1e-6
 
-        # Quantile test
+        # Quantile general test 
         q = rand()
         cm_quant = quantile(cm, q)
 
@@ -124,6 +124,12 @@ println("  > CountMap")
         idx = findfirst(x -> x ≥ q, cum) # Return the first index where the cumulative frequency is greater than or equal to `q`
 
         @test k[idx] ≈ cm_quant
+
+        # Quantile vector test and corner case of quantile between data points
+        cm_quant = quantile(cm, q_vec)
+        for (i,q) in enumerate(q_vec)
+            @test k[findfirst(x -> x ≥ q, cum)] ≈ cm_quant[i]
+        end
     end
 end
 

@@ -155,7 +155,8 @@ function Statistics.mean(cm::CountMap{T}) where T
 end
 function Statistics.quantile(cm::CountMap{T}, q::Float64) where T
     v, w = _compute_valueweights(cm)
-    return StatsBase.quantile(v, w, q)
+    out = T <: Integer ? round(Int, StatsBase.quantile(v, w, q)) : StatsBase.quantile(v, w, q)
+    return out
 end
 Statistics.quantile(cm::CountMap{T}, qvec::Vector{<:Float64}) where T = map(x -> Statistics.quantile(cm, x), qvec)
 
