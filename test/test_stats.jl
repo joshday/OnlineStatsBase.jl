@@ -115,13 +115,13 @@ println("  > CountMap")
 
         # Quantile test
         q = rand()
+        cm_quant = quantile(cm, q)
 
         cmdict = value(cm)
         k = sort(collect(keys(cmdict))) # Sorted keys (values)
         f = [cmdict[x] for x in k] # Occupancies (frequency) of each values
         cum = cumsum(f) ./ sum(f) # Compute the cumulative frequency for each value
         idx = findfirst(x -> x ≥ q, cum) # Return the first index where the cumulative frequency is greater than or equal to `q`
-        cm_quant = quantile(cm, q)
 
         @test k[idx] ≈ cm_quant
     end
