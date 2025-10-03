@@ -149,6 +149,11 @@ function Base.delete!(o::CountMap, level)
     o.n -= x
     o
 end
+function Base.empty!(o::CountMap)
+    empty!(o.value)
+    o.n = 0
+    o
+end
 
 #-----------------------------------------------------------------------# CovMatrix
 """
@@ -287,6 +292,11 @@ value(o::Extrema) = (min=o.min, max=o.max, nmin=o.nmin, nmax=o.nmax)
 Base.extrema(o::Extrema) = (o.min, o.max)
 Base.maximum(o::Extrema) = o.max
 Base.minimum(o::Extrema) = o.min
+function Base.empty!(o::Extrema{T}) where {T}
+    o.min, o.max, _ = OnlineStatsBase.extrema_init(T)
+    o.nmin = o.nmax = o.n = 0
+    o
+end
 
 #-----------------------------------------------------------------------------# ExtremeValues
 """
@@ -481,6 +491,11 @@ function _merge!(o::Mean, o2::Mean)
 end
 Statistics.mean(o::Mean) = o.μ
 Base.copy(o::Mean) = Mean(o.μ, o.weight, o.n)
+function Base.empty!(o::Mean{T}) where {T}
+    o.μ = zero(T)
+    o.n = 0
+    o
+end
 
 #-----------------------------------------------------------------------# Moments
 """
@@ -529,6 +544,11 @@ function _merge!(o::Moments, o2::Moments)
     γ = o2.n / (o.n += o2.n)
     smooth!(o.m, o2.m, γ)
 end
+function Base.empty!(o::Moments)
+    empty!(o.m)
+    o.n = 0
+    o
+end
 
 #-----------------------------------------------------------------------# Sum
 """
@@ -549,6 +569,7 @@ Base.sum(o::Sum) = o.sum
 _fit!(o::Sum{T}, x::Number) where {T} = (o.sum += convert(T, x); o.n += 1)
 _fit!(o::Sum{T}, x::Number, n) where {T} = (o.sum += convert(T, x * n); o.n += n)
 _merge!(o::T, o2::T) where {T <: Sum} = (o.sum += o2.sum; o.n += o2.n; o)
+Base.empty!(o::Sum{T}) where {T} = (o.sum = T(0); o.n = 0; o)
 
 #-----------------------------------------------------------------------# Variance
 """
@@ -594,7 +615,12 @@ function value(o::Variance{T}) where {T}
 end
 Statistics.var(o::Variance) = value(o)
 Statistics.mean(o::Variance) = o.μ
-
+function Base.empty!(o::Variance{T}) where {T}
+    o.σ2 = zero(T) ^ 2 / one(T)
+    o.μ = zero(T) / one(T)
+    o.n = 0
+    o
+end
 
 #-----------------------------------------------------------------------# Series
 """
