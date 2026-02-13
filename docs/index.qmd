@@ -1,0 +1,23 @@
+---
+title: "OnlineStatsBase.jl"
+engine: julia
+---
+
+Welcome to the documentation for **OnlineStatsBase.jl**.
+
+## Overview
+
+OnlineStatsBase.jl is a Julia package that ...
+
+## Installation
+
+```julia
+using Pkg
+Pkg.add("OnlineStatsBase")
+```
+
+## Quickstart
+
+```{julia}
+println("Hello, World!")
+```
