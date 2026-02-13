@@ -149,7 +149,23 @@ function Base.delete!(o::CountMap, level)
     o.n -= x
     o
 end
+function Statistics.mean(cm::CountMap{T}) where T
+    v, w = _compute_valueweights(cm)
+    return StatsBase.mean(v, w)
+end
+function Statistics.quantile(cm::CountMap{T}, q::Float64) where T
+    v, w = _compute_valueweights(cm)
+    out = T <: Integer ? round(Int, StatsBase.quantile(v, w, q)) : StatsBase.quantile(v, w, q)
+    return out
+end
+Statistics.quantile(cm::CountMap{T}, qvec::Vector{<:Float64}) where T = map(x -> Statistics.quantile(cm, x), qvec)
 
+function _compute_valueweights(cm::CountMap{T}) where T
+    v = collect(keys(cm)) 
+    w = StatsBase.fweights(collect(values(cm)))
+    
+    return v, w
+end
 #-----------------------------------------------------------------------# CovMatrix
 """
     CovMatrix(p=0; weight=EqualWeight())
