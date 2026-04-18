@@ -337,15 +337,16 @@ function _fit!(o::ExtremeValues{T,S}, pr::Pair{<:S, Int}) where {T,S}
     length(hi) > b && delete!(hi, minimum(keys(hi)))
 end
 
-function _merge!(a::ExtremeValues, b::ExtremeValues)
-    old_n = a.n
+function _merge!(a::ExtremeValues{T}, b::ExtremeValues{T}) where {T}
+    unique_keys = Set{T}()
+    sizehint!(unique_keys, a.b + b.b)
     for pair in b.lo
+        push!(unique_keys, pair.first)
         _fit!(a, pair)
     end
     for pair in b.hi
-        _fit!(a, pair)
+       pair.first in unique_keys || _fit!(a, pair)
     end
-    a.n = old_n + b.n
 end
 
 #-----------------------------------------------------------------------# Group
