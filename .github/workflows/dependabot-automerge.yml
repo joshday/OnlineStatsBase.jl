@@ -1,0 +1,31 @@
+name: Dependabot auto-merge
+
+# Enables GitHub native auto-merge on Dependabot PRs. Once the required status
+# checks pass, GitHub squash-merges the PR automatically. This relies on branch
+# protection requiring CI checks — without required checks, auto-merge has
+# nothing to wait on and would error with "Pull request is in clean status".
+on: pull_request_target
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  auto-merge:
+    runs-on: ubuntu-latest
+    if: github.event.pull_request.user.login == 'dependabot[bot]'
+    steps:
+      - name: Fetch Dependabot metadata
+        id: metadata
+        uses: dependabot/fetch-metadata@v2
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      # Merge everything that passes CI. To restrict to patch/minor only, add to
+      # the condition below, e.g.:
+      #   if: steps.metadata.outputs.update-type != 'version-update:semver-major'
+      - name: Enable auto-merge
+        run: gh pr merge --auto --squash --delete-branch "$PR_URL"
+        env:
+          PR_URL: ${{ github.event.pull_request.html_url }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
