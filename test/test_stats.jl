@@ -100,6 +100,12 @@ println("  > CountMap")
     @test nobs(c) == 15
     @test c[true] == 10
     @test c[false] == 5
+
+    empty!(c)
+    @test nobs(c) == 0
+    fit!(c, false, 5)
+    @test nobs(c) == 5
+    @test c[false] == 5
 end
 #-----------------------------------------------------------------------# CountMissing
 println("  > CountMissing")
@@ -170,6 +176,11 @@ println("  > Extrema")
     @test o.nmin == 7
     @test maximum(o) == 20
     @test minimum(o) == -20
+
+    empty!(o)
+    fit!(o, 10)
+    @test maximum(o) == 10
+    @test minimum(o) == 10
 end
 #-----------------------------------------------------------------------------# ExtremeValues
 println("  > ExtremeValues")
@@ -260,6 +271,9 @@ println("  > Mean")
     fit!(o, 1.0, 4)
     v = vcat(copy(y), [1.0, 1.0, 1.0, 1.0])
     @test mean(o) ≈ mean(v)
+
+    empty!(o)
+    @test nobs(o) == 0
 end
 #-----------------------------------------------------------------------# Moments
 println("  > Moments")
@@ -285,6 +299,9 @@ println("  > Moments")
     @test std(o) ≈ std(v)
     @test skewness(o) ≈ skewness(v)
     @test kurtosis(o) ≈ kurtosis(v)
+
+    empty!(o)
+    @test nobs(o) == 0
 end
 
 #-----------------------------------------------------------------------# Series
@@ -328,6 +345,9 @@ println("  > Sum")
 
     # Multiple obs method
     @test sum(fit!(Sum(Int), 10, 5)) == 50
+
+    s=empty!(Sum(Int))
+    @test nobs(s) == 0
 end
 
 #-----------------------------------------------------------------------------# TryCatch
@@ -367,6 +387,10 @@ println("  > Variance")
     @test mean(o) ≈ mean(v)
     @test var(o) ≈ var(v)
     @test std(o) ≈ std(v)
+
+    empty!(o)
+    fit!(o, 0.5, 4)
+    @test mean(o) == 0.5
 end
 
 end # end "Test Stats"
