@@ -100,6 +100,21 @@ println("  > CountMap")
     @test nobs(c) == 15
     @test c[true] == 10
     @test c[false] == 5
+
+    # mean/quantile weight each key by its count, matching the same call on the raw data
+    ps = [.25, .5, .75]
+    cm = fit!(CountMap(Int), z)
+    @test mean(cm) ≈ mean(z)
+    @test quantile(cm, .5) ≈ quantile(z, .5)
+    @test quantile(cm, ps) ≈ quantile(z, ps)
+
+    cm = fit!(CountMap(Float64), y)
+    @test mean(cm) ≈ mean(y)
+    @test quantile(cm, ps) ≈ quantile(y, ps)
+
+    cm = fit!(CountMap(String), ["a", "b"])
+    @test_throws MethodError mean(cm)
+    @test_throws MethodError quantile(cm, .5)
 end
 #-----------------------------------------------------------------------# CountMissing
 println("  > CountMissing")
