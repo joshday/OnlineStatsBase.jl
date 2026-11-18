@@ -300,6 +300,33 @@ println("  > Moments")
     @test std(o) ≈ std(v)
     @test skewness(o) ≈ skewness(v)
     @test kurtosis(o) ≈ kurtosis(v)
+
+    # Moments must not overflow for large observations (#43)
+    let 
+        vs = Int64[1_000_000, 4_000_000_000, 4_100_000_000]
+        o = fit!(Moments(), vs)
+        @test mean(o) ≈ mean(vs)
+        @test var(o) ≈ var(vs)
+        @test std(o) ≈ std(vs)
+        @test skewness(o) ≈ skewness(vs)
+        @test kurtosis(o) ≈ kurtosis(vs)
+    end
+
+    # Correctness for shifted distributions (#68)
+    let 
+        v1 = [4.0, 7.0, 13.0, 16.0]
+        v2 = v1 .+ 1e8
+        v3 = v1 .+ 1e9
+        
+        for vs in [v1, v2, v3]
+            o = fit!(Moments(), vs)
+            @test mean(o) ≈ mean(vs)
+            @test var(o) ≈ var(vs)
+            @test std(o) ≈ std(vs)
+            @test skewness(o) ≈ skewness(vs)
+            @test kurtosis(o) ≈ kurtosis(vs)
+        end
+    end
 end
 
 #-----------------------------------------------------------------------# Series
