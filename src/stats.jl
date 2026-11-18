@@ -510,6 +510,15 @@ First four non-central moments.
     std(o)
     skewness(o)
     kurtosis(o)
+
+# Details
+
+The sufficient statistics `value(o)` are stored as a 4-vector: the mean followed by the
+2nd-4th central sums ``Σ(x - μ)^k``.  They are updated with Welford's algorithm and the
+Chan/Terriberry compound formulas, which keeps ``var``/``skewness``/``kurtosis`` accurate
+for large or shifted observations (raw power sums would overflow / cancel).  The weight
+object sets how much a new observation takes over; ``EqualWeight`` is the weighting for
+which the higher moments are exact.
 """
 mutable struct Moments{W} <: OnlineStat{Number}
     m::Vector{Float64}
@@ -517,31 +526,65 @@ mutable struct Moments{W} <: OnlineStat{Number}
     n::Int
 end
 Moments(;weight = EqualWeight()) = Moments(zeros(4), weight, 0)
-function _fit!(o::Moments, y::Real)
-    γ = o.weight(o.n += 1)
-    y2 = y * y
-    @inbounds o.m[1] = smooth(o.m[1], y, γ)
-    @inbounds o.m[2] = smooth(o.m[2], y2, γ)
-    @inbounds o.m[3] = smooth(o.m[3], y * y2, γ)
-    @inbounds o.m[4] = smooth(o.m[4], y2 * y2, γ)
+
+function _fit!(o::Moments, y::Real, k::Integer)
+    n1 = o.n
+    n  = n1 + k
+    o.n = n
+    δ = y - o.m[1]
+    δn = δ / n
+    δn2 = δn * δn
+    n1f, kf = float(n1), float(k)
+    # Chan & Terriberry compound update: the new data is a set of `k` copies of `y`
+    # (mean = y, M2 = M3 = M4 = 0, weight = k). M4/M3/M2 must be updated in that
+    # order so that each term uses the old (pre-update) moments.
+    t1 = δ * δn * n1f * kf
+    @inbounds begin
+        o.m[4] += t1 * δn2 * (n1f^2 - n1f * kf + kf^2) + 6.0 * δn2 * kf^2 * o.m[2] - 4.0 * δn * kf * o.m[3]
+        o.m[3] += t1 * δn * (n1f - kf) - 3.0 * δn * kf * o.m[2]
+        o.m[2] += t1
+        o.m[1] = smooth(o.m[1], y, o.weight(n / k))
+    end
+    return o
+end
+_fit!(o::Moments, y::Real) = _fit!(o, y, 1)
+function _merge!(o::Moments, o2::Moments)
+    n1 = o.n
+    n2 = o2.n
+    n  = n1 + n2
+    n == 0 && return o
+    o.n = n
+    δ = o2.m[1] - o.m[1]
+    δn = δ / n
+    δn2 = δn * δn
+    # Same compound update as _fit!, except that `o2` is a full set of observations
+    # (δ = μ₂ - μ₁). M4/M3/M2 are updated before the mean, using old values.
+    n1f, n2f = float(n1), float(n2)
+    t1 = δ * δn * n1f * n2f
+    @inbounds begin
+        o.m[4] += o2.m[4] + t1 * δn2 * (n1f^2 - n1f * n2f + n2f^2) + 6.0 * δn2 * (n1f^2 * o2.m[2] + n2f^2 * o.m[2]) + 4.0 * δn * (n1f * o2.m[3] - n2f * o.m[3])
+        o.m[3] += o2.m[3] + t1 * δn * (n1f - n2f) + 3.0 * δn * (n1f * o2.m[2] - n2f * o.m[2])
+        o.m[2] += o2.m[2] + t1
+        o.m[1] = smooth(o.m[1], o2.m[1], o.weight(n / n2))
+    end
+    return o
 end
 Statistics.mean(o::Moments) = o.m[1]
 function Statistics.var(o::Moments; corrected=true)
-    out = (o.m[2] - o.m[1] ^ 2)
-    corrected ? bessel(o) * out : out
+    nobs(o) < 2 && return NaN
+    return corrected ? o.m[2] / (nobs(o) - 1) : o.m[2] / nobs(o)
 end
 function StatsBase.skewness(o::Moments)
-    v = value(o)
-    vr = o.m[2] - o.m[1]^2
-    (v[3] - 3.0 * v[1] * vr - v[1] ^ 3) / vr ^ 1.5
+    nobs(o) < 2 && return NaN
+    n = float(nobs(o))
+    m2 = o.m[2] / n
+    return m2 > 0 ? o.m[3] / n / (m2 * sqrt(m2)) : NaN
 end
 function StatsBase.kurtosis(o::Moments)
-    m1, m2, m3, m4 = value(o)
-    (m4 - 4.0 * m1 * m3 + 6.0 * m1^2 * m2 - 3.0 * m1 ^ 4) / var(o; corrected=false) ^ 2 - 3.0
-end
-function _merge!(o::Moments, o2::Moments)
-    γ = o2.n / (o.n += o2.n)
-    smooth!(o.m, o2.m, γ)
+    nobs(o) < 2 && return NaN
+    n = float(nobs(o))
+    m2 = o.m[2] / n
+    return m2 > 0 ? o.m[4] / n / (m2 * m2) - 3.0 : NaN
 end
 
 #-----------------------------------------------------------------------# Sum

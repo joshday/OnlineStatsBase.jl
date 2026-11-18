@@ -280,7 +280,9 @@ end
 println("  > Moments")
 @testset "Moments" begin
     o = fit!(Moments(), y)
-    @test value(o) ≈ [mean(y), mean(y .^ 2), mean(y .^ 3), mean(y .^ 4)]
+    # value(o) is the stored sufficient statistics: mean then the 2nd-4th central sums
+    μy = mean(y)
+    @test value(o) ≈ [μy, sum((y .- μy) .^ 2), sum((y .- μy) .^ 3), sum((y .- μy) .^ 4)]
     @test mean(o) ≈ mean(y)
     @test var(o) ≈ var(y)
     @test var(o, corrected=false) ≈ var(y, corrected=false)
@@ -295,7 +297,8 @@ println("  > Moments")
     o = fit!(Moments(), y)
     fit!(o, 1.0, 4)
     v = vcat(copy(y), [1.0, 1.0, 1.0, 1.0])
-    @test value(o) ≈ [mean(v), mean(v .^ 2), mean(v .^ 3), mean(v .^ 4)]
+    μv = mean(v)
+    @test value(o) ≈ [μv, sum((v .- μv) .^ 2), sum((v .- μv) .^ 3), sum((v .- μv) .^ 4)]
     @test mean(o) ≈ mean(v)
     @test var(o) ≈ var(v)
     @test var(o, corrected=false) ≈ var(v, corrected=false)
