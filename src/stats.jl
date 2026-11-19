@@ -500,7 +500,12 @@ Base.copy(o::Mean) = Mean(o.μ, o.weight, o.n)
 """
     Moments(; weight=EqualWeight())
 
-First four non-central moments.
+First four non-central moments.  The mean and central moments are what's tracked, so `mean`,
+`var`, `std`, `skewness`, and `kurtosis` stay accurate when the mean is far from zero.
+
+    value(o, central=false)
+
+Non-central moments 1-4 by default.  `value(o, true)` is the mean and central moments 2-4.
 
 # Example
 
@@ -512,37 +517,33 @@ First four non-central moments.
     kurtosis(o)
 """
 mutable struct Moments{W} <: OnlineStat{Number}
-    m::Vector{Float64}
+    m::Vector{Float64}  # mean and central moments 2-4
     weight::W
     n::Int
 end
-Moments(;weight = EqualWeight()) = Moments(zeros(4), weight, 0)
-function _fit!(o::Moments, y::Real)
-    γ = o.weight(o.n += 1)
-    y2 = y * y
-    @inbounds o.m[1] = smooth(o.m[1], y, γ)
-    @inbounds o.m[2] = smooth(o.m[2], y2, γ)
-    @inbounds o.m[3] = smooth(o.m[3], y * y2, γ)
-    @inbounds o.m[4] = smooth(o.m[4], y2 * y2, γ)
+Moments(; weight=EqualWeight()) = Moments(zeros(4), weight, 0)
+_fit!(o::Moments, y::Real) = mix!(o.m, (y, 0.0, 0.0, 0.0), o.weight(o.n += 1))
+_fit!(o::Moments{EqualWeight}, y::Real, k) = mix!(o.m, (y, 0.0, 0.0, 0.0), k / (o.n += k))
+_merge!(o::Moments, o2::Moments) = mix!(o.m, o2.m, o2.n / (o.n += o2.n))
+# Overwrite `a` with the (mean, central moments 2-4) of the mixture `(1 - γ) * a + γ * b`
+function mix!(a, b, γ)
+    (μ, a2, a3, a4) = a
+    (μb, b2, b3, b4) = b
+    δ = μb - μ
+    c = γ * (1 - γ)
+    a[1] = smooth(μ, μb, γ)
+    a[2] = smooth(a2, b2, γ) + c * δ^2
+    a[3] = smooth(a3, b3, γ) + c * δ * (3 * (b2 - a2) + (1 - 2γ) * δ^2)
+    a[4] = smooth(a4, b4, γ) + c * δ * (4 * (b3 - a3) + 6δ * smooth(b2, a2, γ) + (1 - 3c) * δ^3)
+end
+function value(o::Moments, central::Bool=false)
+    (μ, m2, m3, m4) = o.m
+    central ? o.m : [μ, m2 + μ^2, m3 + 3μ * m2 + μ^3, m4 + 4μ * m3 + 6μ^2 * m2 + μ^4]
 end
 Statistics.mean(o::Moments) = o.m[1]
-function Statistics.var(o::Moments; corrected=true)
-    out = (o.m[2] - o.m[1] ^ 2)
-    corrected ? bessel(o) * out : out
-end
-function StatsBase.skewness(o::Moments)
-    v = value(o)
-    vr = o.m[2] - o.m[1]^2
-    (v[3] - 3.0 * v[1] * vr - v[1] ^ 3) / vr ^ 1.5
-end
-function StatsBase.kurtosis(o::Moments)
-    m1, m2, m3, m4 = value(o)
-    (m4 - 4.0 * m1 * m3 + 6.0 * m1^2 * m2 - 3.0 * m1 ^ 4) / var(o; corrected=false) ^ 2 - 3.0
-end
-function _merge!(o::Moments, o2::Moments)
-    γ = o2.n / (o.n += o2.n)
-    smooth!(o.m, o2.m, γ)
-end
+Statistics.var(o::Moments; corrected=true) = corrected ? bessel(o) * o.m[2] : o.m[2]
+StatsBase.skewness(o::Moments) = o.m[3] / o.m[2]^1.5
+StatsBase.kurtosis(o::Moments) = o.m[4] / o.m[2]^2 - 3
 
 #-----------------------------------------------------------------------# Sum
 """
