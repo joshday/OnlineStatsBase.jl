@@ -266,8 +266,11 @@ println("  > Moments")
 @testset "Moments" begin
     o = fit!(Moments(), y)
     @test value(o) ≈ [mean(y), mean(y .^ 2), mean(y .^ 3), mean(y .^ 4)]
+    @test value(o, false) == value(o)
+    @test value(o, true) ≈ [mean(y); map(k -> moment(y, k), 2:4)]
     @test mean(o) ≈ mean(y)
     @test var(o) ≈ var(y)
+    @test var(o; corrected=false) ≈ var(y; corrected=false)
     @test std(o) ≈ std(y)
     @test skewness(o) ≈ skewness(y)
     @test kurtosis(o) ≈ kurtosis(y)
@@ -282,9 +285,36 @@ println("  > Moments")
     @test value(o) ≈ [mean(v), mean(v .^ 2), mean(v .^ 3), mean(v .^ 4)]
     @test mean(o) ≈ mean(v)
     @test var(o) ≈ var(v)
+    @test var(o; corrected=false) ≈ var(v; corrected=false)
     @test std(o) ≈ std(v)
     @test skewness(o) ≈ skewness(v)
     @test kurtosis(o) ≈ kurtosis(v)
+
+    # Mean far from zero (#68)
+    for shift ∈ (0, 1e8, 1e9, 1e12)
+        x = [4, 7, 13, 16]
+        (a, b) = (fit!(Moments(), x[1:2] .+ shift), fit!(Moments(), x[3:4] .+ shift))
+        for o ∈ (fit!(Moments(), x .+ shift), merge!(a, b))
+            @test mean(o) ≈ mean(x) + shift
+            @test var(o) ≈ var(x)
+            @test var(o; corrected=false) ≈ var(x; corrected=false)
+            @test skewness(o) ≈ skewness(x) atol=1e-8
+            @test kurtosis(o) ≈ kurtosis(x)
+        end
+    end
+
+    # Integer overflow (#43)
+    x = [4_000_000_000, 4_000_000_100]
+    o = fit!(Moments(), x)
+    @test mean(o) ≈ mean(x)
+    @test var(o) ≈ var(x)
+    @test kurtosis(o) ≈ kurtosis(x)
+
+    # Weighted (implicit starting value of 0)
+    o = fit!(Moments(weight=ExponentialWeight(.1)), y)
+    w = map(i -> .1 * .9 ^ (n - i), 1:n)
+    @test value(o) ≈ map(k -> sum(w .* y .^ k), 1:4)
+    @test value(fit!(copy(o), 1.0, 4)) ≈ value(fit!(copy(o), fill(1.0, 4)))
 end
 
 #-----------------------------------------------------------------------# Series
