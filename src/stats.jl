@@ -350,14 +350,9 @@ function _fit!(o::ExtremeValues{T,S}, pr::Pair{<:S, Int}) where {T,S}
 end
 
 function _merge!(a::ExtremeValues, b::ExtremeValues)
-    old_n = a.n
-    for pair in b.lo
-        _fit!(a, pair)
-    end
-    for pair in b.hi
-        _fit!(a, pair)
-    end
-    a.n = old_n + b.n
+    n = a.n + b.n
+    foreach(pr -> _fit!(a, pr), merge(b.lo, b.hi))  # each distinct value once
+    a.n = n
 end
 
 #-----------------------------------------------------------------------# Group
