@@ -180,6 +180,10 @@ println("  > ExtremeValues")
     @test collect(keys(value(o).hi)) == ysorted[end-4:end]
 
     @test ==(mergevals(ExtremeValues(), y, y2)...)
+
+    # Values in both `lo` and `hi` are merged once (#55)
+    @test ==(mergevals(ExtremeValues(Int, 2), [-100, -50, -50, -33, 7, 8, 12, 38, 44, 60, 70], [-55, 65, 65])...)
+    @test ==(mergevals(ExtremeValues(Int, 8), z, z2)...)
 end
 
 #-----------------------------------------------------------------------------# FilterTransform
