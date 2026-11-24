@@ -7,7 +7,7 @@ Range that repeats forever. e.g.
     r = OnlineStatsBase.RepeatingRange(1:2)
     r[1:5] == [1, 2, 1, 2, 1]
 """
-struct RepeatingRange{T<:AbstractRange}
+struct RepeatingRange{T <: AbstractRange}
     rng::T
 end
 Base.getindex(o::RepeatingRange, i::Int) = o.rng[rem(i - 1, length(o.rng)) + 1]
@@ -34,32 +34,30 @@ Create a fixed-length circular buffer of `b` items of type `T`.
 
     value(o; ordered=false)  # Retrieve values (no copy) without ordering
 """
-mutable struct CircBuff{T,rev} <: OnlineStat{T}
+mutable struct CircBuff{T, rev} <: OnlineStat{T}
     value::Vector{T}
     rng::RepeatingRange{Base.OneTo{Int}}
     n::Int
 end
-CircBuff(T, b::Int; rev=false) = CircBuff{T,rev}(T[], RepeatingRange(Base.OneTo(b)), 0)
-CircBuff(b::Int, T = Float64; rev=false) = CircBuff(T, b; rev=rev)
+CircBuff(T, b::Int; rev = false) = CircBuff{T, rev}(T[], RepeatingRange(Base.OneTo(b)), 0)
+CircBuff(b::Int, T = Float64; rev = false) = CircBuff(T, b; rev = rev)
 
 Base.lastindex(o::CircBuff) = length(o.value)
 Base.length(o::CircBuff) = length(o.value)
 
 function Base.getindex(o::CircBuff, i::Int)
-    nobs(o) ≤ length(o.rng.rng) ? o.value[i] : o.value[o.rng[nobs(o) + i]]
+    return nobs(o) ≤ length(o.rng.rng) ? o.value[i] : o.value[o.rng[nobs(o) + i]]
 end
 function Base.getindex(o::CircBuff{<:Any, true}, i::Int)
     i = length(o.value) - i + 1
-    nobs(o) ≤ length(o.rng.rng) ? o.value[i] : o.value[o.rng[nobs(o) + i]]
+    return nobs(o) ≤ length(o.rng.rng) ? o.value[i] : o.value[o.rng[nobs(o) + i]]
 end
 
 function _fit!(o::CircBuff, y)
-    (o.n += 1) ≤ length(o.rng.rng) ? push!(o.value, y) : o.value[o.rng[nobs(o)]] = y
+    return (o.n += 1) ≤ length(o.rng.rng) ? push!(o.value, y) : o.value[o.rng[nobs(o)]] = y
 end
 
-value(o::CircBuff; ordered=true) = ordered ? eltype(o.value)[o[i] for i in 1:length(o.value)] : o.value
-
-
+value(o::CircBuff; ordered = true) = ordered ? eltype(o.value)[o[i] for i in 1:length(o.value)] : o.value
 
 
 #-----------------------------------------------------------------------# Counter
@@ -109,25 +107,25 @@ fit!(o, "A" => -1)
     sort!(o)
     delete!(o, 1)
 """
-mutable struct CountMap{T, A <: AbstractDict{T, Int}} <: OnlineStat{Union{T, Pair{<:T,<:Integer}}}
+mutable struct CountMap{T, A <: AbstractDict{T, Int}} <: OnlineStat{Union{T, Pair{<:T, <:Integer}}}
     value::A  # OrderedDict by default
     n::Int
 end
-CountMap{T}() where {T} = CountMap{T, OrderedDict{T,Int}}(OrderedDict{T,Int}(), 0)
-CountMap(T::Type = Any) = CountMap{T, OrderedDict{T,Int}}(OrderedDict{T, Int}(), 0)
-CountMap(d::D) where {T,D<:AbstractDict{T, Int}} = CountMap{T, D}(d, 0)
+CountMap{T}() where {T} = CountMap{T, OrderedDict{T, Int}}(OrderedDict{T, Int}(), 0)
+CountMap(T::Type = Any) = CountMap{T, OrderedDict{T, Int}}(OrderedDict{T, Int}(), 0)
+CountMap(d::D) where {T, D <: AbstractDict{T, Int}} = CountMap{T, D}(d, 0)
 function _fit!(o::CountMap, x)
     o.n += 1
-    o.value[x] = get!(o.value, x, 0) + 1
+    return o.value[x] = get!(o.value, x, 0) + 1
 end
 function _fit!(o::CountMap{T}, xy::Pair{<:T, <:Integer}) where {T}
     x, y = xy
     o.n += y
-    o.value[x] = get!(o.value, x, 0) + y
+    return o.value[x] = get!(o.value, x, 0) + y
 end
 function _fit!(o::CountMap{T}, x, n) where {T}
     o.n += n
-    o.value[x] = get!(o.value, x, 0) + n
+    return o.value[x] = get!(o.value, x, 0) + n
 end
 
 _merge!(o::CountMap, o2::CountMap) = (merge!(+, o.value, o2.value); o.n += o2.n)
@@ -137,7 +135,7 @@ function probs(o::CountMap, kys = keys(o.value))
     for (i, k) in enumerate(kys)
         out[i] = k in valkeys ? o.value[k] : 0
     end
-    sum(out) == 0 ? Float64.(out) : out ./ sum(out)
+    return sum(out) == 0 ? Float64.(out) : out ./ sum(out)
 end
 pdf(o::CountMap, y) = y in keys(o.value) ? o.value[y] / nobs(o) : 0.0
 Base.keys(o::CountMap) = keys(value(o))
@@ -149,7 +147,7 @@ function Base.delete!(o::CountMap, level)
     x = value(o)[level]
     delete!(value(o), level)
     o.n -= x
-    o
+    return o
 end
 _values_weights(o::CountMap) = collect(keys(o)), StatsBase.fweights(collect(values(o)))
 
@@ -178,17 +176,17 @@ unknown, leave the default `p=0`.
     mean(o)
     var(o)
 """
-mutable struct CovMatrix{T,W} <: OnlineStat{AbstractVector{<:Number}} where T<:Number
+mutable struct CovMatrix{T, W} <: OnlineStat{AbstractVector{<:Number}} where {T <: Number}
     value::Matrix{T}
     A::Matrix{T}  # x'x/n
     b::Vector{T}  # 1'x/n
     weight::W
     n::Int
 end
-function CovMatrix(::Type{T}, p::Int=0; weight = EqualWeight()) where T<:Number
-    CovMatrix(zeros(T,p,p), zeros(T,p,p), zeros(T,p), weight, 0)
+function CovMatrix(::Type{T}, p::Int = 0; weight = EqualWeight()) where {T <: Number}
+    return CovMatrix(zeros(T, p, p), zeros(T, p, p), zeros(T, p), weight, 0)
 end
-CovMatrix(p::Int=0; weight = EqualWeight()) = CovMatrix(zeros(p,p), zeros(p,p), zeros(p), weight, 0)
+CovMatrix(p::Int = 0; weight = EqualWeight()) = CovMatrix(zeros(p, p), zeros(p, p), zeros(p), weight, 0)
 function _fit!(o::CovMatrix{T}, x) where {T}
     γ = o.weight(o.n += 1)
     if isempty(o.A)
@@ -198,20 +196,20 @@ function _fit!(o::CovMatrix{T}, x) where {T}
         o.value = zeros(T, p, p)
     end
     smooth!(o.b, x, γ)
-    smooth_syr!(o.A, x, γ)
+    return smooth_syr!(o.A, x, γ)
 end
 nvars(o::CovMatrix) = size(o.A, 1)
 function value(o::CovMatrix; corrected::Bool = true)
     o.value[:] = Matrix(Hermitian((o.A - o.b * o.b')))
     corrected && rmul!(o.value, bessel(o))
-    o.value
+    return o.value
 end
 function _merge!(o::CovMatrix, o2::CovMatrix)
     γ = o2.n / (o.n += o2.n)
     smooth!(o.A, o2.A, γ)
-    smooth!(o.b, o2.b, γ)
+    return smooth!(o.b, o2.b, γ)
 end
-Statistics.cov(o::CovMatrix; corrected::Bool = true) = value(o; corrected=corrected)
+Statistics.cov(o::CovMatrix; corrected::Bool = true) = value(o; corrected = corrected)
 Statistics.mean(o::CovMatrix) = o.b
 Statistics.var(o::CovMatrix; kw...) = diag(value(o; kw...))
 function Statistics.cor(o::CovMatrix; kw...)
@@ -219,7 +217,7 @@ function Statistics.cor(o::CovMatrix; kw...)
     v = 1.0 ./ sqrt.(diag(o.value))
     rmul!(o.value, Diagonal(v))
     lmul!(Diagonal(v), o.value)
-    o.value
+    return o.value
 end
 
 #-----------------------------------------------------------------------# Extrema
@@ -238,19 +236,19 @@ Maximum and minimum (and number of occurrences for each) for a data stream of ty
     maximum(o)
     minimum(o)
 """
-mutable struct Extrema{T,S} <: OnlineStat{S}
-# T is type to store data, S is type of single observation.
-# E.g. you may want to accept any Number even if you are storing values as Float64
+mutable struct Extrema{T, S} <: OnlineStat{S}
+    # T is type to store data, S is type of single observation.
+    # E.g. you may want to accept any Number even if you are storing values as Float64
     min::T
     max::T
     nmin::Int
     nmax::Int
     n::Int
 end
-Extrema(a::T, b::T) where {T} = Extrema{T,S}(a, b, 0, 0, 0)
+Extrema(a::T, b::T) where {T} = Extrema{T, S}(a, b, 0, 0, 0)
 function Extrema(T::Type = Float64)
     a, b, S = extrema_init(T)
-    Extrema{T,S}(a, b, 0, 0, 0)
+    return Extrema{T, S}(a, b, 0, 0, 0)
 end
 extrema_init(T::Type{<:Number}) = typemax(T), typemin(T), Number
 extrema_init(T::Type{<:AbstractString}) = T(""), T(""), AbstractString
@@ -295,9 +293,9 @@ function _merge!(a::Extrema, b::Extrema)
         a.max = b.max
         a.nmax = b.nmax
     end
-    a.n += b.n
+    return a.n += b.n
 end
-value(o::Extrema) = (min=o.min, max=o.max, nmin=o.nmin, nmax=o.nmax)
+value(o::Extrema) = (min = o.min, max = o.max, nmin = o.nmin, nmax = o.nmax)
 Base.extrema(o::Extrema) = (o.min, o.max)
 Base.maximum(o::Extrema) = o.max
 Base.minimum(o::Extrema) = o.min
@@ -324,15 +322,15 @@ mutable struct ExtremeValues{T, S} <: OnlineStat{S}
     b::Int
     n::Int
 end
-value(o::ExtremeValues) = (; lo=sort!(o.lo), hi=sort!(o.hi))
-function ExtremeValues(T::Type = Float64, b=25)
+value(o::ExtremeValues) = (; lo = sort!(o.lo), hi = sort!(o.hi))
+function ExtremeValues(T::Type = Float64, b = 25)
     _, _, S = extrema_init(T)
-    ExtremeValues{T,S}(OrderedDict(), OrderedDict(), b, 0)
+    return ExtremeValues{T, S}(OrderedDict(), OrderedDict(), b, 0)
 end
 
-_fit!(o::ExtremeValues{T,S}, y::S) where {T,S} = _fit!(o, y => 1)
+_fit!(o::ExtremeValues{T, S}, y::S) where {T, S} = _fit!(o, y => 1)
 
-function _fit!(o::ExtremeValues{T,S}, pr::Pair{<:S, Int}) where {T,S}
+function _fit!(o::ExtremeValues{T, S}, pr::Pair{<:S, Int}) where {T, S}
     y, n = pr
     o.n += n
     lo, hi, b = o.lo, o.hi, o.b
@@ -346,13 +344,14 @@ function _fit!(o::ExtremeValues{T,S}, pr::Pair{<:S, Int}) where {T,S}
     y < maximum(keys(lo)) && (lo[y] = n)
     y > minimum(keys(hi)) && (hi[y] = n)
     length(lo) > b && delete!(lo, maximum(keys(lo)))
-    length(hi) > b && delete!(hi, minimum(keys(hi)))
+    return length(hi) > b && delete!(hi, minimum(keys(hi)))
 end
 
 function _merge!(a::ExtremeValues, b::ExtremeValues)
+    a.b <= b.b || error("Cannot merge an ExtremeValues with smaller capacity into one with larger capacity.")
     n = a.n + b.n
     foreach(pr -> _fit!(a, pr), merge(b.lo, b.hi))  # each distinct value once
-    a.n = n
+    return a.n = n
 end
 
 #-----------------------------------------------------------------------# Group
@@ -384,12 +383,12 @@ struct Group{T, S} <: StatCollection{S}
         inputs = map(input, values(stats))
         tup = Tuple{inputs...}
         promoted_type = reduce(promote_type, inputs)
-        S = Union{tup, NamedTuple{names, R} where R<:tup, AbstractVector{<: promoted_type}} where names
-        new{T,S}(stats)
+        S = Union{tup, NamedTuple{names, R} where {R <: tup}, AbstractVector{<:promoted_type}} where {names}
+        return new{T, S}(stats)
     end
 end
 Group(o::OnlineStat...) = Group(o)
-Group(;o...) = Group(NamedTuple(o))
+Group(; o...) = Group(NamedTuple(o))
 nobs(o::Group) = nobs(first(o.stats))
 Base.:(==)(a::Group, b::Group) = all(x -> ==(x...), zip(a.stats, b.stats))
 
@@ -407,16 +406,18 @@ function _fit!(o::Group{<:OrderedDict}, y)
     for (yi, stat) in zip(y, values(o.stats))
         _fit!(stat, yi)
     end
+    return
 end
 
 @generated function _fit!(o::Group{T}, y) where {T}
     N = fieldcount(T)
-    :(Base.Cartesian.@nexprs $N i -> @inbounds(_fit!(o.stats[i], y[i])))
+    return :(Base.Cartesian.@nexprs $N i -> @inbounds(_fit!(o.stats[i], y[i])))
 end
-function _fit!(o::Group{T}, y) where {T<:AbstractVector}
-    for (i,yi) in enumerate(y)
+function _fit!(o::Group{T}, y) where {T <: AbstractVector}
+    for (i, yi) in enumerate(y)
         _fit!(o.stats[i], yi)
     end
+    return
 end
 
 _merge!(o::Group, o2::Group) = map(merge!, o.stats, o2.stats)
@@ -437,28 +438,28 @@ tuple with two elements or a Pair.
     y = x .+ randn(10^5)
     fit!(GroupBy(Bool, Series(Mean(), Extrema())), zip(x,y))
 """
-mutable struct GroupBy{T, S, O <: OnlineStat{S}} <: StatCollection{TwoThings{T,S}}
+mutable struct GroupBy{T, S, O <: OnlineStat{S}} <: StatCollection{TwoThings{T, S}}
     value::OrderedDict{T, O}
     init::O
     n::Int
-    function GroupBy(value::OrderedDict{T,O}, init::O, n::Int) where {T,S,O<:OnlineStat{S}}
-        new{T,S,O}(value, init, n)
+    function GroupBy(value::OrderedDict{T, O}, init::O, n::Int) where {T, S, O <: OnlineStat{S}}
+        return new{T, S, O}(value, init, n)
     end
 end
-GroupBy(T::Type, stat::O) where {O<:OnlineStat} = GroupBy(OrderedDict{T, O}(), stat, 0)
+GroupBy(T::Type, stat::O) where {O <: OnlineStat} = GroupBy(OrderedDict{T, O}(), stat, 0)
 function _fit!(o::GroupBy, xy)
     o.n += 1
     x, y = xy
-    x in keys(o.value) ? fit!(o.value[x], y) : (o.value[x] = fit!(copy(o.init), y))
+    return x in keys(o.value) ? fit!(o.value[x], y) : (o.value[x] = fit!(copy(o.init), y))
 end
 Base.getindex(o::GroupBy{T}, i::T) where {T} = o.value[i]
 AbstractTrees.children(o::GroupBy) = collect(o.value)
-AbstractTrees.printnode(io::IO, o::GroupBy{T,S,O}) where {T,S,O} = print(io, "GroupBy: $T => $(name(O,false,false))")
+AbstractTrees.printnode(io::IO, o::GroupBy{T, S, O}) where {T, S, O} = print(io, "GroupBy: $T => $(name(O, false, false))")
 Base.sort!(o::GroupBy) = (sort!(o.value); o)
-function _merge!(a::GroupBy{T,O}, b::GroupBy{T,O}) where {T,O}
+function _merge!(a::GroupBy{T, O}, b::GroupBy{T, O}) where {T, O}
     a.init == b.init || error("Cannot merge GroupBy objects with different inits")
     a.n += b.n
-    merge!((o1, o2) -> merge!(o1, o2), a.value, b.value)
+    return merge!((o1, o2) -> merge!(o1, o2), a.value, b.value)
 end
 
 #-----------------------------------------------------------------------# Mean
@@ -471,22 +472,22 @@ Track a univariate mean, stored as type `T`.
 
     @time fit!(Mean(), randn(10^6))
 """
-mutable struct Mean{T,W} <: OnlineStat{Number}
+mutable struct Mean{T, W} <: OnlineStat{Number}
     μ::T
     weight::W
     n::Int
 end
 Mean(T::Type{<:Number} = Float64; weight = EqualWeight()) = Mean(zero(T), weight, 0)
 function _fit!(o::Mean{T}, x) where {T}
-    o.μ = smooth(o.μ, x, o.weight(o.n += 1))
+    return o.μ = smooth(o.μ, x, o.weight(o.n += 1))
 end
-function _fit!(o::Mean{T, W}, y, n) where {T, W<:EqualWeight}
+function _fit!(o::Mean{T, W}, y, n) where {T, W <: EqualWeight}
     o.n += n
-    o.μ = smooth(o.μ, y, o.weight(o.n / n))
+    return o.μ = smooth(o.μ, y, o.weight(o.n / n))
 end
 function _merge!(o::Mean, o2::Mean)
     o.n += o2.n
-    o.μ = smooth(o.μ, o2.μ, o2.n / o.n)
+    return o.μ = smooth(o.μ, o2.μ, o2.n / o.n)
 end
 Statistics.mean(o::Mean) = o.μ
 Base.copy(o::Mean) = Mean(o.μ, o.weight, o.n)
@@ -516,7 +517,7 @@ mutable struct Moments{W} <: OnlineStat{Number}
     weight::W
     n::Int
 end
-Moments(; weight=EqualWeight()) = Moments(zeros(4), weight, 0)
+Moments(; weight = EqualWeight()) = Moments(zeros(4), weight, 0)
 _fit!(o::Moments, y::Real) = mix!(o.m, (y, 0.0, 0.0, 0.0), o.weight(o.n += 1))
 _fit!(o::Moments{EqualWeight}, y::Real, k) = mix!(o.m, (y, 0.0, 0.0, 0.0), k / (o.n += k))
 _merge!(o::Moments, o2::Moments) = mix!(o.m, o2.m, o2.n / (o.n += o2.n))
@@ -529,14 +530,14 @@ function mix!(a, b, γ)
     a[1] = smooth(μ, μb, γ)
     a[2] = smooth(a2, b2, γ) + c * δ^2
     a[3] = smooth(a3, b3, γ) + c * δ * (3 * (b2 - a2) + (1 - 2γ) * δ^2)
-    a[4] = smooth(a4, b4, γ) + c * δ * (4 * (b3 - a3) + 6δ * smooth(b2, a2, γ) + (1 - 3c) * δ^3)
+    return a[4] = smooth(a4, b4, γ) + c * δ * (4 * (b3 - a3) + 6δ * smooth(b2, a2, γ) + (1 - 3c) * δ^3)
 end
-function value(o::Moments, central::Bool=false)
+function value(o::Moments, central::Bool = false)
     (μ, m2, m3, m4) = o.m
-    central ? o.m : [μ, m2 + μ^2, m3 + 3μ * m2 + μ^3, m4 + 4μ * m3 + 6μ^2 * m2 + μ^4]
+    return central ? o.m : [μ, m2 + μ^2, m3 + 3μ * m2 + μ^3, m4 + 4μ * m3 + 6μ^2 * m2 + μ^4]
 end
 Statistics.mean(o::Moments) = o.m[1]
-Statistics.var(o::Moments; corrected=true) = corrected ? bessel(o) * o.m[2] : o.m[2]
+Statistics.var(o::Moments; corrected = true) = corrected ? bessel(o) * o.m[2] : o.m[2]
 StatsBase.skewness(o::Moments) = o.m[3] / o.m[2]^1.5
 StatsBase.kurtosis(o::Moments) = o.m[4] / o.m[2]^2 - 3
 
@@ -580,26 +581,26 @@ mutable struct Variance{T, S, W} <: OnlineStat{Number}
     n::Int
 end
 function Variance(T::Type{<:Number} = Float64; weight = EqualWeight())
-    Variance(zero(T) ^ 2 / one(T), zero(T) / one(T), weight, 0)
+    return Variance(zero(T)^2 / one(T), zero(T) / one(T), weight, 0)
 end
 Base.copy(o::Variance) = Variance(o.σ2, o.μ, o.weight, o.n)
 function _fit!(o::Variance{T}, x) where {T}
     μ = o.μ
     γ = o.weight(o.n += 1)
     o.μ = smooth(o.μ, T(x), γ)
-    o.σ2 = smooth(o.σ2, (T(x) - o.μ) * (T(x) - μ), γ)
+    return o.σ2 = smooth(o.σ2, (T(x) - o.μ) * (T(x) - μ), γ)
 end
 function _merge!(o::Variance, o2::Variance)
     γ = o2.n / (o.n += o2.n)
     δ = o2.μ - o.μ
-    o.σ2 = smooth(o.σ2, o2.σ2, γ) + δ ^ 2 * γ * (1.0 - γ)
-    o.μ = smooth(o.μ, o2.μ, γ)
+    o.σ2 = smooth(o.σ2, o2.σ2, γ) + δ^2 * γ * (1.0 - γ)
+    return o.μ = smooth(o.μ, o2.μ, γ)
 end
 function value(o::Variance{T}) where {T}
-    if nobs(o) > 1
+    return if nobs(o) > 1
         o.σ2 * T(bessel(o))
     else
-        isfinite(mean(o)) ? T(1) ^ 2 : NaN * T(1) ^ 2
+        isfinite(mean(o)) ? T(1)^2 : NaN * T(1)^2
     end
 end
 Statistics.var(o::Variance) = value(o)
@@ -633,10 +634,11 @@ function _fit!(o::Series{IN, T}, y) where {IN, T <: OrderedDict}
     for stat in values(o.stats)
         _fit!(stat, y)
     end
+    return
 end
 @generated function _fit!(o::Series{IN, T}, y) where {IN, T}
     n = length(fieldnames(T))
-    :(Base.Cartesian.@nexprs $n i -> _fit!(o.stats[i], y))
+    return :(Base.Cartesian.@nexprs $n i -> _fit!(o.stats[i], y))
 end
 _merge!(o::Series, o2::Series) = map(_merge!, o.stats, o2.stats)
 

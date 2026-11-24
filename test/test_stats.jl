@@ -1,14 +1,14 @@
 #-----------------------------------------------------------------------# Stats
 n = 1000
-x,  y,  z  = rand(Bool, n), randn(n), rand(1:10, n)
+x, y, z = rand(Bool, n), randn(n), rand(1:10, n)
 x2, y2, z2 = rand(Bool, n), randn(n), rand(1:10, n)
 xs, ys, zs = vcat(x, x2), vcat(y, y2), vcat(z, z2)
 
 p = 5
-xmat,  ymat,  zmat  = rand(Bool, n, p), randn(n, p), rand(1:10, n, p)
+xmat, ymat, zmat = rand(Bool, n, p), randn(n, p), rand(1:10, n, p)
 xmat2, ymat2, zmat2 = rand(Bool, n, p), randn(n, p), rand(1:10, n, p)
 
-function mergestats(a::OnlineStat, y1, y2; nobs_equals_length=true)
+function mergestats(a::OnlineStat, y1, y2; nobs_equals_length = true)
     b = copy(a)
     fit!(a, y1)             # fit a on y1
     fit!(b, y2)             # fit b on y2
@@ -19,403 +19,408 @@ function mergestats(a::OnlineStat, y1, y2; nobs_equals_length=true)
     else
         @test nobs(a) == nobs(b)
     end
-    a, b
+    return a, b
 end
 mergevals(o1::OnlineStat, y1, y2; kw...) = map(value, mergestats(o1, y1, y2; kw...))
 
 @testset "Testing Stats" begin
-#-----------------------------------------------------------------------------# CircBuff
-println("  > CircBuff")
-@testset "CircBuff" begin
-    a = CircBuff(Int, 5)
-    fit!(a, 1:2)
-    @test value(a) == [1,2]
-    fit!(a, 3:11)
-    @test a[1] == 7
-    @test a[end] == 11
+    #-----------------------------------------------------------------------------# CircBuff
+    println("  > CircBuff")
+    @testset "CircBuff" begin
+        a = CircBuff(Int, 5)
+        fit!(a, 1:2)
+        @test value(a) == [1, 2]
+        fit!(a, 3:11)
+        @test a[1] == 7
+        @test a[end] == 11
 
-    b = CircBuff(Int, 5, rev=true)
-    fit!(b, 1:2)
-    @test value(b) == [2, 1]
-    fit!(b, 3:11)
-    @test b[end] == 7
-    @test b[1] == 11
+        b = CircBuff(Int, 5, rev = true)
+        fit!(b, 1:2)
+        @test value(b) == [2, 1]
+        fit!(b, 3:11)
+        @test b[end] == 7
+        @test b[1] == 11
 
-    # Multiple obs method
-    c = CircBuff(Int, 5)
-    fit!(c, 5, 5)
-    fit!(c, 10)
-    @test c[1] == 5
-    @test c[end] == 10
-end
-
-#-----------------------------------------------------------------------# Counter
-println("  > Counter")
-@testset "Counter" begin
-    o = fit!(Counter(Int), 1:10)
-    @test value(o) == 10
-    o2 = fit!(Counter(Int), 1)
-    @test value(merge!(o, o2)) == 11
-    ==(mergevals(Counter(), y, y2)...)
-
-    # Multiple obs method
-    o3 = fit!(Counter(Int), 1, 10)
-    @test (value(o3)) == 10
-end
-
-#-----------------------------------------------------------------------# CountMap
-println("  > CountMap")
-@testset "CountMap" begin
-    a = fit!(CountMap(Bool), x)
-    @test sort(value(a)) == sort!(OrderedDict(countmap(x)))
-    @test O.pdf(a, true) == mean(x)
-    @test O.pdf(a, false) == mean(!, x)
-    @test O.pdf(a, 2) == 0.0
-    @test keys(a) == keys(a.value)
-    @test values(a) == values(a.value)
-    @test a[true] == a.value[true]
-    @test O.nkeys(a) == 2
-
-    b = fit!(CountMap(Int), z)
-    @test sort(value(b)) == sort!(OrderedDict(countmap(z)))
-    for i in 1:11
-        @test O.pdf(b, i) ≈ sum(==(i), z) / n
-    end
-    @test all(x -> 0 < x < 1, O.probs(b))
-    @test O.probs(b, 11:13) == zeros(3)
-
-    @test ==(mergevals(CountMap(Bool), x, x2)...)
-    @test ==(mergevals(CountMap(Int), z, z2)...)
-    @test ==(mergevals(CountMap{Bool}(), x, x2)...)
-    @test ==(mergevals(CountMap{Int}(), z, z2)...)
-    @test ==(mergevals(CountMap(Dict{Bool,Int}()), x, x2)...)
-    @test ==(mergevals(CountMap(Dict{Int,Int}()), z, z2)...)
-    # Pair method
-    @test ==(mergevals(CountMap(Bool), Pair.(x,z), Pair.(x2,z2); nobs_equals_length=false)...)
-    @test ==(mergevals(CountMap(Int), Pair.(z,z), Pair.(z2,z2); nobs_equals_length=false)...)
-
-    # Multiple obs method
-    c = fit!(CountMap(Bool), true, 10)
-    fit!(c, false, 5)
-    @test nobs(c) == 15
-    @test c[true] == 10
-    @test c[false] == 5
-
-    # mean/quantile weight each key by its count, matching the same call on the raw data
-    ps = [.25, .5, .75]
-    cm = fit!(CountMap(Int), z)
-    @test mean(cm) ≈ mean(z)
-    @test quantile(cm, .5) ≈ quantile(z, .5)
-    @test quantile(cm, ps) ≈ quantile(z, ps)
-
-    cm = fit!(CountMap(Float64), y)
-    @test mean(cm) ≈ mean(y)
-    @test quantile(cm, ps) ≈ quantile(y, ps)
-
-    cm = fit!(CountMap(String), ["a", "b"])
-    @test_throws MethodError mean(cm)
-    @test_throws MethodError quantile(cm, .5)
-end
-#-----------------------------------------------------------------------# CountMissing
-println("  > CountMissing")
-@testset "CountMissing" begin
-    data = Vector{Union{Missing,Float64}}(copy(y))
-    data2 = Vector{Union{Missing,Float64}}(copy(y2))
-    data[x] .= missing
-    data2[x2] .= missing
-    a, b = mergestats(CountMissing(Mean()), data, data2, nobs_equals_length=false)
-    @test value(a) ≈ value(b)
-    @test a.nmissing == b.nmissing
-end
-#-----------------------------------------------------------------------# CovMatrix
-println("  > CovMatrix")
-@testset "CovMatrix" begin
-    o = fit!(CovMatrix(), eachrow(ymat))
-    @test O.nvars(o) == size(ymat, 2)
-    @test value(o) ≈ cov(ymat)
-    @test cov(o) ≈ cov(ymat)
-    @test cor(o) ≈ cor(ymat)
-    @test all(x -> ≈(x...), zip(var(o), var(ymat; dims=1)))
-    @test all(x -> ≈(x...), zip(std(o), std(ymat; dims=1)))
-    @test all(x -> ≈(x...), zip(mean(o), mean(ymat; dims=1)))
-
-    @test ≈(mergevals(CovMatrix(), eachrow(ymat), eachrow(ymat2))...)
-    @test ≈(mergevals(CovMatrix(), O.eachcol(ymat'), O.eachcol(ymat2'))...)
-    @test ≈(mergevals(CovMatrix(Complex{Float64}), eachrow(ymat * im), eachrow(ymat2))...)
-    @test ≈(mergevals(CovMatrix(Complex{Float64}), eachrow(ymat * im), eachrow(ymat2 * im))...)
-end
-#-----------------------------------------------------------------------# Extrema
-println("  > Extrema")
-@testset "Extrema" begin
-    o = fit!(Extrema(), y)
-    @test extrema(o) == extrema(y)
-    @test minimum(o) == minimum(y)
-    @test maximum(o) == maximum(y)
-
-    f(x) = (
-        min = minimum(x),
-        max = maximum(x),
-        nmin = sum(collect(x) .== minimum(x)),
-        nmax = sum(collect(x) .== maximum(x))
-    )
-
-    @test value(fit!(Extrema(Bool), x)) == f(x)
-    @test value(fit!(Extrema(Int), z)) == f(z)
-
-    @test ==(mergevals(Extrema(), y, y2)...)
-    @test ==(mergevals(Extrema(), x, x2)...)
-
-    o = fit!(Extrema(Date), Date(2010):Day(1):Date(2011))
-    @test minimum(o) == Date(2010)
-    @test maximum(o) == Date(2011)
-
-    @test value(fit!(Extrema(Char), 'a':'z')) == f('a':'z')
-    @test value(fit!(Extrema(Char), "abc")) == f("abc")
-    @test value(fit!(Extrema(String), ["a", "b"])) == f(["a","b"])
-
-    o = fit!(Extrema(), x)
-    @test o.nmin == length(x) - sum(x)
-    @test o.nmax == sum(x)
-
-    # Multiple obs method
-    o = fit!(Extrema(), y)
-    fit!(o, 20, 5)
-    fit!(o, -20, 7)
-    @test o.nmax == 5
-    @test o.nmin == 7
-    @test maximum(o) == 20
-    @test minimum(o) == -20
-end
-#-----------------------------------------------------------------------------# ExtremeValues
-println("  > ExtremeValues")
-@testset "ExtremeValues" begin
-    o = fit!(ExtremeValues(Float64, 5), y)
-    ysorted = sort(y)
-    @test collect(keys(value(o).lo)) == ysorted[1:5]
-    @test collect(keys(value(o).hi)) == ysorted[end-4:end]
-
-    @test ==(mergevals(ExtremeValues(), y, y2)...)
-
-    # Values in both `lo` and `hi` are merged once (#55)
-    @test ==(mergevals(ExtremeValues(Int, 2), [-100, -50, -50, -33, 7, 8, 12, 38, 44, 60, 70], [-55, 65, 65])...)
-    @test ==(mergevals(ExtremeValues(Int, 8), z, z2)...)
-end
-
-#-----------------------------------------------------------------------------# FilterTransform
-println("  > FilterTransform")
-@testset "FilterTransform" begin
-    o = FilterTransform(String => (x->true) => (x -> parse(Int,x)) => Mean())
-    fit!(o, ["1", "3", "5"])
-    @test value(o) ≈ 3
-
-    o = FilterTransform(String => (x -> x != "1") => (x -> parse(Int,x)) => Mean())
-    fit!(o, ["1", "3", "5"])
-    @test value(o) ≈ 4
-    @test o.nfiltered == 1
-end
-
-#-----------------------------------------------------------------------# Group
-println("  > Group")
-@testset "Group" begin
-    o = fit!(5Mean(), eachrow(ymat))
-    @test o[1] == first(o)
-    @test o[end] == last(o)
-    @test 5Mean() == 5Mean()
-    @test collect(map(value, value(o))) ≈ vec(mean(ymat, dims=1))
-
-    o2 = Group(m1=Mean(), m2=Mean(), m3=Mean(), m4=Mean(), m5=Mean())
-    fit!(o2, eachrow(ymat))
-    @test collect(map(value, value(o2))) ≈ vec(mean(ymat, dims=1))
-    @test length(o2) == 5
-
-    a, b = mergevals(
-        Group(Mean(), Variance(), Sum(), Moments(), Mean()), eachrow(ymat), eachrow(ymat2)
-    )
-    for (ai, bi) in zip(a, b)
-        @test value(ai) ≈ value(bi)
+        # Multiple obs method
+        c = CircBuff(Int, 5)
+        fit!(c, 5, 5)
+        fit!(c, 10)
+        @test c[1] == 5
+        @test c[end] == 10
     end
 
-    @test length(values(a)) == 5
+    #-----------------------------------------------------------------------# Counter
+    println("  > Counter")
+    @testset "Counter" begin
+        o = fit!(Counter(Int), 1:10)
+        @test value(o) == 10
+        o2 = fit!(Counter(Int), 1)
+        @test value(merge!(o, o2)) == 11
+        ==(mergevals(Counter(), y, y2)...)
 
-    c = fit!(Group([Mean(), Mean()]), zip(1:10, 1:10))
-    for m in c
-        @test value(m) ≈ mean(1:10)
+        # Multiple obs method
+        o3 = fit!(Counter(Int), 1, 10)
+        @test (value(o3)) == 10
     end
 
-    # With OrderedDict
+    #-----------------------------------------------------------------------# CountMap
+    println("  > CountMap")
+    @testset "CountMap" begin
+        a = fit!(CountMap(Bool), x)
+        @test sort(value(a)) == sort!(OrderedDict(countmap(x)))
+        @test O.pdf(a, true) == mean(x)
+        @test O.pdf(a, false) == mean(!, x)
+        @test O.pdf(a, 2) == 0.0
+        @test keys(a) == keys(a.value)
+        @test values(a) == values(a.value)
+        @test a[true] == a.value[true]
+        @test O.nkeys(a) == 2
 
-    o = Group(OrderedDict("x1" => Mean(), "x2" => Series(Extrema(), Mean())))
-    fit!(o, zip(1:10, 2:11))
-    @test value(o["x1"]) ≈ mean(1:10)
-    @test extrema(o["x2"][1]) == (2, 11)
-    @test value(o["x2"][2]) ≈ mean(2:11)
-end
-#-----------------------------------------------------------------------# GroupBy
-println("  > GroupBy")
-@testset "GroupBy" begin
-    @test GroupBy(Bool, Mean()) == GroupBy(Bool, Mean())
-    d = value(fit!(GroupBy(Bool, Mean()), zip(x,y)))
-    @test value(d[true]) ≈ mean(y[x])
-    @test value(d[false]) ≈ mean(y[map(!,x)])
-    string(GroupBy(Bool, Mean()))
+        b = fit!(CountMap(Int), z)
+        @test sort(value(b)) == sort!(OrderedDict(countmap(z)))
+        for i in 1:11
+            @test O.pdf(b, i) ≈ sum(==(i), z) / n
+        end
+        @test all(x -> 0 < x < 1, O.probs(b))
+        @test O.probs(b, 11:13) == zeros(3)
 
-    a, b = mergevals(GroupBy(Int, Mean()), zip(z,y), zip(z2, y2))
-    for (ai,bi) in zip(values(sort(a)), values(sort(b)))
-        @test value(ai) ≈ value(bi)
+        @test ==(mergevals(CountMap(Bool), x, x2)...)
+        @test ==(mergevals(CountMap(Int), z, z2)...)
+        @test ==(mergevals(CountMap{Bool}(), x, x2)...)
+        @test ==(mergevals(CountMap{Int}(), z, z2)...)
+        @test ==(mergevals(CountMap(Dict{Bool, Int}()), x, x2)...)
+        @test ==(mergevals(CountMap(Dict{Int, Int}()), z, z2)...)
+        # Pair method
+        @test ==(mergevals(CountMap(Bool), Pair.(x, z), Pair.(x2, z2); nobs_equals_length = false)...)
+        @test ==(mergevals(CountMap(Int), Pair.(z, z), Pair.(z2, z2); nobs_equals_length = false)...)
+
+        # Multiple obs method
+        c = fit!(CountMap(Bool), true, 10)
+        fit!(c, false, 5)
+        @test nobs(c) == 15
+        @test c[true] == 10
+        @test c[false] == 5
+
+        # mean/quantile weight each key by its count, matching the same call on the raw data
+        ps = [0.25, 0.5, 0.75]
+        cm = fit!(CountMap(Int), z)
+        @test mean(cm) ≈ mean(z)
+        @test quantile(cm, 0.5) ≈ quantile(z, 0.5)
+        @test quantile(cm, ps) ≈ quantile(z, ps)
+
+        cm = fit!(CountMap(Float64), y)
+        @test mean(cm) ≈ mean(y)
+        @test quantile(cm, ps) ≈ quantile(y, ps)
+
+        cm = fit!(CountMap(String), ["a", "b"])
+        @test_throws MethodError mean(cm)
+        @test_throws MethodError quantile(cm, 0.5)
     end
-    @test value(a[1]) ≈ value(b[1])
-    string(GroupBy(Int, Mean()))
-end
-#-----------------------------------------------------------------------# Mean
-println("  > Mean")
-@testset "Mean" begin
-    o = fit!(Mean(), y)
-    @test value(o) ≈ mean(y)
-    @test mean(o) ≈ mean(y)
-    @test ≈(mergevals(Mean(), y, y2)...)
+    #-----------------------------------------------------------------------# CountMissing
+    println("  > CountMissing")
+    @testset "CountMissing" begin
+        data = Vector{Union{Missing, Float64}}(copy(y))
+        data2 = Vector{Union{Missing, Float64}}(copy(y2))
+        data[x] .= missing
+        data2[x2] .= missing
+        a, b = mergestats(CountMissing(Mean()), data, data2, nobs_equals_length = false)
+        @test value(a) ≈ value(b)
+        @test a.nmissing == b.nmissing
+    end
+    #-----------------------------------------------------------------------# CovMatrix
+    println("  > CovMatrix")
+    @testset "CovMatrix" begin
+        o = fit!(CovMatrix(), eachrow(ymat))
+        @test O.nvars(o) == size(ymat, 2)
+        @test value(o) ≈ cov(ymat)
+        @test cov(o) ≈ cov(ymat)
+        @test cor(o) ≈ cor(ymat)
+        @test all(x -> ≈(x...), zip(var(o), var(ymat; dims = 1)))
+        @test all(x -> ≈(x...), zip(std(o), std(ymat; dims = 1)))
+        @test all(x -> ≈(x...), zip(mean(o), mean(ymat; dims = 1)))
 
-    # Multiple obs method
-    o = fit!(Mean(), y)
-    fit!(o, 1.0, 4)
-    v = vcat(copy(y), [1.0, 1.0, 1.0, 1.0])
-    @test mean(o) ≈ mean(v)
-end
-#-----------------------------------------------------------------------# Moments
-println("  > Moments")
-@testset "Moments" begin
-    o = fit!(Moments(), y)
-    @test value(o) ≈ [mean(y), mean(y .^ 2), mean(y .^ 3), mean(y .^ 4)]
-    @test value(o, false) == value(o)
-    @test value(o, true) ≈ [mean(y); map(k -> moment(y, k), 2:4)]
-    @test mean(o) ≈ mean(y)
-    @test var(o) ≈ var(y)
-    @test var(o; corrected=false) ≈ var(y; corrected=false)
-    @test std(o) ≈ std(y)
-    @test skewness(o) ≈ skewness(y)
-    @test kurtosis(o) ≈ kurtosis(y)
-    for (v1,v2) in zip(mergevals(Moments(), y, y2)...)
-        @test v1 ≈ v2
+        @test ≈(mergevals(CovMatrix(), eachrow(ymat), eachrow(ymat2))...)
+        @test ≈(mergevals(CovMatrix(), O.eachcol(ymat'), O.eachcol(ymat2'))...)
+        @test ≈(mergevals(CovMatrix(Complex{Float64}), eachrow(ymat * im), eachrow(ymat2))...)
+        @test ≈(mergevals(CovMatrix(Complex{Float64}), eachrow(ymat * im), eachrow(ymat2 * im))...)
+    end
+    #-----------------------------------------------------------------------# Extrema
+    println("  > Extrema")
+    @testset "Extrema" begin
+        o = fit!(Extrema(), y)
+        @test extrema(o) == extrema(y)
+        @test minimum(o) == minimum(y)
+        @test maximum(o) == maximum(y)
+
+        f(x) = (
+            min = minimum(x),
+            max = maximum(x),
+            nmin = sum(collect(x) .== minimum(x)),
+            nmax = sum(collect(x) .== maximum(x)),
+        )
+
+        @test value(fit!(Extrema(Bool), x)) == f(x)
+        @test value(fit!(Extrema(Int), z)) == f(z)
+
+        @test ==(mergevals(Extrema(), y, y2)...)
+        @test ==(mergevals(Extrema(), x, x2)...)
+
+        o = fit!(Extrema(Date), Date(2010):Day(1):Date(2011))
+        @test minimum(o) == Date(2010)
+        @test maximum(o) == Date(2011)
+
+        @test value(fit!(Extrema(Char), 'a':'z')) == f('a':'z')
+        @test value(fit!(Extrema(Char), "abc")) == f("abc")
+        @test value(fit!(Extrema(String), ["a", "b"])) == f(["a", "b"])
+
+        o = fit!(Extrema(), x)
+        @test o.nmin == length(x) - sum(x)
+        @test o.nmax == sum(x)
+
+        # Multiple obs method
+        o = fit!(Extrema(), y)
+        fit!(o, 20, 5)
+        fit!(o, -20, 7)
+        @test o.nmax == 5
+        @test o.nmin == 7
+        @test maximum(o) == 20
+        @test minimum(o) == -20
+    end
+    #-----------------------------------------------------------------------------# ExtremeValues
+    println("  > ExtremeValues")
+    @testset "ExtremeValues" begin
+        o = fit!(ExtremeValues(Float64, 5), y)
+        ysorted = sort(y)
+        @test collect(keys(value(o).lo)) == ysorted[1:5]
+        @test collect(keys(value(o).hi)) == ysorted[(end - 4):end]
+
+        @test ==(mergevals(ExtremeValues(), y, y2)...)
+
+        # Values in both `lo` and `hi` are merged once (#55)
+        @test ==(mergevals(ExtremeValues(Int, 2), [-100, -50, -50, -33, 7, 8, 12, 38, 44, 60, 70], [-55, 65, 65])...)
+        @test ==(mergevals(ExtremeValues(Int, 8), z, z2)...)
+
+        # A smaller capacity has already discarded extremes the larger one needs (#72)
+        small, big = fit!(ExtremeValues(Int, 1), [1, 2, 4, 5]), fit!(ExtremeValues(Int, 2), [3])
+        @test_throws ErrorException merge!(big, small)
+        @test value(merge!(small, big)) == value(fit!(ExtremeValues(Int, 1), 1:5))
     end
 
-    # Multiple obs method
-    o = fit!(Moments(), y)
-    fit!(o, 1.0, 4)
-    v = vcat(copy(y), [1.0, 1.0, 1.0, 1.0])
-    @test value(o) ≈ [mean(v), mean(v .^ 2), mean(v .^ 3), mean(v .^ 4)]
-    @test mean(o) ≈ mean(v)
-    @test var(o) ≈ var(v)
-    @test var(o; corrected=false) ≈ var(v; corrected=false)
-    @test std(o) ≈ std(v)
-    @test skewness(o) ≈ skewness(v)
-    @test kurtosis(o) ≈ kurtosis(v)
+    #-----------------------------------------------------------------------------# FilterTransform
+    println("  > FilterTransform")
+    @testset "FilterTransform" begin
+        o = FilterTransform(String => (x -> true) => (x -> parse(Int, x)) => Mean())
+        fit!(o, ["1", "3", "5"])
+        @test value(o) ≈ 3
 
-    # Mean far from zero (#68)
-    for shift ∈ (0, 1e8, 1e9, 1e12)
-        x = [4, 7, 13, 16]
-        (a, b) = (fit!(Moments(), x[1:2] .+ shift), fit!(Moments(), x[3:4] .+ shift))
-        for o ∈ (fit!(Moments(), x .+ shift), merge!(a, b))
-            @test mean(o) ≈ mean(x) + shift
-            @test var(o) ≈ var(x)
-            @test var(o; corrected=false) ≈ var(x; corrected=false)
-            @test skewness(o) ≈ skewness(x) atol=1e-8
-            @test kurtosis(o) ≈ kurtosis(x)
+        o = FilterTransform(String => (x -> x != "1") => (x -> parse(Int, x)) => Mean())
+        fit!(o, ["1", "3", "5"])
+        @test value(o) ≈ 4
+        @test o.nfiltered == 1
+    end
+
+    #-----------------------------------------------------------------------# Group
+    println("  > Group")
+    @testset "Group" begin
+        o = fit!(5Mean(), eachrow(ymat))
+        @test o[1] == first(o)
+        @test o[end] == last(o)
+        @test 5Mean() == 5Mean()
+        @test collect(map(value, value(o))) ≈ vec(mean(ymat, dims = 1))
+
+        o2 = Group(m1 = Mean(), m2 = Mean(), m3 = Mean(), m4 = Mean(), m5 = Mean())
+        fit!(o2, eachrow(ymat))
+        @test collect(map(value, value(o2))) ≈ vec(mean(ymat, dims = 1))
+        @test length(o2) == 5
+
+        a, b = mergevals(
+            Group(Mean(), Variance(), Sum(), Moments(), Mean()), eachrow(ymat), eachrow(ymat2)
+        )
+        for (ai, bi) in zip(a, b)
+            @test value(ai) ≈ value(bi)
+        end
+
+        @test length(values(a)) == 5
+
+        c = fit!(Group([Mean(), Mean()]), zip(1:10, 1:10))
+        for m in c
+            @test value(m) ≈ mean(1:10)
+        end
+
+        # With OrderedDict
+
+        o = Group(OrderedDict("x1" => Mean(), "x2" => Series(Extrema(), Mean())))
+        fit!(o, zip(1:10, 2:11))
+        @test value(o["x1"]) ≈ mean(1:10)
+        @test extrema(o["x2"][1]) == (2, 11)
+        @test value(o["x2"][2]) ≈ mean(2:11)
+    end
+    #-----------------------------------------------------------------------# GroupBy
+    println("  > GroupBy")
+    @testset "GroupBy" begin
+        @test GroupBy(Bool, Mean()) == GroupBy(Bool, Mean())
+        d = value(fit!(GroupBy(Bool, Mean()), zip(x, y)))
+        @test value(d[true]) ≈ mean(y[x])
+        @test value(d[false]) ≈ mean(y[map(!, x)])
+        string(GroupBy(Bool, Mean()))
+
+        a, b = mergevals(GroupBy(Int, Mean()), zip(z, y), zip(z2, y2))
+        for (ai, bi) in zip(values(sort(a)), values(sort(b)))
+            @test value(ai) ≈ value(bi)
+        end
+        @test value(a[1]) ≈ value(b[1])
+        string(GroupBy(Int, Mean()))
+    end
+    #-----------------------------------------------------------------------# Mean
+    println("  > Mean")
+    @testset "Mean" begin
+        o = fit!(Mean(), y)
+        @test value(o) ≈ mean(y)
+        @test mean(o) ≈ mean(y)
+        @test ≈(mergevals(Mean(), y, y2)...)
+
+        # Multiple obs method
+        o = fit!(Mean(), y)
+        fit!(o, 1.0, 4)
+        v = vcat(copy(y), [1.0, 1.0, 1.0, 1.0])
+        @test mean(o) ≈ mean(v)
+    end
+    #-----------------------------------------------------------------------# Moments
+    println("  > Moments")
+    @testset "Moments" begin
+        o = fit!(Moments(), y)
+        @test value(o) ≈ [mean(y), mean(y .^ 2), mean(y .^ 3), mean(y .^ 4)]
+        @test value(o, false) == value(o)
+        @test value(o, true) ≈ [mean(y); map(k -> moment(y, k), 2:4)]
+        @test mean(o) ≈ mean(y)
+        @test var(o) ≈ var(y)
+        @test var(o; corrected = false) ≈ var(y; corrected = false)
+        @test std(o) ≈ std(y)
+        @test skewness(o) ≈ skewness(y)
+        @test kurtosis(o) ≈ kurtosis(y)
+        for (v1, v2) in zip(mergevals(Moments(), y, y2)...)
+            @test v1 ≈ v2
+        end
+
+        # Multiple obs method
+        o = fit!(Moments(), y)
+        fit!(o, 1.0, 4)
+        v = vcat(copy(y), [1.0, 1.0, 1.0, 1.0])
+        @test value(o) ≈ [mean(v), mean(v .^ 2), mean(v .^ 3), mean(v .^ 4)]
+        @test mean(o) ≈ mean(v)
+        @test var(o) ≈ var(v)
+        @test var(o; corrected = false) ≈ var(v; corrected = false)
+        @test std(o) ≈ std(v)
+        @test skewness(o) ≈ skewness(v)
+        @test kurtosis(o) ≈ kurtosis(v)
+
+        # Mean far from zero (#68)
+        for shift in (0, 1.0e8, 1.0e9, 1.0e12)
+            x = [4, 7, 13, 16]
+            (a, b) = (fit!(Moments(), x[1:2] .+ shift), fit!(Moments(), x[3:4] .+ shift))
+            for o in (fit!(Moments(), x .+ shift), merge!(a, b))
+                @test mean(o) ≈ mean(x) + shift
+                @test var(o) ≈ var(x)
+                @test var(o; corrected = false) ≈ var(x; corrected = false)
+                @test skewness(o) ≈ skewness(x) atol = 1.0e-8
+                @test kurtosis(o) ≈ kurtosis(x)
+            end
+        end
+
+        # Integer overflow (#43)
+        x = [4_000_000_000, 4_000_000_100]
+        o = fit!(Moments(), x)
+        @test mean(o) ≈ mean(x)
+        @test var(o) ≈ var(x)
+        @test kurtosis(o) ≈ kurtosis(x)
+
+        # Weighted (implicit starting value of 0)
+        o = fit!(Moments(weight = ExponentialWeight(0.1)), y)
+        w = map(i -> 0.1 * 0.9^(n - i), 1:n)
+        @test value(o) ≈ map(k -> sum(w .* y .^ k), 1:4)
+        @test value(fit!(copy(o), 1.0, 4)) ≈ value(fit!(copy(o), fill(1.0, 4)))
+    end
+
+    #-----------------------------------------------------------------------# Series
+    println("  > Series")
+    @testset "Series" begin
+        @testset "Series" begin
+            a, b = mergevals(Series(Mean(), Variance()), y, y2)
+            @test a[1] ≈ b[1]
+            @test a[2] ≈ b[2]
+
+            a, b = mergevals(Series(m = Mean(), v = Variance()), y, y2)
+            @test a.m ≈ b.m
+            @test a.v ≈ b.v
+
+            # OrderedDict input
+            o = Series(OrderedDict("x1" => Mean()))
+            fit!(o, 1:10)
+            @test value(o["x1"]) ≈ mean(1:10)
         end
     end
 
-    # Integer overflow (#43)
-    x = [4_000_000_000, 4_000_000_100]
-    o = fit!(Moments(), x)
-    @test mean(o) ≈ mean(x)
-    @test var(o) ≈ var(x)
-    @test kurtosis(o) ≈ kurtosis(x)
-
-    # Weighted (implicit starting value of 0)
-    o = fit!(Moments(weight=ExponentialWeight(.1)), y)
-    w = map(i -> .1 * .9 ^ (n - i), 1:n)
-    @test value(o) ≈ map(k -> sum(w .* y .^ k), 1:4)
-    @test value(fit!(copy(o), 1.0, 4)) ≈ value(fit!(copy(o), fill(1.0, 4)))
-end
-
-#-----------------------------------------------------------------------# Series
-println("  > Series")
-@testset "Series" begin
-    @testset "Series" begin
-        a, b = mergevals(Series(Mean(), Variance()), y, y2)
-        @test a[1] ≈ b[1]
-        @test a[2] ≈ b[2]
-
-        a, b = mergevals(Series(m=Mean(), v=Variance()), y, y2)
-        @test a.m ≈ b.m
-        @test a.v ≈ b.v
-
-        # OrderedDict input
-        o = Series(OrderedDict("x1" => Mean()))
-        fit!(o, 1:10)
-        @test value(o["x1"]) ≈ mean(1:10)
+    #-----------------------------------------------------------------------------# SkipMissing
+    println("  > SkipMissing")
+    @testset "SkipMissing" begin
+        data = [rand() > 0.5 ? missing : rand() for i in 1:1000]
+        o = fit!(skipmissing(Mean()), data)
+        @test nobs(o) == sum(!ismissing, data)
+        @test value(o) ≈ mean(skipmissing(data))
     end
-end
 
-#-----------------------------------------------------------------------------# SkipMissing
-println("  > SkipMissing")
-@testset "SkipMissing" begin
-    data = [rand() > .5 ? missing : rand() for i in 1:1000]
-    o = fit!(skipmissing(Mean()), data)
-    @test nobs(o) == sum(!ismissing, data)
-    @test value(o) ≈ mean(skipmissing(data))
-end
+    #-----------------------------------------------------------------------# Sum
+    println("  > Sum")
+    @testset "Sum" begin
+        @test sum(fit!(Sum(Int), x)) == sum(x)
+        @test value(fit!(Sum(), y)) ≈ sum(y)
+        @test value(fit!(Sum(Int), z)) == sum(z)
 
-#-----------------------------------------------------------------------# Sum
-println("  > Sum")
-@testset "Sum" begin
-    @test sum(fit!(Sum(Int), x)) == sum(x)
-    @test value(fit!(Sum(), y)) ≈ sum(y)
-    @test value(fit!(Sum(Int), z)) == sum(z)
+        @test ==(mergevals(Sum(Int), x, x2)...)
+        @test ≈(mergevals(Sum(), y, y2)...)
+        @test ==(mergevals(Sum(Int), z, z2)...)
 
-    @test ==(mergevals(Sum(Int), x, x2)...)
-    @test ≈(mergevals(Sum(), y, y2)...)
-    @test ==(mergevals(Sum(Int), z, z2)...)
+        # Multiple obs method
+        @test sum(fit!(Sum(Int), 10, 5)) == 50
+    end
 
-    # Multiple obs method
-    @test sum(fit!(Sum(Int), 10, 5)) == 50
-end
+    #-----------------------------------------------------------------------------# TryCatch
+    println("  > TryCatch")
+    @testset "TryCatch" begin
+        o = TryCatch(Mean())
+        fit!(o, [1, missing, 3])
+        @test value(o) ≈ 2
+        merge!(o, fit!(TryCatch(Mean()), [missing, 5, missing]))
+        @test value(o) ≈ 3
+        @test length(OnlineStatsBase.errors(o)) == OnlineStatsBase.nerrors(o)
+    end
 
-#-----------------------------------------------------------------------------# TryCatch
-println("  > TryCatch")
-@testset "TryCatch" begin
-    o = TryCatch(Mean())
-    fit!(o, [1, missing, 3])
-    @test value(o) ≈ 2
-    merge!(o, fit!(TryCatch(Mean()), [missing, 5, missing]))
-    @test value(o) ≈ 3
-    @test length(OnlineStatsBase.errors(o)) == OnlineStatsBase.nerrors(o)
-end
+    #-----------------------------------------------------------------------# Variance
+    println("  > Variance")
+    @testset "Variance" begin
+        o = fit!(Variance(), y)
+        @test mean(o) ≈ mean(y)
+        @test var(o) ≈ var(y)
+        @test std(o) ≈ std(y)
 
-#-----------------------------------------------------------------------# Variance
-println("  > Variance")
-@testset "Variance" begin
-    o = fit!(Variance(), y)
-    @test mean(o) ≈ mean(y)
-    @test var(o) ≈ var(y)
-    @test std(o) ≈ std(y)
+        @test ≈(mergevals(Variance(), x, x2)...)
+        @test ≈(mergevals(Variance(), y, y2)...)
+        @test ≈(mergevals(Variance(Float32), Float32.(y), Float32.(y2))...; atol = 0.001)
+        @test ≈(mergevals(Variance(), z, z2)...)
+        # Issue 116
+        @test std(Variance()) == 1
+        @test std(fit!(Variance(), 1)) == 1
+        @test std(fit!(Variance(), [1, 2])) == sqrt(0.5)
+        # https://github.com/joshday/OnlineStats.jl/issues/217
+        @test value(fit!(Variance(Float32), randn(Float32, 10))) isa Float32
 
-    @test ≈(mergevals(Variance(), x, x2)...)
-    @test ≈(mergevals(Variance(), y, y2)...)
-    @test ≈(mergevals(Variance(Float32), Float32.(y), Float32.(y2))...; atol=.001)
-    @test ≈(mergevals(Variance(), z, z2)...)
-    # Issue 116
-    @test std(Variance()) == 1
-    @test std(fit!(Variance(), 1)) == 1
-    @test std(fit!(Variance(), [1, 2])) == sqrt(.5)
-    # https://github.com/joshday/OnlineStats.jl/issues/217
-    @test value(fit!(Variance(Float32), randn(Float32, 10))) isa Float32
-
-    # Multiple obs method
-    o = fit!(Variance(), y)
-    fit!(o, 1.0, 4)
-    v = vcat(copy(y), [1.0, 1.0, 1.0, 1.0])
-    @test mean(o) ≈ mean(v)
-    @test var(o) ≈ var(v)
-    @test std(o) ≈ std(v)
-end
+        # Multiple obs method
+        o = fit!(Variance(), y)
+        fit!(o, 1.0, 4)
+        v = vcat(copy(y), [1.0, 1.0, 1.0, 1.0])
+        @test mean(o) ≈ mean(v)
+        @test var(o) ≈ var(v)
+        @test std(o) ≈ std(v)
+    end
 
 end # end "Test Stats"
