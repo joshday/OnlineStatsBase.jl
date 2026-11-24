@@ -27,6 +27,10 @@ jobs:
             arch: x86
           - os: macOS-latest
             arch: x64
+          # Julia 1.10.14 (current lts) ships no 32-bit Windows binaries
+          - os: windows-latest
+            arch: x86
+            version: 'lts'
         include:
           - os: macOS-latest
             arch: aarch64
